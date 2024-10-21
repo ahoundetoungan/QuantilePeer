@@ -13,6 +13,6 @@ URL: https://github.com/ahoundetoungan/QtNet
 LazyData: true
 Depends: R (>= 3.5.0)
 Imports: Rcpp (>= 1.0.13)
-LinkingTo: Rcpp, RcppArmadillo
+LinkingTo: Rcpp, RcppArmadillo, RcppEigen, RcppNumerical 
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
