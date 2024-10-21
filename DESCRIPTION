@@ -1,0 +1,18 @@
+Package: QtNet
+Type: Package
+Title: Quantile Peer Effect Models
+Version: 1.0.0
+Date: 2025-01-18
+Authors@R: person("Aristide", "Houndetoungan", role = c("cre","aut"), email =  "ahoundetoungan@gmail.com")
+Description: Simulating and estimating peer effect models and network formation models.
+License: GPL-3
+Language: en-US
+Encoding: UTF-8
+BugReports: https://github.com/ahoundetoungan/QtNet/issues
+URL: https://github.com/ahoundetoungan/QtNet
+LazyData: true
+Depends: R (>= 3.5.0)
+Imports: Rcpp (>= 1.0.13)
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 7.3.2
+Roxygen: list(markdown = TRUE)
