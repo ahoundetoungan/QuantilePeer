@@ -12,68 +12,9 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// fgPIyP
-Rcpp::List fgPIyP(const arma::vec& y, Rcpp::List& G, const arma::vec d, const arma::mat& igroup, const arma::vec& nvec, const int& ngroup, const int& n);
-RcppExport SEXP _QtNet_fgPIyP(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP ngroupSEXP, SEXP nSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< Rcpp::List& >::type G(GSEXP);
-    Rcpp::traits::input_parameter< const arma::vec >::type d(dSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type nvec(nvecSEXP);
-    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
-    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    rcpp_result_gen = Rcpp::wrap(fgPIyP(y, G, d, igroup, nvec, ngroup, n));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fQWeightIndex
-void fQWeightIndex(arma::mat& w2, arma::umat& pi1, arma::umat& pi2, Rcpp::List& lgP, Rcpp::List& lcumsumgP, Rcpp::List& lIyP, const arma::vec& d, const arma::vec& stau, const arma::vec& sm, const int& n, const int& ntau);
-RcppExport SEXP _QtNet_fQWeightIndex(SEXP w2SEXP, SEXP pi1SEXP, SEXP pi2SEXP, SEXP lgPSEXP, SEXP lcumsumgPSEXP, SEXP lIyPSEXP, SEXP dSEXP, SEXP stauSEXP, SEXP smSEXP, SEXP nSEXP, SEXP ntauSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat& >::type w2(w2SEXP);
-    Rcpp::traits::input_parameter< arma::umat& >::type pi1(pi1SEXP);
-    Rcpp::traits::input_parameter< arma::umat& >::type pi2(pi2SEXP);
-    Rcpp::traits::input_parameter< Rcpp::List& >::type lgP(lgPSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List& >::type lcumsumgP(lcumsumgPSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List& >::type lIyP(lIyPSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type d(dSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type stau(stauSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type sm(smSEXP);
-    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
-    fQWeightIndex(w2, pi1, pi2, lgP, lcumsumgP, lIyP, d, stau, sm, n, ntau);
-    return R_NilValue;
-END_RCPP
-}
-// fQtauyVars
-Rcpp::List fQtauyVars(const arma::vec& y, const arma::mat Vars, Rcpp::List& G, const arma::vec d, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const arma::vec& sm, const int& ngroup, const int& colVars, const int& n, const int& ntau);
-RcppExport SEXP _QtNet_fQtauyVars(SEXP ySEXP, SEXP VarsSEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP smSEXP, SEXP ngroupSEXP, SEXP colVarsSEXP, SEXP nSEXP, SEXP ntauSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const arma::mat >::type Vars(VarsSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List& >::type G(GSEXP);
-    Rcpp::traits::input_parameter< const arma::vec >::type d(dSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type nvec(nvecSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type stau(stauSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type sm(smSEXP);
-    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
-    Rcpp::traits::input_parameter< const int& >::type colVars(colVarsSEXP);
-    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
-    rcpp_result_gen = Rcpp::wrap(fQtauyVars(y, Vars, G, d, igroup, nvec, stau, sm, ngroup, colVars, n, ntau));
-    return rcpp_result_gen;
-END_RCPP
-}
 // fQtauy
-arma::mat fQtauy(const arma::vec& y, Rcpp::List& G, const arma::vec d, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const arma::vec& sm, const int& ngroup, const int& n, const int& ntau);
-RcppExport SEXP _QtNet_fQtauy(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP smSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP) {
+arma::mat fQtauy(const arma::vec& y, Rcpp::List& G, const arma::vec d, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const int& ngroup, const int& n, const int& ntau, const int& type);
+RcppExport SEXP _QtNet_fQtauy(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -83,30 +24,97 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type nvec(nvecSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type stau(stauSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type sm(smSEXP);
     Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
     Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
-    rcpp_result_gen = Rcpp::wrap(fQtauy(y, G, d, igroup, nvec, stau, sm, ngroup, n, ntau));
+    Rcpp::traits::input_parameter< const int& >::type type(typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(fQtauy(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type));
     return rcpp_result_gen;
 END_RCPP
 }
-// BR
-arma::vec BR(const arma::vec& talpha, const arma::mat& Qtauy, const arma::vec& lambdatau);
-RcppExport SEXP _QtNet_BR(SEXP talphaSEXP, SEXP QtauySEXP, SEXP lambdatauSEXP) {
+// fQtauyWithIndex
+Rcpp::List fQtauyWithIndex(const arma::vec& y, Rcpp::List& G, const arma::vec d, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const int& ngroup, const int& n, const int& ntau, const int& type);
+RcppExport SEXP _QtNet_fQtauyWithIndex(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Rcpp::List& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type nvec(nvecSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type stau(stauSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
+    Rcpp::traits::input_parameter< const int& >::type type(typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(fQtauyWithIndex(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fQtauyIndex
+Rcpp::List fQtauyIndex(const arma::vec& y, Rcpp::List& G, const arma::vec d, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const int& ngroup, const int& n, const int& ntau, const int& type);
+RcppExport SEXP _QtNet_fQtauyIndex(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Rcpp::List& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type nvec(nvecSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type stau(stauSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
+    Rcpp::traits::input_parameter< const int& >::type type(typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(fQtauyIndex(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fIndexMat
+arma::sp_mat fIndexMat(const arma::uvec& pi1, const arma::uvec& pi2, const arma::vec& w2, const int& n);
+RcppExport SEXP _QtNet_fIndexMat(SEXP pi1SEXP, SEXP pi2SEXP, SEXP w2SEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::uvec& >::type pi1(pi1SEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type pi2(pi2SEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type w2(w2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(fIndexMat(pi1, pi2, w2, n));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fProdWVI
+arma::mat fProdWVI(const arma::sp_mat& W, const arma::mat& V, const int& power);
+RcppExport SEXP _QtNet_fProdWVI(SEXP WSEXP, SEXP VSEXP, SEXP powerSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::sp_mat& >::type W(WSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type V(VSEXP);
+    Rcpp::traits::input_parameter< const int& >::type power(powerSEXP);
+    rcpp_result_gen = Rcpp::wrap(fProdWVI(W, V, power));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fEy
+arma::vec fEy(const arma::sp_mat& sWl, const arma::vec& talpha, const int& n);
+RcppExport SEXP _QtNet_fEy(SEXP sWlSEXP, SEXP talphaSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::sp_mat& >::type sWl(sWlSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type talpha(talphaSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type Qtauy(QtauySEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type lambdatau(lambdatauSEXP);
-    rcpp_result_gen = Rcpp::wrap(BR(talpha, Qtauy, lambdatau));
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(fEy(sWl, talpha, n));
     return rcpp_result_gen;
 END_RCPP
 }
 // fNashE
-int fNashE(arma::vec& y, Rcpp::List& G, const arma::vec d, const arma::vec& talpha, const arma::vec& lambdatau, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const arma::vec& sm, const int& ngroup, const int& n, const int& ntau, const double& tol, const int& maxit);
-RcppExport SEXP _QtNet_fNashE(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP talphaSEXP, SEXP lambdatauSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP smSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
+int fNashE(arma::vec& y, Rcpp::List& G, const arma::vec d, const arma::vec& talpha, const arma::vec& lambdatau, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const int& ngroup, const int& n, const int& ntau, const int& type, const double& tol, const int& maxit);
+RcppExport SEXP _QtNet_fNashE(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP talphaSEXP, SEXP lambdatauSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -118,23 +126,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type nvec(nvecSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type stau(stauSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type sm(smSEXP);
     Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
     Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
+    Rcpp::traits::input_parameter< const int& >::type type(typeSEXP);
     Rcpp::traits::input_parameter< const double& >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< const int& >::type maxit(maxitSEXP);
-    rcpp_result_gen = Rcpp::wrap(fNashE(y, G, d, talpha, lambdatau, igroup, nvec, stau, sm, ngroup, n, ntau, tol, maxit));
+    rcpp_result_gen = Rcpp::wrap(fNashE(y, G, d, talpha, lambdatau, igroup, nvec, stau, ngroup, n, ntau, type, tol, maxit));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_QtNet_fgPIyP", (DL_FUNC) &_QtNet_fgPIyP, 7},
-    {"_QtNet_fQWeightIndex", (DL_FUNC) &_QtNet_fQWeightIndex, 11},
-    {"_QtNet_fQtauyVars", (DL_FUNC) &_QtNet_fQtauyVars, 12},
     {"_QtNet_fQtauy", (DL_FUNC) &_QtNet_fQtauy, 10},
-    {"_QtNet_BR", (DL_FUNC) &_QtNet_BR, 3},
+    {"_QtNet_fQtauyWithIndex", (DL_FUNC) &_QtNet_fQtauyWithIndex, 10},
+    {"_QtNet_fQtauyIndex", (DL_FUNC) &_QtNet_fQtauyIndex, 10},
+    {"_QtNet_fIndexMat", (DL_FUNC) &_QtNet_fIndexMat, 4},
+    {"_QtNet_fProdWVI", (DL_FUNC) &_QtNet_fProdWVI, 3},
+    {"_QtNet_fEy", (DL_FUNC) &_QtNet_fEy, 3},
     {"_QtNet_fNashE", (DL_FUNC) &_QtNet_fNashE, 14},
     {NULL, NULL, 0}
 };

@@ -36,11 +36,27 @@ using namespace Rcpp;
 using namespace arma;
 using namespace std;
 
+// floorP and ceilP are floor and ceil functions with the precision that
+// decimal digit longer than k are ignored.
+int floorP(const long double& x, const unsigned int& k = 10){
+  long tp1(pow(10, k));
+  long tp2(round(x*tp1));
+  return tp2/tp1;
+}
+
+int ceilP(const long double& x, const unsigned int& k = 10){
+  long tp1(pow(10, k));
+  long tp2(round(x*tp1));
+  long tp3(tp2/tp1);
+  if (tp3*tp1 < tp2) return tp3 + 1;
+  return tp3;
+}
+
+
 // gP vector of gij for gij>0, this is sorted from the smallest based of yj of peers
 // IyP includes the indexes of sorterd yj of peers in the original y
 // cumsumgP cumulative sum of gP
-// This function computes liste of gP, IyP, cumsumgP
-//[[Rcpp::export]]
+// This function computes list of gP, IyP, cumsumgP
 Rcpp::List fgPIyP(const arma::vec& y,
                   Rcpp::List& G,
                   const arma::vec d,
@@ -67,8 +83,16 @@ Rcpp::List fgPIyP(const arma::vec& y,
       Gri   = Gri/d(k);
       tp    = arma::sort_index(yr.elem(ipGri));
       Gri   = Gri.elem(tp);
-      tp    = arma::join_cols(ipGri.elem(tp) + n1, arma::zeros<arma::uvec>(1));
-      csgPi = arma::cumsum(Gri);
+      
+      // Index
+      tp    = ipGri.elem(tp) + n1;
+      tp    = arma::join_cols(arma::join_cols(tp.head(1), tp), tp.tail(1));
+      
+      // cumsum
+      csgPi = arma::join_cols(arma::zeros<arma::vec>(1), arma::cumsum(Gri));
+      csgPi.elem(arma::find(csgPi >= 1)).ones(); 
+      
+      // Weights
       Gri          = arma::join_cols(Gri, arma::ones<arma::vec>(1));
       lgP[k]       = Gri;
       lcumsumgP[k] = csgPi;
@@ -82,7 +106,6 @@ Rcpp::List fgPIyP(const arma::vec& y,
 // weight for y_(pi + 1) in w2 (matrix n*ntau) 
 // index for y_(pi) in pi1 (matrix n*ntau)
 // index for y_(pi + 1) in pi2 (matrix n*ntau) 
-//[[Rcpp::export]]
 void fQWeightIndex(arma::mat& w2, 
                    arma::umat& pi1,
                    arma::umat& pi2,
@@ -91,76 +114,219 @@ void fQWeightIndex(arma::mat& w2,
                    Rcpp::List& lIyP,
                    const arma::vec& d,
                    const arma::vec& stau,
-                   const arma::vec& sm,
                    const int& n,
-                   const int& ntau){
-  for(int i(0); i < n; ++ i){
-    if(d(i) == 0) continue;
-    arma::vec gP = lgP[i];
-    arma::vec cumsumgP = lcumsumgP[i];
-    arma::uvec IyP = lIyP[i];
-    arma::vec w2i(ntau);
-    arma::uvec pii1(ntau);
-    
-    for(int k(0); k < ntau; ++ k){
-      int l(sum(cumsumgP <= stau(k)));
-      double tp1(0); if(l > 0) tp1 = cumsumgP(l - 1);
-      double tp2(l - 1 + (stau(k) - tp1)/gP(l) + sm(k));
-      pii1(k) = floor(tp2);
-      w2i(k)   = tp2 - pii1(k);
-    }
-    w2.col(i)  = w2i;
-    pi1.col(i) = IyP.elem(pii1);
-    pi2.col(i) = IyP.elem(pii1 + 1);
-  }
-}
-
-// This function computes Qtau(V) and Qtau y
-//[[Rcpp::export]]
-Rcpp::List fQtauyVars(const arma::vec& y,
-                      const arma::mat Vars,
-                      Rcpp::List& G,
-                      const arma::vec d,
-                      const arma::mat& igroup,
-                      const arma::vec& nvec,
-                      const arma::vec& stau,
-                      const arma::vec& sm,
-                      const int& ngroup,
-                      const int& colVars,
-                      const int& n,
-                      const int& ntau){
-  // compute gP, cumsumgP, and IyP
-  Rcpp::List tp = fgPIyP(y, G, d, igroup, nvec, ngroup, n);
-  Rcpp::List lgP       = tp["gP"];
-  Rcpp::List lcumsumgP = tp["cumsumgP"];
-  Rcpp::List lIyP      = tp["IyP"];
-  
-  // compute w2, pi1, and pi2
-  arma::mat w2(ntau, n, arma::fill::zeros); 
-  arma::umat pi1(ntau, n, arma::fill::zeros), pi2(ntau, n, arma::fill::zeros);
-  fQWeightIndex(w2, pi1, pi2, lgP, lcumsumgP, lIyP, d, stau, sm, n, ntau);
-  
-  Rcpp::List QtV(colVars + 1);
-  
-  // Qtau(y)
-  arma::mat QtVk(n, ntau);
-  for(int i(0); i < n; ++ i){
-    QtVk.row(i) = arma::trans(y.elem(pi1.col(i))%(1 - w2.col(i)) +  y.elem(pi2.col(i))%w2.col(i));
-  }
-  QtV[0]        = QtVk;
-  
-  // Qtau(Vars)
-  for(int k(0); k < colVars; ++ k){
-    arma::vec Vk(Vars.col(k));
+                   const int& ntau,
+                   const int type){
+  if(type == 1){
     for(int i(0); i < n; ++ i){
-      QtVk.row(i) = arma::trans(Vk.elem(pi1.col(i))%(1 - w2.col(i)) +  Vk.elem(pi2.col(i))%w2.col(i));
+      if(d(i) == 0) continue;
+      arma::vec gP(lgP[i]);
+      arma::vec cumsumgP(lcumsumgP[i]);
+      arma::uvec IyP(lIyP[i]);
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(cumsumgP <= stau(k)) - 1);
+        long double tp1(cumsumgP(l));
+        long double tp2(l + (stau(k) - tp1)/gP(l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = ceilP(tp2 - pii1(k));
+      }
+      w2.col(i)  = w2i;
+      pi1.col(i) = IyP.elem(pii1);
+      pi2.col(i) = IyP.elem(pii1 + 1);
     }
-    QtV[k + 1]    = QtVk;
   }
-  return QtV;
+  
+  if(type == 2){
+    for(int i(0); i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec gP(lgP[i]);
+      arma::vec cumsumgP(lcumsumgP[i]);
+      arma::uvec IyP(lIyP[i]);
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(cumsumgP <= stau(k)) - 1);
+        long double tp1(cumsumgP(l));
+        long double tp2(l + (stau(k) - tp1)/gP(l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = 0.5*(1 + ceilP(tp2 - pii1(k)));
+      }
+      w2.col(i)  = w2i;
+      pi1.col(i) = IyP.elem(pii1);
+      pi2.col(i) = IyP.elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 3){
+    for(int i(0); i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec gP(lgP[i]);
+      arma::vec cumsumgP(lcumsumgP[i]);
+      arma::uvec IyP(lIyP[i]);
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(cumsumgP <= stau(k)) - 1);
+        long double tp1(cumsumgP(l));
+        long double tp2(l - 0.5 + (stau(k) - tp1)/gP(l)); 
+        pii1(k)  = floorP(tp2); if (pii1(k) < 0) pii1(k) = 0;//this is j in HYNDMAN and FAN (1996)
+        if((pii1(k)%2 == 0) & (tp2 >= 1)){
+          w2i(k) = ceilP(tp2 - pii1(k));
+        } else{
+          w2i(k) = 1;
+        }
+      }
+      w2.col(i)  = w2i;
+      pi1.col(i) = IyP.elem(pii1);
+      pi2.col(i) = IyP.elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 4){
+    for(int i(0); i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec gP(lgP[i]);
+      arma::vec cumsumgP(lcumsumgP[i]);
+      arma::uvec IyP(lIyP[i]);
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(cumsumgP <= stau(k)) - 1);
+        long double tp1(cumsumgP(l));
+        long double tp2(l + (stau(k) - tp1)/gP(l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w2.col(i)  = w2i;
+      pi1.col(i) = IyP.elem(pii1);
+      pi2.col(i) = IyP.elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 5){
+    for(int i(0); i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec gP(lgP[i]);
+      arma::vec cumsumgP(lcumsumgP[i]);
+      arma::uvec IyP(lIyP[i]);
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(cumsumgP <= stau(k)) - 1);
+        long double tp1(cumsumgP(l));
+        long double tp2(l + 0.5 + (stau(k) - tp1)/gP(l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w2.col(i)  = w2i;
+      pi1.col(i) = IyP.elem(pii1);
+      pi2.col(i) = IyP.elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 6){
+    for(int i(0); i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec gP(lgP[i]);
+      arma::vec cumsumgP(lcumsumgP[i]);
+      arma::uvec IyP(lIyP[i]);
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(cumsumgP <= stau(k)) - 1);
+        long double tp1(cumsumgP(l));
+        long double tp2(l + (stau(k) - tp1)/gP(l) + stau(k)); 
+        if(stau(k) >= 1) tp2 = l;
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+        // if(i == 1) cout<<d(i)<<endl;
+        // if(i == 1) cout<<arma::trans(cumsumgP - stau(k))<<endl;
+        // if(i == 1) cout<<tp1<<endl;
+        // if(i == 1) cout<<tp2<<endl;
+        // if(i == 1) cout<<pii1(k)<<endl;
+      }
+      w2.col(i)  = w2i;
+      pi1.col(i) = IyP.elem(pii1);
+      pi2.col(i) = IyP.elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 7){
+    for(int i(0); i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec gP(lgP[i]);
+      arma::vec cumsumgP(lcumsumgP[i]);
+      arma::uvec IyP(lIyP[i]);
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(cumsumgP <= stau(k)) - 1);
+        long double tp1(cumsumgP(l));
+        long double tp2(l + (stau(k) - tp1)/gP(l) + 1 - stau(k)); //here tp2 is necessarily >= 0
+        pii1(k) = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)  = tp2 - pii1(k);
+      }
+      w2.col(i)  = w2i;
+      pi1.col(i) = IyP.elem(pii1);
+      pi2.col(i) = IyP.elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 8){
+    for(int i(0); i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec gP(lgP[i]);
+      arma::vec cumsumgP(lcumsumgP[i]);
+      arma::uvec IyP(lIyP[i]);
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(cumsumgP <= stau(k)) - 1);
+        long double tp1(cumsumgP(l));
+        long double tp2(l + (stau(k) - tp1)/gP(l) + (stau(k) + 1.0)/3.0); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w2.col(i)  = w2i;
+      pi1.col(i) = IyP.elem(pii1);
+      pi2.col(i) = IyP.elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 9){
+    for(int i(0); i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec gP(lgP[i]);
+      arma::vec cumsumgP(lcumsumgP[i]);
+      arma::uvec IyP(lIyP[i]);
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(cumsumgP <= stau(k)) - 1);
+        long double tp1(cumsumgP(l));
+        long double tp2(l + (stau(k) - tp1)/gP(l) + stau(k)/4.0 + 3.0/8.0); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w2.col(i)  = w2i;
+      pi1.col(i) = IyP.elem(pii1);
+      pi2.col(i) = IyP.elem(pii1 + 1);
+    }
+  }
 }
 
-// The same function for a single variable
+// This function computes Qtau(y) 
 //[[Rcpp::export]]
 arma::mat fQtauy(const arma::vec& y,
                  Rcpp::List& G,
@@ -168,10 +334,10 @@ arma::mat fQtauy(const arma::vec& y,
                  const arma::mat& igroup,
                  const arma::vec& nvec,
                  const arma::vec& stau,
-                 const arma::vec& sm,
                  const int& ngroup,
                  const int& n,
-                 const int& ntau){
+                 const int& ntau,
+                 const int& type){
   // compute gP, cumsumgP, and IyP
   Rcpp::List tp = fgPIyP(y, G, d, igroup, nvec, ngroup, n);
   Rcpp::List lgP       = tp["gP"];
@@ -181,7 +347,7 @@ arma::mat fQtauy(const arma::vec& y,
   // compute w2, pi1, and pi2
   arma::mat w2(ntau, n, arma::fill::zeros); 
   arma::umat pi1(ntau, n, arma::fill::zeros), pi2(ntau, n, arma::fill::zeros);
-  fQWeightIndex(w2, pi1, pi2, lgP, lcumsumgP, lIyP, d, stau, sm, n, ntau);
+  fQWeightIndex(w2, pi1, pi2, lgP, lcumsumgP, lIyP, d, stau, n, ntau, type);
   
   arma::mat Qty(ntau, n);
   for(int i(0); i < n; ++ i){
@@ -190,9 +356,103 @@ arma::mat fQtauy(const arma::vec& y,
   return Qty.t();
 }
 
+// The same function with indices
+//[[Rcpp::export]]
+Rcpp::List fQtauyWithIndex(const arma::vec& y,
+                           Rcpp::List& G,
+                           const arma::vec d,
+                           const arma::mat& igroup,
+                           const arma::vec& nvec,
+                           const arma::vec& stau,
+                           const int& ngroup,
+                           const int& n,
+                           const int& ntau,
+                           const int& type){
+  // compute gP, cumsumgP, and IyP
+  Rcpp::List tp = fgPIyP(y, G, d, igroup, nvec, ngroup, n);
+  Rcpp::List lgP       = tp["gP"];
+  Rcpp::List lcumsumgP = tp["cumsumgP"];
+  Rcpp::List lIyP      = tp["IyP"];
+  
+  // compute w2, pi1, and pi2
+  arma::mat w2(ntau, n, arma::fill::zeros); 
+  arma::umat pi1(ntau, n, arma::fill::zeros), pi2(ntau, n, arma::fill::zeros);
+  fQWeightIndex(w2, pi1, pi2, lgP, lcumsumgP, lIyP, d, stau, n, ntau, type);
+  
+  arma::mat Qty(ntau, n);
+  for(int i(0); i < n; ++ i){
+    Qty.col(i) = y.elem(pi1.col(i))%(1 - w2.col(i)) +  y.elem(pi2.col(i))%w2.col(i);
+  }
+  
+  return Rcpp::List::create(_["Qy"] = Qty.t(), _["pi1"] = pi1.t(), _["pi2"] = pi2.t(), _["w2"] = w2.t());
+}
+
+// The same function only indices
+//[[Rcpp::export]]
+Rcpp::List fQtauyIndex(const arma::vec& y,
+                   Rcpp::List& G,
+                   const arma::vec d,
+                   const arma::mat& igroup,
+                   const arma::vec& nvec,
+                   const arma::vec& stau,
+                   const int& ngroup,
+                   const int& n,
+                   const int& ntau,
+                   const int& type){
+  // compute gP, cumsumgP, and IyP
+  Rcpp::List tp = fgPIyP(y, G, d, igroup, nvec, ngroup, n);
+  Rcpp::List lgP       = tp["gP"];
+  Rcpp::List lcumsumgP = tp["cumsumgP"];
+  Rcpp::List lIyP      = tp["IyP"];
+  
+  // compute w2, pi1, and pi2
+  arma::mat w2(ntau, n, arma::fill::zeros); 
+  arma::umat pi1(ntau, n, arma::fill::zeros), pi2(ntau, n, arma::fill::zeros);
+  fQWeightIndex(w2, pi1, pi2, lgP, lcumsumgP, lIyP, d, stau, n, ntau, type);
+  return Rcpp::List::create(_["pi1"] = pi1.t(), _["pi2"] = pi2.t(), _["w2"] = w2.t());
+}
+
+// Convert index into sparse matrix
+//[[Rcpp::export]]
+arma::sp_mat fIndexMat(const arma::uvec& pi1,
+                       const arma::uvec& pi2,
+                       const arma::vec& w2,
+                       const int& n){
+  arma::sp_mat out(n, n);
+  for (int i(0); i < n; ++ i){
+    out(i, pi2(i))  = w2(i);
+    out(i, pi1(i)) += 1 - w2(i);
+  }
+  return out;
+}
+
+// Product Weights Variables
+//[[Rcpp::export]]
+arma::mat fProdWVI(const arma::sp_mat& W,
+                   const arma::mat& V,
+                   const int& power = 1){
+  arma::mat tp(W*V);
+  if (power == 1) return tp;
+  arma::mat out(tp);
+  for (int k(1); k < power; ++ k){
+    tp  = W*tp;
+    out = arma::join_rows(out, tp);
+  }
+  return out;
+}
+
+// Compute expectation of y
+// talpha is alpha tilde
+// sWl is the sum of W*lambda
+//[[Rcpp::export]]
+arma::vec fEy(const arma::sp_mat& sWl, 
+              const arma::vec& talpha,
+              const int& n){
+  return arma::spsolve(arma::speye<arma::sp_mat>(n, n) - sWl, talpha);
+}
+
 // Best response function
 // talpha is alpha tilde
-//[[Rcpp::export]]
 arma::vec BR(const arma::vec& talpha,
              const arma::mat& Qtauy,
              const arma::vec& lambdatau){
@@ -210,17 +470,17 @@ int fNashE(arma::vec& y,
            const arma::mat& igroup,
            const arma::vec& nvec,
            const arma::vec& stau,
-           const arma::vec& sm,
            const int& ngroup,
            const int& n,
            const int& ntau,
+           const int& type = 7,
            const double& tol = 1e-10,
            const int& maxit  = 500){
   int t(0);
   computeBR: ++t;
   
   // Compute Qtauy
-  arma::mat Qtauy = fQtauy(y, G, d, igroup, nvec, stau, sm, ngroup, n, ntau);
+  arma::mat Qtauy = fQtauy(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type);
   
   // New y
   arma::vec yst   = BR(talpha, Qtauy, lambdatau);
