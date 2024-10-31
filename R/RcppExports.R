@@ -13,19 +13,35 @@ fQtauyIndex <- function(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type) {
     .Call(`_QtNet_fQtauyIndex`, y, G, d, igroup, nvec, stau, ngroup, n, ntau, type)
 }
 
-fIndexMat <- function(pi1, pi2, w2, n) {
-    .Call(`_QtNet_fIndexMat`, pi1, pi2, w2, n)
+fIndexMat <- function(pi1, pi2, w1, w2, n) {
+    .Call(`_QtNet_fIndexMat`, pi1, pi2, w1, w2, n)
 }
 
-fProdWVI <- function(W, V, power = 1L) {
-    .Call(`_QtNet_fProdWVI`, W, V, power)
-}
-
-fEy <- function(sWl, talpha, n) {
-    .Call(`_QtNet_fEy`, sWl, talpha, n)
+fProdWVI <- function(W, V, distance = 1L) {
+    .Call(`_QtNet_fProdWVI`, W, V, distance)
 }
 
 fNashE <- function(y, G, d, talpha, lambdatau, igroup, nvec, stau, ngroup, n, ntau, type = 7L, tol = 1e-10, maxit = 500L) {
     .Call(`_QtNet_fNashE`, y, G, d, talpha, lambdatau, igroup, nvec, stau, ngroup, n, ntau, type, tol, maxit)
+}
+
+fcheckrank <- function(X) {
+    .Call(`_QtNet_fcheckrank`, X)
+}
+
+flambda <- function(lambdatilde, linf, lsup, ntau) {
+    .Call(`_QtNet_flambda`, lambdatilde, linf, lsup, ntau)
+}
+
+flambdatilde <- function(lambda, linf, lsup, ntau) {
+    .Call(`_QtNet_flambdatilde`, lambda, linf, lsup, ntau)
+}
+
+g <- function(theta, x) {
+    .Call(`_QtNet_g`, theta, x)
+}
+
+dg <- function(theta, x) {
+    .Call(`_QtNet_dg`, theta, x)
 }
 

@@ -12,6 +12,7 @@ qpeer.sim(
   lambda,
   beta,
   epsilon,
+  structural = FALSE,
   type = 7,
   tol = 1e-10,
   maxit = 500,
@@ -28,13 +29,16 @@ where \code{x1} and \code{x2} are control variables, which can include contextua
 \item{tau}{The vector of quantile levels.}
 
 \item{parms}{A vector defining the true values of \eqn{(\lambda', \beta')'}, where \eqn{\lambda} is a vector of \eqn{\lambda_{\tau}} for each quantile level \eqn{\tau} (see model specification in the details).
-The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately using the arguments \code{lambda} and \code{beta}.}
+The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately using the arguments \code{lambda} and \code{beta}. For the structural model,
+\eqn{\lambda = (\lambda^{*}, \lambda_{\tau_1}, \lambda_{\tau_2}, \dots)^{\prime}} (see details).}
 
 \item{lambda}{The true value of the vector \eqn{\lambda}.}
 
 \item{beta}{The true value of the vector \eqn{\beta}.}
 
 \item{epsilon}{A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in details).}
+
+\item{structural}{A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see details).}
 
 \item{type}{An integer between 1 and 9 selecting one of the nine quantile algorithms used to compute peer quantiles (see the \link[stats]{quantile} function).}
 
@@ -51,7 +55,7 @@ in the model. If not found in \code{data}, the variables are taken from \code{en
 \value{
 A list containing:
 \item{y}{The simulated variable.}
-\item{Qy}{Quantiles of the simulated variable among peers.}
+\item{qy}{Quantiles of the simulated variable among peers.}
 \item{epsilon}{The idiosyncratic error.}
 \item{index}{The indices of the two peers whose weighted average gives the quantile.}
 \item{weight}{The weights of the two peers whose weighted average gives the quantile.}
@@ -61,13 +65,19 @@ A list containing:
 \code{qpeer.sim} simulates the quantile peer effect models developed by Houndetoungan (2025).
 }
 \details{
-Let \eqn{\mathcal{T}} be a set of quantile levels. The quantile peer effect model is given by:
+Let \eqn{\mathcal{T}} be a set of quantile levels. The reduced-form specification of quantile peer effect models is given by:
 \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + \mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
-where \eqn{\mathbf{y}_{-i} = (y_1, \ldots, y_{i-1}, y_{i+1}, \ldots, y_n)^{\prime}} is the vector of outcomes for other units and \eqn{q_{\tau,i}(\mathbf{y}_{-i})} is the
+where \eqn{\mathbf{y}_{-i} = (y_1, \ldots, y_{i-1}, y_{i+1}, \ldots, y_n)^{\prime}} is the vector of outcomes for other units, and \eqn{q_{\tau,i}(\mathbf{y}_{-i})} is the
 sample \eqn{\tau}-quantile of peer outcomes. The term \eqn{\varepsilon_i} is an idiosyncratic error term, \eqn{\lambda_{\tau}} captures the effect of the \eqn{\tau}-quantile of peer outcomes on \eqn{y_i},
 and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. For the definition of the sample \eqn{\tau}-quantile, see Hyndman and Fan (1996). The network matrices in \code{Glist} can be weighted or unweighted.
 If weighted, the sample weighted quantile is computed, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}, the \eqn{(i, j)} entry of the network matrix. It can be shown that
-the sample \eqn{\tau}-quantile is a weighted average of two peer outcomes. For more details, see the \link[stats]{quantile} and \code{\link{quantvars}} functions.
+the sample \eqn{\tau}-quantile is a weighted average of two peer outcomes. For more details, see the \link[stats]{quantile} and \code{\link{qpeer.instruments}} functions. \cr
+
+The specification of the structural model depends on whether node \eqn{i} is isolated or not. For isolated \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
+\deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
+If node \eqn{i} is non-isolated, the specification is:
+\deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,}
+where \eqn{\lambda^*} captures whether preferences describe complementarity/substitution or conformism.
 }
 \examples{
 ngr  <- 50
@@ -91,5 +101,5 @@ out$iteration
 Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 }
 \seealso{
-\code{\link{qpeer.lim}}, \code{\link{qpeer.instruments}}
+\code{\link{qpeer.estim}}, \code{\link{qpeer.instruments}}
 }

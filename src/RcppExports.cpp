@@ -2,7 +2,6 @@
 // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #include <RcppArmadillo.h>
-#include <RcppEigen.h>
 #include <Rcpp.h>
 
 using namespace Rcpp;
@@ -73,42 +72,30 @@ BEGIN_RCPP
 END_RCPP
 }
 // fIndexMat
-arma::sp_mat fIndexMat(const arma::uvec& pi1, const arma::uvec& pi2, const arma::vec& w2, const int& n);
-RcppExport SEXP _QtNet_fIndexMat(SEXP pi1SEXP, SEXP pi2SEXP, SEXP w2SEXP, SEXP nSEXP) {
+arma::sp_mat fIndexMat(const arma::uvec& pi1, const arma::uvec& pi2, const arma::vec& w1, const arma::vec& w2, const int& n);
+RcppExport SEXP _QtNet_fIndexMat(SEXP pi1SEXP, SEXP pi2SEXP, SEXP w1SEXP, SEXP w2SEXP, SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::uvec& >::type pi1(pi1SEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type pi2(pi2SEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type w1(w1SEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type w2(w2SEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    rcpp_result_gen = Rcpp::wrap(fIndexMat(pi1, pi2, w2, n));
+    rcpp_result_gen = Rcpp::wrap(fIndexMat(pi1, pi2, w1, w2, n));
     return rcpp_result_gen;
 END_RCPP
 }
 // fProdWVI
-arma::mat fProdWVI(const arma::sp_mat& W, const arma::mat& V, const int& power);
-RcppExport SEXP _QtNet_fProdWVI(SEXP WSEXP, SEXP VSEXP, SEXP powerSEXP) {
+arma::mat fProdWVI(const arma::sp_mat& W, const arma::mat& V, const int& distance);
+RcppExport SEXP _QtNet_fProdWVI(SEXP WSEXP, SEXP VSEXP, SEXP distanceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::sp_mat& >::type W(WSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type V(VSEXP);
-    Rcpp::traits::input_parameter< const int& >::type power(powerSEXP);
-    rcpp_result_gen = Rcpp::wrap(fProdWVI(W, V, power));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fEy
-arma::vec fEy(const arma::sp_mat& sWl, const arma::vec& talpha, const int& n);
-RcppExport SEXP _QtNet_fEy(SEXP sWlSEXP, SEXP talphaSEXP, SEXP nSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::sp_mat& >::type sWl(sWlSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type talpha(talphaSEXP);
-    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    rcpp_result_gen = Rcpp::wrap(fEy(sWl, talpha, n));
+    Rcpp::traits::input_parameter< const int& >::type distance(distanceSEXP);
+    rcpp_result_gen = Rcpp::wrap(fProdWVI(W, V, distance));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -136,15 +123,82 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fcheckrank
+arma::uvec fcheckrank(const arma::mat& X);
+RcppExport SEXP _QtNet_fcheckrank(SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(fcheckrank(X));
+    return rcpp_result_gen;
+END_RCPP
+}
+// flambda
+arma::vec flambda(const arma::vec& lambdatilde, const arma::vec& linf, const arma::vec& lsup, const int& ntau);
+RcppExport SEXP _QtNet_flambda(SEXP lambdatildeSEXP, SEXP linfSEXP, SEXP lsupSEXP, SEXP ntauSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type lambdatilde(lambdatildeSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type linf(linfSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type lsup(lsupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
+    rcpp_result_gen = Rcpp::wrap(flambda(lambdatilde, linf, lsup, ntau));
+    return rcpp_result_gen;
+END_RCPP
+}
+// flambdatilde
+arma::vec flambdatilde(const arma::vec& lambda, const arma::vec& linf, const arma::vec& lsup, const int& ntau);
+RcppExport SEXP _QtNet_flambdatilde(SEXP lambdaSEXP, SEXP linfSEXP, SEXP lsupSEXP, SEXP ntauSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type linf(linfSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type lsup(lsupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
+    rcpp_result_gen = Rcpp::wrap(flambdatilde(lambda, linf, lsup, ntau));
+    return rcpp_result_gen;
+END_RCPP
+}
+// g
+arma::mat g(const arma::vec& theta, Rcpp::List& x);
+RcppExport SEXP _QtNet_g(SEXP thetaSEXP, SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List& >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(g(theta, x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dg
+arma::mat dg(const arma::vec& theta, Rcpp::List& x);
+RcppExport SEXP _QtNet_dg(SEXP thetaSEXP, SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List& >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(dg(theta, x));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_QtNet_fQtauy", (DL_FUNC) &_QtNet_fQtauy, 10},
     {"_QtNet_fQtauyWithIndex", (DL_FUNC) &_QtNet_fQtauyWithIndex, 10},
     {"_QtNet_fQtauyIndex", (DL_FUNC) &_QtNet_fQtauyIndex, 10},
-    {"_QtNet_fIndexMat", (DL_FUNC) &_QtNet_fIndexMat, 4},
+    {"_QtNet_fIndexMat", (DL_FUNC) &_QtNet_fIndexMat, 5},
     {"_QtNet_fProdWVI", (DL_FUNC) &_QtNet_fProdWVI, 3},
-    {"_QtNet_fEy", (DL_FUNC) &_QtNet_fEy, 3},
     {"_QtNet_fNashE", (DL_FUNC) &_QtNet_fNashE, 14},
+    {"_QtNet_fcheckrank", (DL_FUNC) &_QtNet_fcheckrank, 1},
+    {"_QtNet_flambda", (DL_FUNC) &_QtNet_flambda, 4},
+    {"_QtNet_flambdatilde", (DL_FUNC) &_QtNet_flambdatilde, 4},
+    {"_QtNet_g", (DL_FUNC) &_QtNet_g, 2},
+    {"_QtNet_dg", (DL_FUNC) &_QtNet_dg, 2},
     {NULL, NULL, 0}
 };
 

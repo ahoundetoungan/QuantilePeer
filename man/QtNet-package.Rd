@@ -20,6 +20,6 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Aristide Houndetoungan \email{ahoundetoungan@gmail.com}
+\strong{Maintainer}: Aristide Houndetoungan \email{ahoundetoungan@gmail.com} (\href{https://orcid.org/0009-0003-2733-9362}{ORCID})
 
 }

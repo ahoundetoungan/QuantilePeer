@@ -17,9 +17,9 @@ formula.to.data <- function(formula,
   yname       <- NULL
   
   if (simulations) {
-    if(length(formula) != 2) stop("formula is not correct. To simulate data the expected format is ~ X1 + X2 + ....")
+    if(length(formula) != 2) stop("`formula` is not correct. To simulate data, the expected format is ~ X1 + X2 + ....")
   } else {
-    if(length(formula) != 3) stop("formula is not correct. For the estimation, the expected format is y ~ X1 + X2 + ....")
+    if(length(formula) != 3) stop("`formula` is not correct. For the estimation, the expected format is y ~ X1 + X2 + ....")
     yname     <- all.vars(formula)[1]
   }
   
