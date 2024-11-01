@@ -186,6 +186,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// demean
+arma::mat demean(arma::mat X, const arma::mat& igroup, const int& ngroup);
+RcppExport SEXP _QtNet_demean(SEXP XSEXP, SEXP igroupSEXP, SEXP ngroupSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    rcpp_result_gen = Rcpp::wrap(demean(X, igroup, ngroup));
+    return rcpp_result_gen;
+END_RCPP
+}
+// demean_separate
+arma::mat demean_separate(arma::mat X, const arma::mat& igroup, const arma::uvec& Is, const int& ngroup, const int& n);
+RcppExport SEXP _QtNet_demean_separate(SEXP XSEXP, SEXP igroupSEXP, SEXP IsSEXP, SEXP ngroupSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type Is(IsSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(demean_separate(X, igroup, Is, ngroup, n));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_QtNet_fQtauy", (DL_FUNC) &_QtNet_fQtauy, 10},
@@ -199,6 +227,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_QtNet_flambdatilde", (DL_FUNC) &_QtNet_flambdatilde, 4},
     {"_QtNet_g", (DL_FUNC) &_QtNet_g, 2},
     {"_QtNet_dg", (DL_FUNC) &_QtNet_dg, 2},
+    {"_QtNet_demean", (DL_FUNC) &_QtNet_demean, 3},
+    {"_QtNet_demean_separate", (DL_FUNC) &_QtNet_demean_separate, 5},
     {NULL, NULL, 0}
 };
 

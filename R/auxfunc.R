@@ -43,3 +43,15 @@ formula.to.data <- function(formula,
        "yname"     = yname,
        "xname"     = xname)
 }
+
+
+fnetwork <- function(Glist) {
+  dg       <- unlist(lapply(Glist, rowSums))
+  Is       <- which(dg == 0) - 1
+  nIs      <- which(dg != 0) - 1
+  M        <- length(Glist)
+  nvec     <- unlist(lapply(Glist, nrow))
+  n        <- sum(nvec)
+  igr      <- matrix(c(cumsum(c(0, nvec[-M])), cumsum(nvec) - 1), ncol = 2)
+  list(dg = dg, M = M, nvec = nvec, n = n, igr = igr, Is = Is, nIs = nIs)
+}

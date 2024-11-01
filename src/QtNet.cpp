@@ -618,7 +618,7 @@ arma::mat g(const arma::vec& theta,
 // Jocobian of the moment function g
 //[[Rcpp::export]]
 arma::mat dg(const arma::vec& theta, 
-            Rcpp::List& x){
+             Rcpp::List& x){
   arma::vec y = x["y"];
   arma::mat qy = x["qy"];
   arma::mat X = x["X"];
@@ -642,4 +642,48 @@ arma::mat dg(const arma::vec& theta,
   // Derivative with respect to beta
   out.tail_cols(Kx) = -arma::trans(arma::sum(X.rows(Is), 0) + arma::sum(X.rows(nIs), 0)*(1 - lambda(0)));
   return out.t()/n;
+}
+
+// demean
+//[[Rcpp::export]]
+arma::mat demean(arma::mat X,
+                 const arma::mat& igroup,
+                 const int & ngroup) {
+  for (int r(0); r < ngroup; ++ r) {
+    int n1(igroup(r, 0)), n2(igroup(r, 1));
+    X.rows(n1, n2).each_row() -= arma::mean(X.rows(n1, n2), 0);
+  }
+  return X;
+}
+
+// demean for the structural model
+//[[Rcpp::export]]
+arma::mat demean_separate(arma::mat X,
+                          const arma::mat& igroup,
+                          const arma::uvec& Is,
+                          const int & ngroup,
+                          const int& n) {
+  arma::uvec isnIs = arma::ones<arma::uvec>(n);
+  isnIs.elem(Is).zeros();
+  for (int r(0); r < ngroup; ++ r) {
+    int n1(igroup(r, 0)), n2(igroup(r, 1));
+    arma::mat Xm(X.rows(n1, n2));
+    arma::uvec tp(isnIs.subvec(n1, n2));
+    // For isolated
+    arma::uvec itp(arma::find(tp == 0));
+    if (itp.n_elem > 0) {
+      arma::mat Xm1 = Xm.rows(itp);
+      Xm1.each_row() -= arma::mean(Xm1, 0);
+      Xm.rows(itp) = Xm1;
+    }
+    // For non-isolated
+    itp = arma::find(tp != 0);
+    if (itp.n_elem > 0) {
+      arma::mat Xm1 = Xm.rows(itp);
+      Xm1.each_row() -= arma::mean(Xm1, 0);
+      Xm.rows(itp) = Xm1;
+    }
+    X.rows(n1, n2) = Xm;
+  }
+  return X;
 }

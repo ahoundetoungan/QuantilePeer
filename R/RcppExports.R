@@ -45,3 +45,11 @@ dg <- function(theta, x) {
     .Call(`_QtNet_dg`, theta, x)
 }
 
+demean <- function(X, igroup, ngroup) {
+    .Call(`_QtNet_demean`, X, igroup, ngroup)
+}
+
+demean_separate <- function(X, igroup, Is, ngroup, n) {
+    .Call(`_QtNet_demean_separate`, X, igroup, Is, ngroup, n)
+}
+

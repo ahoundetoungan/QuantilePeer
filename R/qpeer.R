@@ -68,17 +68,15 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   # Network
-  if (!is.list(Glist)) {
-    Glist  <- list(Glist)
-  }
-  dg       <- unlist(lapply(Glist, rowSums))
-  M        <- length(Glist)
-  nvec     <- unlist(lapply(Glist, nrow))
-  n        <- sum(nvec)
-  igr      <- matrix(c(cumsum(c(0, nvec[-M])), cumsum(nvec) - 1), ncol = 2)
-  Is       <- which(dg == 0)
-  nIs      <- which(dg != 0)
-  if (length(Is) <= 1) warning("The structural model requires isolated nodes.")
+  dg       <- fnetwork(Glist = Glist)
+  M        <- dg$M
+  nvec     <- dg$nvec
+  n        <- dg$n
+  igr      <- dg$igr
+  Is       <- dg$Is
+  nIs      <- dg$nIs
+  dg       <- dg$dg
+  if (length(Is) <= 1 & structural) warning("The structural model requires isolated nodes.")
   
   # Data
   f.t.data <- formula.to.data(formula = formula, data = data, simulations = TRUE, fixed.effects = FALSE)
@@ -141,7 +139,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
   
   # Solving the game
   talpha   <- X %*% b
-  if (structural) talpha[nIs] <- talpha[nIs]*(1 - ltst)
+  if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - ltst)
   talpha   <- talpha + eps
   y        <- rep(0, n)
   t        <- fNashE(y = y, G = Glist, d = dg, talpha, lambdatau = lt, igroup = igr, 
@@ -192,6 +190,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
        "iteration" = t)
 } 
 
+#' @importFrom gmm gmm
 #' @export
 qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optimal.instruments = FALSE, 
                      gmm.weight = "IV", structural = FALSE, fixed.effects = FALSE, tol = 1e-10, maxit = 500, ...){
@@ -201,18 +200,24 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
   gmm.weight <- tolower(gmm.weight)
   stopifnot(gmm.weight %in% c("iv", "optimal", "ident"))
   
+  if (is.character(fixed.effects[1])) fixed.effects <- tolower(fixed.effects)
+  stopifnot(fixed.effects %in% c(FALSE, "no", TRUE, "yes", "join", "separate"))
+  if (fixed.effects == TRUE | fixed.effects == "yes") fixed.effects <- ifelse(structural, "separate", "join")
+  if (fixed.effects == FALSE) fixed.effects <- "no"
+  
   # Network
   if (!is.list(Glist)) {
     Glist  <- list(Glist)
   }
-  dg       <- unlist(lapply(Glist, rowSums))
-  M        <- length(Glist)
-  nvec     <- unlist(lapply(Glist, nrow))
-  n        <- sum(nvec)
-  igr      <- matrix(c(cumsum(c(0, nvec[-M])), cumsum(nvec) - 1), ncol = 2)
-  Is       <- which(dg == 0) - 1
-  nIs      <- which(dg != 0) - 1
-  if (length(Is) <= 1) stop("The structural model requires isolated nodes.")
+  dg       <- fnetwork(Glist = Glist)
+  M        <- dg$M
+  nvec     <- dg$nvec
+  n        <- dg$n
+  igr      <- dg$igr
+  Is       <- dg$Is
+  nIs      <- dg$nIs
+  dg       <- dg$dg
+  if (length(Is) <= 1 & structural) stop("The structural model requires isolated nodes.")
   
   # linf and lsup
   linf     <- NULL
@@ -225,7 +230,7 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
   # Data
   # y and X
   formula    <- as.formula(formula)
-  f.t.data   <- formula.to.data(formula = formula, data = data, fixed.effects = fixed.effects, 
+  f.t.data   <- formula.to.data(formula = formula, data = data, fixed.effects = (fixed.effects != "no"), 
                                 simulations = FALSE) 
   y          <- f.t.data$y
   X          <- f.t.data$X
@@ -233,11 +238,13 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
   xname      <- f.t.data$xname
   yname      <- f.t.data$yname
   xint       <- f.t.data$intercept
+  qy         <- fQtauy(y = y, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
+                       ngroup = M, n = n, ntau = ntau, type = type)
   
   # Instruments
   inst       <- as.formula(instruments)
   if(length(inst) != 2) stop("Expected format for instruments is ~ X1 + X2 + ....")
-  f.t.data   <- formula.to.data(formula = inst, data = data, fixed.effects = fixed.effects, 
+  f.t.data   <- formula.to.data(formula = inst, data = data, fixed.effects = (fixed.effects != "no"), 
                                 simulations = TRUE)
   ins        <- f.t.data$X
   zename     <- f.t.data$xname
@@ -246,6 +253,24 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
   } else {
     ins      <- ins
   }
+  
+  # Demean fixed effect models
+  X0         <- X #Save initial X
+  if (fixed.effects != "no") {
+    if (fixed.effects == "join") {
+      y      <- c(demean(as.matrix(y), igroup = igr, ngroup = M))
+      qy     <- demean(qy, igroup = igr, ngroup = M)
+      X      <- demean(X, igroup = igr, ngroup = M)
+      ins    <- demean(ins, igroup = igr, ngroup = M)
+    } else {
+      y      <- c(demean_separate(as.matrix(y), igroup = igr, Is = Is, ngroup = M, n = n))
+      qy     <- demean_separate(qy, igroup = igr, Is = Is, ngroup = M, n = n)
+      X      <- demean_separate(X, igroup = igr, Is = Is, ngroup = M, n = n)
+      ins    <- demean_separate(ins, igroup = igr, Is = Is, ngroup = M, n = n)
+    }
+  }
+  
+  # Construct the final instrument matrix
   XStruc     <- NULL
   if (structural) {
     Xiso     <- X; Xiso[nIs + 1, ] <- 0
@@ -257,8 +282,8 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
     ins      <- cbind(X, ins)
   }
   
-  qy         <- fQtauy(y = y, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
-                       ngroup = M, n = n, ntau = ntau, type = type)
+  
+  
   # GMM weight
   weight     <- gmm.weight
   if (gmm.weight == "iv"){
@@ -298,7 +323,7 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
       ltst     <- lt[1]
       lt       <- lt[-1]
       b        <- tail(GMM1$coefficients, Kx)
-      talpha   <- X %*% b
+      talpha   <- X0 %*% b
       talpha[nIs + 1] <- talpha[nIs + 1]*(1 - ltst)
       Ey       <- rep(0, n)
       t        <- fNashE(y = Ey, G = Glist, d = dg, talpha = talpha, lambdatau = lt, igroup = igr,
@@ -306,6 +331,13 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
                         tol = tol, maxit = maxit)
       ins      <- fQtauy(y = Ey, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
                         ngroup = M, n = n, ntau = ntau, type = type)
+      if (fixed.effects != "no") {
+        if (fixed.effects == "join") {
+          ins   <- demean(ins, igroup = igr, ngroup = M)
+        } else {
+          ins   <- demean_separate(ins, igroup = igr, Is = Is, ngroup = M, n = n)
+        }
+      }
       ins      <- cbind(XStruc, ins)
       # GMM weight
       weight   <- gmm.weight
@@ -326,13 +358,20 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
     } else {
       lt      <- head(GMM1$coefficients, ntau)
       b       <- tail(GMM1$coefficients, Kx)
-      talpha  <- X %*% b
+      talpha  <- X0 %*% b
       Ey      <- rep(0, n)
       t       <- fNashE(y = Ey, G = Glist, d = dg, talpha, lambdatau = lt, igroup = igr,
                         nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type,
                         tol = tol, maxit = maxit)
       ins     <- fQtauy(y = Ey, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
                         ngroup = M, n = n, ntau = ntau, type = type)
+      if (fixed.effects != "no") {
+        if (fixed.effects == "join") {
+          ins   <- demean(ins, igroup = igr, ngroup = M)
+        } else {
+          ins   <- demean_separate(ins, igroup = igr, Is = Is, ngroup = M, n = n)
+        }
+      }
       ins     <- cbind(X, ins)
       # GMM weight
       weight     <- gmm.weight
