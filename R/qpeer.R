@@ -180,11 +180,52 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
        "iteration" = t)
 } 
 
+#' @title Estimating Linear Models with Quantile Peer Effects
+#' @param formula An object of class \link[stats]{formula}: a symbolic description of the model. `formula` should be specified as \code{y ~ x1 + x2}, 
+#' where `y` is the outcome and `x1` and `x2` are control variables, which can include contextual variables such as averages or quantiles among peers.
+#' @param excluded.instruments An object of class \link[stats]{formula} to indicate excluded instruments. It should be specified as \code{~ z1 + z2}, 
+#' where `z1` and `z2` are excluded instruments for the quantile peer outcomes.
+#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
+#' @param tau A numeric vector specifying the quantile levels.
+#' @param type An integer between 1 and 9 selecting one of the nine quantile algorithms used to compute peer quantiles (see the \link[stats]{quantile} function).
+#' @param maxit The maximum number of iterations for the Fixed Point Iteration Method used to compute optimal instruments.
+#' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
+#' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `qpeer.estim` is called.
+#' @param tol A numeric tolerance value for the Fixed Point Iteration Method used to compute the outcome `y`. The process stops if the \eqn{\ell_1}-distance 
+#' between two consecutive values of `y` is less than `tol`.
+#' @param structural A logical value indicating whether the reduced-form or structural specification should be estimated (see details).
+#' @param fixed.effects A logical value indicating whether the model includes subnet fixed effects.
+#' @param optimal.instruments A logical value indicating whether optimal instruments should be used.
+#' @param gmm.weight A character string specifying the GMM weight: either `"IV"` for the standard instrumental variable weight, `"optimal"` for the optimal GMM weight, or `"ident"` for the identity matrix.
+#' @param HAC A character string specifying the correlation structure among the idiosyncratic error terms for covariance computation. Options are `"iid"` for independent errors, `"hetero"` for heteroskedastic non-autocorrelated errors, and `"cluster"` for heteroskedastic errors with potential within-subnet correlation.
+#' @description
+#' `qpeer.estim` estimates the quantile peer effect models developed by Houndetoungan (2025).
+#' @details 
+#' Let \eqn{\mathcal{T}} be a set of quantile levels. The reduced-form specification of quantile peer effect models is given by:
+#' \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + \mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
+#' where \eqn{\mathbf{y}_{-i} = (y_1, \ldots, y_{i-1}, y_{i+1}, \ldots, y_n)^{\prime}} is the vector of outcomes for other units, and \eqn{q_{\tau,i}(\mathbf{y}_{-i})} is the 
+#' sample \eqn{\tau}-quantile of peer outcomes. The term \eqn{\varepsilon_i} is an idiosyncratic error term, \eqn{\lambda_{\tau}} captures the effect of the \eqn{\tau}-quantile of peer outcomes on \eqn{y_i}, 
+#' and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. For the definition of the sample \eqn{\tau}-quantile, see Hyndman and Fan (1996). The network matrices in `Glist` can be weighted or unweighted. 
+#' If weighted, the sample weighted quantile is computed, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}, the \eqn{(i, j)} entry of the network matrix. It can be shown that
+#' the sample \eqn{\tau}-quantile is a weighted average of two peer outcomes. For more details, see the \link[stats]{quantile} and \code{\link{qpeer.instruments}} functions. \cr
+#' 
+#' The specification of the structural model depends on whether node \eqn{i} is isolated or not. For isolated \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
+#' \deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
+#' If node \eqn{i} is non-isolated, the specification is:
+#' \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,}
+#' where \eqn{\lambda^*} captures whether preferences describe complementarity/substitution or conformism.
+#' @seealso \code{\link{qpeer.sim}}, \code{\link{qpeer.instruments}}
+#' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
+#' @return A list containing:
+#'     \item{model.info}{A list with information about the model, such as the number of subnets, number of observations, and other key details.}
+#'     \item{gmm}{A list of GMM estimation results, including parameter estimates, the covariance matrix, and related statistics.}
+#'     \item{gmm.opt.ins}{GMM estimation results using optimal instruments, if specified.}
+#'     \item{data}{A list containing the outcome, outcome quantiles among peers, control variables, and excluded instruments used in the model.}
 #' @export
 qpeer.estim <- function(formula, excluded.instuments, Glist, tau, type = 7, data, 
                         optimal.instruments = FALSE, gmm.weight = "IV", 
                         structural = FALSE, fixed.effects = FALSE, 
-                        HAC = "iid", tol = 1e-10, maxit = 500, ...){
+                        HAC = "iid", tol = 1e-10, maxit = 500){
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   ntau       <- length(tau)
