@@ -221,8 +221,9 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #'     \item{gmm}{A list of GMM estimation results, including parameter estimates, the covariance matrix, and related statistics.}
 #'     \item{gmm.opt.ins}{GMM estimation results using optimal instruments, if specified.}
 #'     \item{data}{A list containing the outcome, outcome quantiles among peers, control variables, and excluded instruments used in the model.}
+#' @importFrom stats pchisq
 #' @export
-qpeer.estim <- function(formula, excluded.instuments, Glist, tau, type = 7, data, 
+qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, data, 
                         optimal.instruments = FALSE, gmm.weight = "IV", 
                         structural = FALSE, fixed.effects = FALSE, 
                         HAC = "iid", tol = 1e-10, maxit = 500){
@@ -271,7 +272,7 @@ qpeer.estim <- function(formula, excluded.instuments, Glist, tau, type = 7, data
                        ngroup = M, n = n, ntau = ntau, type = type)
   
   # Instruments
-  inst       <- as.formula(excluded.instuments)
+  inst       <- as.formula(excluded.instruments)
   if(length(inst) != 2) stop("Expected format for instruments is ~ z1 + z2 + ....")
   f.t.data   <- formula.to.data(formula = inst, data = data, fixed.effects = (fixed.effects != "no"), 
                                 simulations = TRUE)
@@ -410,7 +411,7 @@ qpeer.estim <- function(formula, excluded.instuments, Glist, tau, type = 7, data
   }
   
   out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, tau = tau, formula = formula, 
-                                       excluded.instuments = excluded.instuments, type = type, gmm.weight = gmm.weight, 
+                                       excluded.instruments = excluded.instruments, type = type, gmm.weight = gmm.weight, 
                                        optimal.instruments = optimal.instruments,
                                        fixed.effects = fixed.effects, HAC = HAC),
                     gmm         = GMM1,
@@ -421,3 +422,6 @@ qpeer.estim <- function(formula, excluded.instuments, Glist, tau, type = 7, data
   out
 }
 
+summary.qpeer.estim <- function() {
+  
+}

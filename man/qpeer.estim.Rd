@@ -6,7 +6,7 @@
 \usage{
 qpeer.estim(
   formula,
-  excluded.instuments,
+  excluded.instruments,
   Glist,
   tau,
   type = 7,
@@ -23,6 +23,9 @@ qpeer.estim(
 \arguments{
 \item{formula}{An object of class \link[stats]{formula}: a symbolic description of the model. \code{formula} should be specified as \code{y ~ x1 + x2},
 where \code{y} is the outcome and \code{x1} and \code{x2} are control variables, which can include contextual variables such as averages or quantiles among peers.}
+
+\item{excluded.instruments}{An object of class \link[stats]{formula} to indicate excluded instruments. It should be specified as \code{~ z1 + z2},
+where \code{z1} and \code{z2} are excluded instruments for the quantile peer outcomes.}
 
 \item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
 
@@ -47,9 +50,6 @@ in the model. If not found in \code{data}, the variables are taken from \code{en
 between two consecutive values of \code{y} is less than \code{tol}.}
 
 \item{maxit}{The maximum number of iterations for the Fixed Point Iteration Method used to compute optimal instruments.}
-
-\item{excluded.instruments}{An object of class \link[stats]{formula} to indicate excluded instruments. It should be specified as \code{~ z1 + z2},
-where \code{z1} and \code{z2} are excluded instruments for the quantile peer outcomes.}
 }
 \value{
 A list containing:
