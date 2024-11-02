@@ -59,7 +59,6 @@ A list containing:
 \item{epsilon}{The idiosyncratic error.}
 \item{index}{The indices of the two peers whose weighted average gives the quantile.}
 \item{weight}{The weights of the two peers whose weighted average gives the quantile.}
-\item{iteration}{Number of iterations performed by the sub-network in the Fixed Point Iteration Method.}
 }
 \description{
 \code{qpeer.sim} simulates the quantile peer effect models developed by Houndetoungan (2025).

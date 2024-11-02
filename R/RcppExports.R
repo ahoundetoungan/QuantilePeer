@@ -25,24 +25,16 @@ fNashE <- function(y, G, d, talpha, lambdatau, igroup, nvec, stau, ngroup, n, nt
     .Call(`_QtNet_fNashE`, y, G, d, talpha, lambdatau, igroup, nvec, stau, ngroup, n, ntau, type, tol, maxit)
 }
 
+optins_red <- function(beta, y, G, X, d, igroup, nvec, stau, ngroup, n, ntau, type, Kx, tol, maxit) {
+    .Call(`_QtNet_optins_red`, beta, y, G, X, d, igroup, nvec, stau, ngroup, n, ntau, type, Kx, tol, maxit)
+}
+
+optins_struc <- function(beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, ntau, type, Kx, tol, maxit) {
+    .Call(`_QtNet_optins_struc`, beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, ntau, type, Kx, tol, maxit)
+}
+
 fcheckrank <- function(X) {
     .Call(`_QtNet_fcheckrank`, X)
-}
-
-flambda <- function(lambdatilde, linf, lsup, ntau) {
-    .Call(`_QtNet_flambda`, lambdatilde, linf, lsup, ntau)
-}
-
-flambdatilde <- function(lambda, linf, lsup, ntau) {
-    .Call(`_QtNet_flambdatilde`, lambda, linf, lsup, ntau)
-}
-
-g <- function(theta, x) {
-    .Call(`_QtNet_g`, theta, x)
-}
-
-dg <- function(theta, x) {
-    .Call(`_QtNet_dg`, theta, x)
 }
 
 demean <- function(X, igroup, ngroup) {
@@ -51,5 +43,13 @@ demean <- function(X, igroup, ngroup) {
 
 demean_separate <- function(X, igroup, Is, ngroup, n) {
     .Call(`_QtNet_demean_separate`, X, igroup, Is, ngroup, n)
+}
+
+fgmm_red <- function(y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, HAC = 0L, iv = TRUE) {
+    .Call(`_QtNet_fgmm_red`, y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, HAC, iv)
+}
+
+fgmm_struc <- function(y, X, qy, ins, W1, W2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, HAC = 0L, iv = TRUE) {
+    .Call(`_QtNet_fgmm_struc`, y, X, qy, ins, W1, W2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, HAC, iv)
 }
 

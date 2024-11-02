@@ -41,7 +41,6 @@
 #'     \item{epsilon}{The idiosyncratic error.}
 #'     \item{index}{The indices of the two peers whose weighted average gives the quantile.}
 #'     \item{weight}{The weights of the two peers whose weighted average gives the quantile.}
-#'     \item{iteration}{Number of iterations performed by the sub-network in the Fixed Point Iteration Method.}
 #' @examples 
 #' ngr  <- 50
 #' nvec <- rep(30, ngr)
@@ -130,7 +129,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
     }
     b      <- tail(parms, Kx)
   }
-  if (sum(abs(lt)) >= 1) warning("The sum of the absolute values of lambda_tau is greater than or equal to one, the Nash Equilibrium may not be stable")
+  if (sum(abs(lt)) >= 1) warning("The sum of the absolute values of lambda_tau is greater than or equal to one, the Nash Equilibrium may not be stable.")
   if (structural) {
     if (abs(ltst) >= 1) {
       stop("The absolute value of lambda[1] (the parameter that captures whether preferences indicate complementarity/substitution or conformism) must be less than 1.")
@@ -155,29 +154,21 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
                      ngroup = M, n = n, ntau = ntau, type = type)
   }
   
-  i        <- NULL
-  w        <- NULL
+  W        <- list()
   if (details) {
-    i      <- list(pi1 = qy$pi1, pi2 = qy$pi2)
-    w      <- list(w1 = qy$w1, w2 = qy$w2)
+    W      <- lapply(1:ntau, function(s) fIndexMat(pi1 = qy$pi1[,s], pi2 = qy$pi2[,s], w1 = qy$w1[,s], w2 = qy$w2[,s], n = n))
     qy     <- qy$qy
   }
   
   if (ntau == 1){
-    qy       <- c(qy)
+    qy            <- c(qy)
     if (details) {
-      i$pi1  <- c(i$pi1)
-      i$pi2  <- c(i$pi2)
-      w$w1   <- c(w$w1)
-      w$w2   <- c(w$w2)
+      names(W)    <- "tau"
     }
   } else {
-    colnames(qy)      <- paste0("y_q", 1:ntau)
+    colnames(qy)  <- paste0("y_q", 1:ntau)
     if (details) {
-      colnames(i$pi1) <- paste0("pi1_q", 1:ntau)
-      colnames(i$pi2) <- paste0("pi2_q", 1:ntau)
-      colnames(w$w1)  <- paste0("w1_q", 1:ntau)
-      colnames(w$w2)  <- paste0("w2_q", 1:ntau)
+      names(W)    <- paste0("tau_", 1:ntau)
     }
   }
   
@@ -185,25 +176,29 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
   list("y"         = y,
        "qy"        = qy, 
        "epsilon"   = eps,
-       "index"     = i,
-       "weight"    = w,
+       "weight"    = W,
        "iteration" = t)
 } 
 
-#' @importFrom gmm gmm
 #' @export
-qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optimal.instruments = FALSE, 
-                     gmm.weight = "IV", structural = FALSE, fixed.effects = FALSE, tol = 1e-10, maxit = 500, ...){
+qpeer.estim <- function(formula, excluded.instuments, Glist, tau, type = 7, data, 
+                        optimal.instruments = FALSE, gmm.weight = "IV", 
+                        structural = FALSE, fixed.effects = FALSE, 
+                        HAC = "iid", tol = 1e-10, maxit = 500, ...){
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   ntau       <- length(tau)
   gmm.weight <- tolower(gmm.weight)
   stopifnot(gmm.weight %in% c("iv", "optimal", "ident"))
+  HAC        <- tolower(HAC[1])
+  stopifnot(HAC %in% c("iid", "hetero", "cluster"))
+  HACnum     <- (0:2)[HAC == c("iid", "hetero", "cluster")]
   
   if (is.character(fixed.effects[1])) fixed.effects <- tolower(fixed.effects)
   stopifnot(fixed.effects %in% c(FALSE, "no", TRUE, "yes", "join", "separate"))
-  if (fixed.effects == TRUE | fixed.effects == "yes") fixed.effects <- ifelse(structural, "separate", "join")
   if (fixed.effects == FALSE) fixed.effects <- "no"
+  if (fixed.effects == TRUE | fixed.effects == "yes") fixed.effects <- "join"
+  if (structural & fixed.effects != "no") fixed.effects <- "separate"
   
   # Network
   if (!is.list(Glist)) {
@@ -218,14 +213,7 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
   nIs      <- dg$nIs
   dg       <- dg$dg
   if (length(Is) <= 1 & structural) stop("The structural model requires isolated nodes.")
-  
-  # linf and lsup
-  linf     <- NULL
-  lsup     <- NULL
-  if (structural) {
-    linf   <- rep(0, ntau + 1)
-    lsup   <- rep(1, ntau + 1)
-  }
+  if (length(nIs) <= 1) stop("Insufficient links in the networks.")
   
   # Data
   # y and X
@@ -242,8 +230,8 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
                        ngroup = M, n = n, ntau = ntau, type = type)
   
   # Instruments
-  inst       <- as.formula(instruments)
-  if(length(inst) != 2) stop("Expected format for instruments is ~ X1 + X2 + ....")
+  inst       <- as.formula(excluded.instuments)
+  if(length(inst) != 2) stop("Expected format for instruments is ~ z1 + z2 + ....")
   f.t.data   <- formula.to.data(formula = inst, data = data, fixed.effects = (fixed.effects != "no"), 
                                 simulations = TRUE)
   ins        <- f.t.data$X
@@ -253,9 +241,9 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
   } else {
     ins      <- ins
   }
-  
   # Demean fixed effect models
   X0         <- X #Save initial X
+  ins0       <- ins
   if (fixed.effects != "no") {
     if (fixed.effects == "join") {
       y      <- c(demean(as.matrix(y), igroup = igr, ngroup = M))
@@ -270,67 +258,54 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
     }
   }
   
-  # Construct the final instrument matrix
-  XStruc     <- NULL
-  if (structural) {
-    Xiso     <- X; Xiso[nIs + 1, ] <- 0
-    Xniso    <- X; Xniso[Is + 1, ] <- 0
-    XStruc   <- cbind(Xiso, Xniso)
-    XStruc   <- XStruc[, fcheckrank(XStruc) == 1, drop = FALSE]
-    ins      <- cbind(XStruc, ins)
-  } else {
-    ins      <- cbind(X, ins)
-  }
-  
-  
-  
-  # GMM weight
-  weight     <- gmm.weight
-  if (gmm.weight == "iv"){
-    weight   <- solve(crossprod(ins)/n)
-  }
-  
   # GMM
-  GMM1      <- NULL
+  GMM1       <- list()
+  iv         <- (gmm.weight %in% c("iv", "optimal"))
+  estname    <- NULL
   if (structural) {
-    x       <- list(y = y, qy = qy, X = X, ins = ins, Is = Is, nIs = nIs, 
-                    linf = linf, lsup = lsup, n = n, Kx = Kx, ntau = ntau, Kins = ncol(ins))
-    if (gmm.weight == "iv") {
-      GMM1  <- gmm(g, x = x, grad = dg, weightsMatrix = weight, 
-                   t0 = rep(0, ntau + Kx + 1), ...)
-    } else {
-      GMM1  <- gmm(g, x = x, grad = dg, wmatrix = weight, 
-                   t0 = rep(0, ntau + Kx + 1), ...)
+    estname  <- c(paste0(yname, paste0("_l", c("st", 1:ntau))), xname)
+    Kins     <- ncol(ins)
+    
+    # Estimation
+    GMM1     <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = diag(Kx), W2 = diag(Kins + 1), 
+                            igroup = igr, nIs = nIs, Is = Is, ngroup = M, Kins = Kins, Kx = Kx,
+                            ntau = ntau, n = n, HAC = HACnum, iv = iv)
+    if (gmm.weight == "optimal") {
+      GMM1   <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = solve(GMM1$VF1), W2 = solve(GMM1$VF2), 
+                             igroup = igr, nIs = nIs, Is = Is, ngroup = M, Kins = Kins, Kx = Kx,
+                             ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
     }
+    GMM1$parms <- c(1 - GMM1$lambda[ntau + 1], GMM1$lambda[-(ntau + 1)], GMM1$b)
+    GMM1$Vpa   <- GMM1$Vpa[c(Kx + ntau + 1, (Kx + 1):(Kx + ntau), 1:Kx), c(Kx + ntau + 1, (Kx + 1):(Kx + ntau), 1:Kx)]
   } else {
-    if (gmm.weight == "iv") {
-      GMM1  <- gmm(y ~ -1 + qy + X, x = ins, weightsMatrix = weight)
-    } else {
-      GMM1  <- gmm(y ~ -1 + qy + X, x = ins, wmatrix = weight, ...)
-    }
-    if (ntau == 1) {
-      names(GMM1$coefficients) <- c(paste0(yname, "_q"), xname)
-    } else {
-      names(GMM1$coefficients) <- c(paste0(yname, "_q", 1:ntau), xname)
+    estname  <- c(paste0(yname, paste0("_l", 1:ntau)), xname)
+    V        <- cbind(qy, X)
+    ins      <- cbind(X, ins)
+    Kins     <- ncol(ins)
+    
+    # Estimation
+    GMM1     <- fgmm_red(y = y, V = V, ins = ins, W = diag(Kins), igroup = igr, ngroup = M, 
+                           Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = iv)
+    if (gmm.weight == "optimal") {
+      GMM1   <- fgmm_red(y = y, V = V, ins = ins, W = solve(GMM1$VZe), igroup = igr, 
+                           ngroup = M, Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
     }
   }
+  GMM1       <- list(Estimate = c(GMM1$parms), cov = GMM1$Vpa, Sargan = c("stat" = GMM1$Overident, "df" = GMM1$df))
+  names(GMM1$Estimate) <- estname
+  colnames(GMM1$cov)   <- estname
+  rownames(GMM1$cov)   <- estname
+  GMM1$Sargan["prob"]  <- ifelse(GMM1$Sargan["df"] > 0, 1 - pchisq(GMM1$Sargan["df"], GMM1$Sargan["df"]), NA)
   
   # Using the optimal instrument
-  GMM2      <- list()
+  GMM2       <- list()
+  optins     <- NULL
   if (optimal.instruments) {
     if (structural) {
-      lt       <- flambda(lambdatilde = head(GMM1$coefficients, ntau + 1), linf = linf, lsup = lsup, ntau = ntau)
-      ltst     <- lt[1]
-      lt       <- lt[-1]
-      b        <- tail(GMM1$coefficients, Kx)
-      talpha   <- X0 %*% b
-      talpha[nIs + 1] <- talpha[nIs + 1]*(1 - ltst)
-      Ey       <- rep(0, n)
-      t        <- fNashE(y = Ey, G = Glist, d = dg, talpha = talpha, lambdatau = lt, igroup = igr,
-                        nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type,
-                        tol = tol, maxit = maxit)
-      ins      <- fQtauy(y = Ey, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
-                        ngroup = M, n = n, ntau = ntau, type = type)
+      ins    <- optins_struc(beta = GMM1$Estimate, y = y, G = Glist, X = X0, d = dg, igroup = igr,
+                              nvec = nvec, stau = tau, nIs = nIs, ngroup = M, n = n, ntau = ntau, 
+                              type = type, Kx = Kx, tol = tol, maxit = maxit)
+      optins <- ins
       if (fixed.effects != "no") {
         if (fixed.effects == "join") {
           ins   <- demean(ins, igroup = igr, ngroup = M)
@@ -338,33 +313,24 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
           ins   <- demean_separate(ins, igroup = igr, Is = Is, ngroup = M, n = n)
         }
       }
-      ins      <- cbind(XStruc, ins)
-      # GMM weight
-      weight   <- gmm.weight
-      if (gmm.weight == "iv"){
-        weight <- solve(crossprod(ins))
-      }
+      Kins      <- ncol(ins)
       
       # Estimation
-      x       <- list(y = y, qy = qy, X = X, ins = ins, Is = Is, nIs = nIs, 
-                      linf = linf, lsup = lsup, n = n, Kx = Kx, ntau = ntau, Kins = ncol(ins))
-      if (gmm.weight == "iv") {
-        GMM2  <- gmm(g, x = x, grad = dg, weightsMatrix = weight, 
-                     t0 = GMM1$coefficients, ...)
-      } else {
-        GMM2  <- gmm(g, x = x, grad = dg, wmatrix = weight, 
-                     t0 = GMM1$coefficients, ...)
+      GMM2      <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = diag(Kx), W2 = diag(Kins + 1), 
+                              igroup = igr, nIs = nIs, Is = Is, ngroup = M, Kins = Kins, Kx = Kx,
+                              ntau = ntau, n = n, HAC = HACnum, iv = iv)
+      if (gmm.weight == "optimal") {
+        GMM2     <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = solve(GMM2$VF1), W2 = solve(GMM2$VF2), 
+                               igroup = igr, nIs = nIs, Is = Is, ngroup = M, Kins = Kins, Kx = Kx,
+                               ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
       }
+      GMM2$parms <- c(1 - GMM2$lambda[ntau + 1], GMM2$lambda[-(ntau + 1)], GMM2$b)
+      GMM2$Vpa   <- GMM2$Vpa[c(Kx + ntau + 1, (Kx + 1):(Kx + ntau), 1:Kx), c(Kx + ntau + 1, (Kx + 1):(Kx + ntau), 1:Kx)]
     } else {
-      lt      <- head(GMM1$coefficients, ntau)
-      b       <- tail(GMM1$coefficients, Kx)
-      talpha  <- X0 %*% b
-      Ey      <- rep(0, n)
-      t       <- fNashE(y = Ey, G = Glist, d = dg, talpha, lambdatau = lt, igroup = igr,
-                        nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type,
-                        tol = tol, maxit = maxit)
-      ins     <- fQtauy(y = Ey, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
-                        ngroup = M, n = n, ntau = ntau, type = type)
+      ins       <- optins_red(beta = GMM1$Estimate, y = y, G = Glist, X = X0, d = dg, igroup = igr,
+                            nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type,
+                            Kx = Kx, tol = tol, maxit = maxit)
+      optins    <- ins
       if (fixed.effects != "no") {
         if (fixed.effects == "join") {
           ins   <- demean(ins, igroup = igr, ngroup = M)
@@ -372,30 +338,44 @@ qpeer.estim <- function(formula, instruments, Glist, tau, type = 7, data, optima
           ins   <- demean_separate(ins, igroup = igr, Is = Is, ngroup = M, n = n)
         }
       }
-      ins     <- cbind(X, ins)
-      # GMM weight
-      weight     <- gmm.weight
-      if (gmm.weight == "iv"){
-        weight   <- solve(crossprod(ins))
-      }
-      if (gmm.weight == "iv") {
-        GMM2  <- gmm(y ~ -1 + qy + X, x = ins, weightsMatrix = weight, ...)
-      } else {
-        GMM2  <- gmm(y ~ -1 + qy + X, x = ins, wmatrix = weight, ...)
-      }
-      if (ntau == 1) {
-        names(GMM2$coefficients) <- c(paste0(yname, "_q"), xname)
-      } else {
-        names(GMM2$coefficients) <- c(paste0(yname, "_q", 1:ntau), xname)
+      ins        <- cbind(X, ins)
+      V          <- cbind(qy, X)
+      Kins       <- ncol(ins)
+      
+      # Estimation
+      GMM2     <- fgmm_red(y = y, V = V, ins = ins, W = diag(Kins), igroup = igr, ngroup = M, 
+                           Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = iv)
+      if (gmm.weight == "optimal") {
+        GMM2   <- fgmm_red(y = y, V = V, ins = ins, W = solve(GMM2$VZe), igroup = igr, 
+                           ngroup = M, Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
       }
     }
+    GMM2       <- list(Estimate = c(GMM2$parms), cov = GMM2$Vpa, Sargan = c("stat" = GMM2$Overident, "df" = GMM2$df))
+    names(GMM2$Estimate) <- estname
+    colnames(GMM2$cov)   <- estname
+    rownames(GMM2$cov)   <- estname
+    GMM2$Sargan["prob"]  <- ifelse(GMM2$Sargan["df"] > 0, 1 - pchisq(GMM2$Sargan["df"], GMM2$Sargan["df"]), NA)
+    if (ntau == 1) {
+      colnames(optins)   <- "optins"
+    } else {
+      colnames(optins)   <- paste0("optins", 1:ntau)
+    } 
   }
   
-  out       <- list(model.info  = list(n = n, ngroup = M, tau = tau, formula = formula, instruments = instruments,
-                                      type = type, gmm.weight = gmm.weight, optimal.instruments = optimal.instruments,
-                                      fixed.effects = fixed.effects),
+  if (ntau == 1) {
+    colnames(qy) <- paste0(yname, "_q")
+  } else {
+    colnames(qy) <- paste0(yname, "_q", 1:ntau)
+  }
+  
+  out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, tau = tau, formula = formula, 
+                                       excluded.instuments = excluded.instuments, type = type, gmm.weight = gmm.weight, 
+                                       optimal.instruments = optimal.instruments,
+                                       fixed.effects = fixed.effects, HAC = HAC),
                     gmm         = GMM1,
-                    gmm.opt.ins = GMM2)
+                    gmm.opt.ins = GMM2,
+                    data        = list(y = y, qy = qy, X = X, instruments = ins0, 
+                                       optimal.instruments = optins))
   class(out) <- c("qpeer.estim")
   out
 }
