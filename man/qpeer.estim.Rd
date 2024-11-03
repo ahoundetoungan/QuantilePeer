@@ -76,6 +76,86 @@ If node \eqn{i} is non-isolated, the specification is:
 \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,}
 where \eqn{\lambda^*} captures whether preferences describe complementarity/substitution or conformism.
 }
+\examples{
+\donttest{
+## Simulating and estimating the reduced-form model
+ngr  <- 50
+nvec <- rep(30, ngr)
+n    <- sum(nvec)
+G    <- lapply(1:ngr, function(z){
+  Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
+  diag(Gz) <- 0
+  Gz
+}) 
+tau  <- seq(0, 1, 0.25)
+X    <- cbind(rnorm(n), rpois(n, 2))
+l    <- c(0.2, 0.1, 0.05, 0.1, 0.2)
+b    <- c(2, -0.5, 1)
+eps  <- rnorm(n, 0, 0.4)
+
+# Simulate y
+y    <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, 
+                  beta = b, epsilon = eps)$y
+
+# Compute instruments
+Z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), 
+                   max.distance = 3, checkrank = TRUE)
+Z   <- Z$instruments
+
+# Estimation
+# Standard IV
+summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau))
+
+# Optimal instruments
+summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
+                    tau = tau, optimal.instruments = TRUE))
+
+# Optimal instruments with optimal GMM weight
+summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
+                    tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal"))
+
+# Fixed effects
+summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
+                    tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal",
+                    fixed.effects = TRUE))
+
+
+## Simulating and estimating the structural model
+# Isolated nodes are necessary for the structural model
+ngr  <- 50
+nvec <- rep(30, ngr)
+n    <- sum(nvec)
+G    <- lapply(1:ngr, function(z){
+  Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
+  diag(Gz) <- 0
+  Gz[sample(1:nvec[z], round(nvec[z]*0.1)),] <- 0 #10\% of isolated nodes
+  Gz
+}) 
+tau  <- seq(0, 1, 0.25)
+X    <- cbind(rnorm(n), rpois(n, 2))
+l    <- c(0.4, 0.2, 0.1, 0.05, 0.1, 0.2)
+b    <- c(2, -0.5, 1)
+eps  <- rnorm(n, 0, 0.4)
+
+# Simulate y
+y    <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, 
+                  beta = b, epsilon = eps, structural = TRUE)$y
+
+# Compute instruments
+Z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), 
+                   max.distance = 3, checkrank = TRUE)
+Z   <- Z$instruments
+
+# Estimation
+summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
+                    tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal",
+                    structural = TRUE))
+
+summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
+                    tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal",
+                    structural = TRUE, fixed.effects = TRUE))
+}
+}
 \references{
 Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 }

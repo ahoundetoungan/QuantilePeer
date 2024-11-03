@@ -221,6 +221,85 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #'     \item{gmm}{A list of GMM estimation results, including parameter estimates, the covariance matrix, and related statistics.}
 #'     \item{gmm.opt.ins}{GMM estimation results using optimal instruments, if specified.}
 #'     \item{data}{A list containing the outcome, outcome quantiles among peers, control variables, and excluded instruments used in the model.}
+#' @examples
+#' \donttest{
+#' ## Simulating and estimating the reduced-form model
+#' ngr  <- 50
+#' nvec <- rep(30, ngr)
+#' n    <- sum(nvec)
+#' G    <- lapply(1:ngr, function(z){
+#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
+#'   diag(Gz) <- 0
+#'   Gz
+#' }) 
+#' tau  <- seq(0, 1, 0.25)
+#' X    <- cbind(rnorm(n), rpois(n, 2))
+#' l    <- c(0.2, 0.1, 0.05, 0.1, 0.2)
+#' b    <- c(2, -0.5, 1)
+#' eps  <- rnorm(n, 0, 0.4)
+#' 
+#' # Simulate y
+#' y    <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, 
+#'                   beta = b, epsilon = eps)$y
+#' 
+#' # Compute instruments
+#' Z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), 
+#'                    max.distance = 3, checkrank = TRUE)
+#' Z   <- Z$instruments
+#' 
+#' # Estimation
+#' # Standard IV
+#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau))
+#' 
+#' # Optimal instruments
+#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
+#'                     tau = tau, optimal.instruments = TRUE))
+#' 
+#' # Optimal instruments with optimal GMM weight
+#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
+#'                     tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal"))
+#' 
+#' # Fixed effects
+#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
+#'                     tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal",
+#'                     fixed.effects = TRUE))
+#' 
+#' 
+#' ## Simulating and estimating the structural model
+#' # Isolated nodes are necessary for the structural model
+#' ngr  <- 50
+#' nvec <- rep(30, ngr)
+#' n    <- sum(nvec)
+#' G    <- lapply(1:ngr, function(z){
+#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
+#'   diag(Gz) <- 0
+#'   Gz[sample(1:nvec[z], round(nvec[z]*0.1)),] <- 0 #10% of isolated nodes
+#'   Gz
+#' }) 
+#' tau  <- seq(0, 1, 0.25)
+#' X    <- cbind(rnorm(n), rpois(n, 2))
+#' l    <- c(0.4, 0.2, 0.1, 0.05, 0.1, 0.2)
+#' b    <- c(2, -0.5, 1)
+#' eps  <- rnorm(n, 0, 0.4)
+#' 
+#' # Simulate y
+#' y    <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, 
+#'                   beta = b, epsilon = eps, structural = TRUE)$y
+#' 
+#' # Compute instruments
+#' Z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), 
+#'                    max.distance = 3, checkrank = TRUE)
+#' Z   <- Z$instruments
+#' 
+#' # Estimation
+#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
+#'                     tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal",
+#'                     structural = TRUE))
+#' 
+#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
+#'                     tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal",
+#'                     structural = TRUE, fixed.effects = TRUE))
+#' }
 #' @importFrom stats pchisq
 #' @export
 qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, data, 
@@ -305,17 +384,17 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
   iv         <- (gmm.weight %in% c("iv", "optimal"))
   estname    <- NULL
   if (structural) {
-    estname  <- c(paste0(yname, paste0("_l", c("st", 1:ntau))), xname)
+    estname  <- c(paste0(yname, paste0("_l", c("star", 1:ntau))), xname)
     Kins     <- ncol(ins)
     
     # Estimation
     GMM1     <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = diag(Kx), W2 = diag(Kins + 1), 
-                            igroup = igr, nIs = nIs, Is = Is, ngroup = M, Kins = Kins, Kx = Kx,
-                            ntau = ntau, n = n, HAC = HACnum, iv = iv)
+                           igroup = igr, nIs = nIs, Is = Is, ngroup = M, Kins = Kins, Kx = Kx,
+                           ntau = ntau, n = n, HAC = HACnum, iv = iv)
     if (gmm.weight == "optimal") {
       GMM1   <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = solve(GMM1$VF1), W2 = solve(GMM1$VF2), 
-                             igroup = igr, nIs = nIs, Is = Is, ngroup = M, Kins = Kins, Kx = Kx,
-                             ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
+                           igroup = igr, nIs = nIs, Is = Is, ngroup = M, Kins = Kins, Kx = Kx,
+                           ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
     }
     GMM1$parms <- c(1 - GMM1$lambda[ntau + 1], GMM1$lambda[-(ntau + 1)], GMM1$b)
     GMM1$Vpa   <- GMM1$Vpa[c(Kx + ntau + 1, (Kx + 1):(Kx + ntau), 1:Kx), c(Kx + ntau + 1, (Kx + 1):(Kx + ntau), 1:Kx)]
@@ -327,17 +406,17 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
     
     # Estimation
     GMM1     <- fgmm_red(y = y, V = V, ins = ins, W = diag(Kins), igroup = igr, ngroup = M, 
-                           Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = iv)
+                         Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = iv)
     if (gmm.weight == "optimal") {
       GMM1   <- fgmm_red(y = y, V = V, ins = ins, W = solve(GMM1$VZe), igroup = igr, 
-                           ngroup = M, Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
+                         ngroup = M, Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
     }
   }
-  GMM1       <- list(Estimate = c(GMM1$parms), cov = GMM1$Vpa, Sargan = c("stat" = GMM1$Overident, "df" = GMM1$df))
+  GMM1       <- list(Estimate = c(GMM1$parms), cov = GMM1$Vpa, Jtest = c("stat" = GMM1$Overident, "df" = GMM1$df))
   names(GMM1$Estimate) <- estname
   colnames(GMM1$cov)   <- estname
   rownames(GMM1$cov)   <- estname
-  GMM1$Sargan["prob"]  <- ifelse(GMM1$Sargan["df"] > 0, 1 - pchisq(GMM1$Sargan["df"], GMM1$Sargan["df"]), NA)
+  GMM1$Jtest["prob"]  <- ifelse(GMM1$Jtest["df"] > 0, 1 - pchisq(GMM1$Jtest["df"], GMM1$Jtest["df"]), NA)
   
   # Using the optimal instrument
   GMM2       <- list()
@@ -345,8 +424,8 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
   if (optimal.instruments) {
     if (structural) {
       ins    <- optins_struc(beta = GMM1$Estimate, y = y, G = Glist, X = X0, d = dg, igroup = igr,
-                              nvec = nvec, stau = tau, nIs = nIs, ngroup = M, n = n, ntau = ntau, 
-                              type = type, Kx = Kx, tol = tol, maxit = maxit)
+                             nvec = nvec, stau = tau, nIs = nIs, ngroup = M, n = n, ntau = ntau, 
+                             type = type, Kx = Kx, tol = tol, maxit = maxit)
       optins <- ins
       if (fixed.effects != "no") {
         if (fixed.effects == "join") {
@@ -370,8 +449,8 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
       GMM2$Vpa   <- GMM2$Vpa[c(Kx + ntau + 1, (Kx + 1):(Kx + ntau), 1:Kx), c(Kx + ntau + 1, (Kx + 1):(Kx + ntau), 1:Kx)]
     } else {
       ins       <- optins_red(beta = GMM1$Estimate, y = y, G = Glist, X = X0, d = dg, igroup = igr,
-                            nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type,
-                            Kx = Kx, tol = tol, maxit = maxit)
+                              nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type,
+                              Kx = Kx, tol = tol, maxit = maxit)
       optins    <- ins
       if (fixed.effects != "no") {
         if (fixed.effects == "join") {
@@ -392,11 +471,11 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
                            ngroup = M, Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
       }
     }
-    GMM2       <- list(Estimate = c(GMM2$parms), cov = GMM2$Vpa, Sargan = c("stat" = GMM2$Overident, "df" = GMM2$df))
+    GMM2       <- list(Estimate = c(GMM2$parms), cov = GMM2$Vpa, Jtest = c("stat" = GMM2$Overident, "df" = GMM2$df))
     names(GMM2$Estimate) <- estname
     colnames(GMM2$cov)   <- estname
     rownames(GMM2$cov)   <- estname
-    GMM2$Sargan["prob"]  <- ifelse(GMM2$Sargan["df"] > 0, 1 - pchisq(GMM2$Sargan["df"], GMM2$Sargan["df"]), NA)
+    GMM2$Jtest["prob"]  <- ifelse(GMM2$Jtest["df"] > 0, 1 - pchisq(GMM2$Jtest["df"], GMM2$Jtest["df"]), NA)
     if (ntau == 1) {
       colnames(optins)   <- "optins"
     } else {
@@ -410,18 +489,96 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
     colnames(qy) <- paste0(yname, "_q", 1:ntau)
   }
   
-  out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, tau = tau, formula = formula, 
-                                       excluded.instruments = excluded.instruments, type = type, gmm.weight = gmm.weight, 
-                                       optimal.instruments = optimal.instruments,
-                                       fixed.effects = fixed.effects, HAC = HAC),
+  out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, tau = tau, structural = structural, formula = formula, 
+                                       excluded.instruments = excluded.instruments, optimal.instruments = optimal.instruments,
+                                       tau = tau, ntau = ntau, type = type, gmm.weight = gmm.weight, fixed.effects = fixed.effects, 
+                                       HAC = HAC),
                     gmm         = GMM1,
                     gmm.opt.ins = GMM2,
                     data        = list(y = y, qy = qy, X = X, instruments = ins0, 
                                        optimal.instruments = optins))
-  class(out) <- c("qpeer.estim")
+  class(out) <- "qpeer.estim"
   out
 }
 
-summary.qpeer.estim <- function() {
+#' @title Summary for the Estimation of Linear Models with Quantile Peer Effects
+#' @param object An object of class \code{\link{qpeer.estim}}.
+#' @param optimal.instruments A logical value indicating whether the model with optimal instruments should be summarized.
+#' @param ... Further arguments passed to or from other methods.
+#' @param x An object of class \code{\link{summary.qpeer.estim}} or \code{\link{qpeer.estim}}.
+#' @description Summary and print methods for the class \code{\link{qpeer.estim}}.
+#' @return A list containing:
+#'     \item{model.info}{A list with information about the model, such as the number of subnets, number of observations, and other key details.}
+#'     \item{coefficients}{A summary of the estimates, standard errors, and p-values.}
+#'     \item{Estimate}{The vector of parameter estimates.}
+#'     \item{cov}{The covariance matrix of the estimates.}
+#'     \item{Jtest}{A summary of Hansen's J-test for overidentifying restrictions.}
+#'     \item{data}{A list containing the outcome, outcome quantiles among peers, control variables, and excluded instruments used in the model.}
+#' @importFrom stats pchisq
+#' @importFrom stats pnorm
+#' @export
+summary.qpeer.estim <- function(object, optimal.instruments, ...) {
+  stopifnot(inherits(object, "qpeer.estim"))
+  if (object$model.info$optimal.instruments){
+    if (missing(optimal.instruments)) {
+      optimal.instruments = TRUE
+    } 
+  } else {
+    if (missing(optimal.instruments)) {
+      optimal.instruments = FALSE
+    } else {
+      if(optimal.instruments) stop("Optimal instruments were not used.")
+    }
+  }
+  object$model.info$optimal.instruments <- optimal.instruments
+  gmm   <- NULL
+  if (optimal.instruments) {
+    gmm <- object$gmm.opt.ins
+  } else {
+    gmm <- object$gmm
+  }
+  gmm$Jtest      <- t(gmm$Jtest); rownames(gmm$Jtest) <- "Hansen's J-test:"
   
+  coef           <- cbind(gmm$Estimate, sqrt(diag(gmm$cov)), 0, 0)
+  coef[,3]       <- coef[,1]/coef[,2]
+  coef[,4]       <- 2*(1 - pnorm(abs(coef[,3])))
+  colnames(coef) <- c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
+  out            <- c(object["model.info"], 
+                      list(coefficients = coef),
+                      gmm, object["data"], list(...))
+  class(out)     <- "summary.qpeer.estim"
+  out
+}
+
+#' @rdname summary.qpeer.estim
+#' @export
+print.summary.qpeer.estim <- function(x, ...) {
+  ntau <- x$model.info$ntau
+  cat("formula:", as.character(x$model.info$formula), "\n")
+  if (x$model.info$optimal.instruments) {
+    cat("excluded instruments:", as.character(x$model.info$formula), "\n")
+  } else {
+    if (ntau == 1) {
+      cat("excluded instruments: ~ optins (optimal instrument)", "\n")
+    } else {
+      cat("excluded instruments: ~",  paste0("optins", 1:ntau, collapse = " + "), "(optimal instrument)", "\n")
+    }
+  }
+  
+  cat('\nNumber of quantile levels:', ntau)
+  cat("\nQuantile levels:\n", x$model.info$tau, "\n")
+  
+  cat("\nCoefficients:\n")
+  do.call(print, c(list(x = x$coefficients), x[-(1:6)], ...))
+  
+  cat("\n")
+  print(x$Jtest)
+  class(x) <- "print.summary.qpeer.estim"
+  invisible(x)
+}
+
+#' @rdname summary.qpeer.estim
+#' @export
+print.qpeer.estim <- function(x, ...) {
+  print(summary(x))
 }
