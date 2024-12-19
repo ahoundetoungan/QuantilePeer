@@ -6,7 +6,7 @@
 \alias{print.qpeer.estim}
 \title{Summary for the Estimation of Linear Models with Quantile Peer Effects}
 \usage{
-\method{summary}{qpeer.estim}(object, optimal.instruments, ...)
+\method{summary}{qpeer.estim}(object, diagnostic = FALSE, diagnostics = FALSE, ...)
 
 \method{print}{summary.qpeer.estim}(x, ...)
 
@@ -14,8 +14,6 @@
 }
 \arguments{
 \item{object}{An object of class \code{\link{qpeer.estim}}.}
-
-\item{optimal.instruments}{A logical value indicating whether the model with optimal instruments should be summarized.}
 
 \item{...}{Further arguments passed to or from other methods.}
 

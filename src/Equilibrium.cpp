@@ -22,7 +22,7 @@
  */
 
 // [[Rcpp::depends(RcppArmadillo)]]
-
+#define ARMA_64BIT_WORD 1
 #include <RcppArmadillo.h>
 //#define NDEBUG
 // #include <RcppNumerical.h>

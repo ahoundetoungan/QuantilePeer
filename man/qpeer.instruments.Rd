@@ -14,7 +14,8 @@ qpeer.instruments(
   type = 7,
   data,
   max.distance = 1,
-  checkrank = FALSE
+  checkrank = FALSE,
+  tol = 1e-10
 )
 
 qpeer.instrument(

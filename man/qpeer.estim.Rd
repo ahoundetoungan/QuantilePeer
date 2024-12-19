@@ -11,13 +11,11 @@ qpeer.estim(
   tau,
   type = 7,
   data,
-  optimal.instruments = FALSE,
   gmm.weight = "IV",
   structural = FALSE,
   fixed.effects = FALSE,
   HAC = "iid",
-  tol = 1e-10,
-  maxit = 500
+  tol = 1e-10
 )
 }
 \arguments{
@@ -35,8 +33,6 @@ where \code{z1} and \code{z2} are excluded instruments for the quantile peer out
 
 \item{data}{An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 in the model. If not found in \code{data}, the variables are taken from \code{environment(formula)}, typically the environment from which \code{qpeer.estim} is called.}
-
-\item{optimal.instruments}{A logical value indicating whether optimal instruments should be used.}
 
 \item{gmm.weight}{A character string specifying the GMM weight: either \code{"IV"} for the standard instrumental variable weight, \code{"optimal"} for the optimal GMM weight, or \code{"ident"} for the identity matrix.}
 

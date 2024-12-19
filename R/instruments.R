@@ -41,7 +41,7 @@
 #' Inst <- qpeer.instruments(formula = ~ X, Glist = G, tau = tau, max.distance = 2)$instruments
 #' summary(Inst)
 #' @export
-qpeer.instruments <- function(formula, Glist, tau, type = 7, data, max.distance = 1, checkrank = FALSE){
+qpeer.instruments <- function(formula, Glist, tau, type = 7, data, max.distance = 1, checkrank = FALSE, tol = 1e-10){
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   stopifnot(max.distance >= 1)
@@ -104,7 +104,7 @@ qpeer.instruments <- function(formula, Glist, tau, type = 7, data, max.distance 
   
   # Checking rank
   if (checkrank) {
-    ins <- ins[, c(fcheckrank(ins)) == 1, drop = FALSE]
+    ins <- ins[, fcheckrank(X = ins, tol = tol) + 1, drop = FALSE]
   }
   if (ncol(ins) == 1) {
     ins <- c(ins)

@@ -16,27 +16,41 @@ using namespace std;
 
 // This function removes columns to obtain full rank matrices
 //[[Rcpp::export]]
-arma::uvec fcheckrank(const arma::mat& X) {
-  int Kx(X.n_cols), Rout(arma::rank(X));
+arma::uvec fcheckrank(const arma::mat& X, const double& tol = 1e-10) {
+  arma::rowvec s(arma::stddev(X, 1, 0)), m(arma::mean(X, 0));
+  m.elem(arma::find(s < tol)).zeros();
+  s.elem(arma::find(s < tol)).ones();
+  arma::mat U((X.each_row() - m).each_row()/s);
+  U = U.t()*U/U.n_rows; 
+  arma::mat Q, R;
+  arma::qr(Q, R, U);
+  return arma::find(arma::abs(R.diag()) > tol);
+}
+
+
+arma::uvec fcheckrank_this_is_slower(const arma::mat& X) {
+  arma::rowvec m(arma::mean(X, 0)), s(arma::stddev(X, 1, 0));
+  s.elem(arma::find(s == 0)).ones();
+  arma::mat U((X.each_row() - m).each_row()/s);
+  U = U.t()*U/X.n_rows;
+
+  int Kx(X.n_cols), Rout(arma::rank(U));
+  unsigned int tp(1);
   arma::uvec out(arma::ones<arma::uvec>(Kx));
   if (Rout < Kx) {
     for (int k(0); k < Kx; ++ k) {
-      arma::uvec outst(out); 
-      outst(k) = 0;
-      arma::mat X1(X.cols(arma::find(out == 1)));
-      arma::mat X2(X.cols(arma::find(outst == 1)));
-      int Routst(arma::rank(X2));
-      
-      int drank1 = X1.n_cols - Rout;
-      int drank2 = X2.n_cols - Routst;
-      if (drank2 < drank1){
+      arma::mat Up(U.cols(arma::find(out.head(k + 1) == 1)));
+      if (arma::rank(Up) != tp) {
         out(k) = 0;
-        Rout   = Routst;
-      } 
+      } else {
+        ++ tp;
+      }
     }
   }
-  return out;
+  return arma::find(out == 1);
 }
+
+
 
 // demean
 //[[Rcpp::export]]

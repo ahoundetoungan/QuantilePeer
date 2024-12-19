@@ -82,29 +82,35 @@ Rcpp::List fgmm_red(const arma::vec& y,
                             _["Overident"] = stat, _["df"] = Kins - Kx - ntau);
 }
 
-  
+
+
 // This function implements the GMM estimator (Structural model)
 //[[Rcpp::export]]
 Rcpp::List fgmm_struc(const arma::vec& y,
-                       const arma::mat& X,
-                       const arma::mat& qy,
-                       const arma::mat& ins,
-                       arma::mat& W1,
-                       arma::mat& W2,
-                       const arma::mat& igroup,
-                       const arma::uvec& nIs,
-                       const arma::uvec& Is,
-                       const int& ngroup,
-                       const int& Kins,
-                       const int& Kx,
-                       const int& ntau,
-                       const int& n,
-                       const int& HAC = 0,
-                       const bool& iv = true){
+                      const arma::mat& X,
+                      const arma::mat& qy,
+                      const arma::mat& ins,
+                      arma::mat& W1,
+                      arma::mat& W2,
+                      const arma::uvec& idX1,
+                      const arma::uvec& idX2,
+                      const int& Kx1,
+                      const int& Kx2,
+                      const arma::mat& igroup,
+                      const arma::uvec& nIs,
+                      const arma::uvec& Is,
+                      const int& ngroup,
+                      const int& Kins,
+                      const int& Kx,
+                      const int& ntau,
+                      const int& n,
+                      const int& HAC = 0,
+                      const bool& iv = true){
   int n_iso(Is.n_elem), n_niso(n - n_iso);
   // First stage
   arma::vec y1(y.elem(Is));
-  arma::mat X1(X.rows(Is)), XX1(X1.t()*X1);
+  arma::mat X1(X.rows(Is)); X1 = X1.cols(idX1);
+  arma::mat XX1(X1.t()*X1);
   if (iv) {
     W1 = arma::inv(XX1/n_iso);
   }
@@ -112,8 +118,11 @@ Rcpp::List fgmm_struc(const arma::vec& y,
   arma::vec b(arma::solve(XXWXX1, XXW1*X1.t()*y1));
   
   // Second stage
-  arma::vec Xb(X*b), Xb1(Xb.elem(Is)), Xb2(Xb.elem(nIs)), y2(y.elem(nIs));
-  arma::mat X2(X.rows(nIs)), V2(arma::join_rows(qy.rows(nIs), Xb2)), 
+  arma::vec Xb(X.cols(idX1)*b), Xb1(Xb.elem(Is)), Xb2(Xb.elem(nIs)), y2(y.elem(nIs));
+  arma::mat X2(X.rows(nIs));
+  arma::mat X21(X2.cols(idX1));
+  X2 = X2.cols(idX2);
+  arma::mat V2(arma::join_rows(arma::join_rows(Xb2, qy.rows(nIs)), X2)), 
   Z2(arma::join_rows(Xb2, ins.rows(nIs))), ZV2(Z2.t()*V2), ZZ2(Z2.t()*Z2); 
   if (iv) {
     W2 = arma::inv(ZZ2/n_niso);
@@ -124,26 +133,26 @@ Rcpp::List fgmm_struc(const arma::vec& y,
   
   // Variance
   arma::vec  e1(y1 - Xb1), e2(y2 - V2*lambda);
-  arma::mat H(Kx + ntau + 1, Kx + Kins + 1, arma::fill::zeros);
-  H.submat(0, 0, Kx - 1, Kx - 1) = XXW1;
-  H.submat(Kx, Kx, Kx + ntau, Kx + Kins) = VZW2;
+  arma::mat H(Kx + ntau + 1, Kx1 + Kins + 1, arma::fill::zeros);
+  H.submat(0, 0, Kx1 - 1, Kx1 - 1) = XXW1;
+  H.submat(Kx1, Kx1, Kx + ntau, Kx1 + Kins) = VZW2;
   
-  arma::mat dF(Kx + Kins + 1, Kx + ntau + 1, arma::fill::zeros);
-  dF.submat(0, 0, Kx - 1, Kx - 1) = -XX1;
-  dF.submat(Kx, 0, Kx, Kx - 1) = (e2.t()*X2);
-  dF.submat(Kx, 0, Kx + Kins, Kx - 1) -= (Z2.t()*X2*lambda(ntau));
-  dF.submat(Kx, Kx, Kx + Kins, Kx + ntau) = -ZV2;
+  arma::mat dF(Kx1 + Kins + 1, Kx + ntau + 1, arma::fill::zeros);
+  dF.submat(0, 0, Kx1 - 1, Kx1 - 1) = -XX1;
+  dF.submat(Kx1, 0, Kx1, Kx1 - 1) = (e2.t()*X21);
+  dF.submat(Kx1, 0, Kx1 + Kins, Kx1 - 1) -= (Z2.t()*X21*lambda(0));
+  dF.submat(Kx1, Kx1, Kx1 + Kins, Kx + ntau) = -ZV2;
   
-  arma::mat VF(Kx + Kins + 1, Kx + Kins + 1, arma::fill::zeros);
+  arma::mat VF(Kx1 + Kins + 1, Kx1 + Kins + 1, arma::fill::zeros);
   if (HAC == 0) {
-    VF.submat(0, 0, Kx - 1, Kx - 1) = (sum(e1%e1)/(n_iso - Kx))*XX1;
-    VF.submat(Kx, Kx, Kx + Kins, Kx + Kins) = (sum(e2%e2)/(n_niso - ntau - 1))*ZZ2;
+    VF.submat(0, 0, Kx1 - 1, Kx1 - 1) = (sum(e1%e1)/(n_iso - Kx))*XX1;
+    VF.submat(Kx1, Kx1, Kx1 + Kins, Kx1 + Kins) = (sum(e2%e2)/(n_niso - ntau - 1))*ZZ2;
   }
   if (HAC == 1) {
     arma::mat Xe1(X1.each_col()%e1);
     arma::mat Ze2(Z2.each_col()%e2);
-    VF.submat(0, 0, Kx - 1, Kx - 1) = Xe1.t()*Xe1;
-    VF.submat(Kx, Kx, Kx + Kins, Kx + Kins) = Ze2.t()*Ze2;
+    VF.submat(0, 0, Kx1 - 1, Kx1 - 1) = Xe1.t()*Xe1;
+    VF.submat(Kx1, Kx1, Kx1 + Kins, Kx1 + Kins) = Ze2.t()*Ze2;
   }
   if (HAC == 2) {
     X1   = X; X1.rows(nIs).zeros();
@@ -163,15 +172,75 @@ Rcpp::List fgmm_struc(const arma::vec& y,
   Vpa = arma::solve(HdF, Vpa.t());//inv(H * dF) * H * Var(F) * H' * inv(H * dF)'
   // overidentification
   arma::vec F2(Z2.t()*e2);
-  arma::mat VF1(VF.submat(0, 0, Kx - 1, Kx - 1)), VF2(VF.submat(Kx, Kx, Kx + Kins, Kx + Kins));
+  arma::mat VF1(VF.submat(0, 0, Kx1 - 1, Kx1 - 1)), VF2(VF.submat(Kx1, Kx1, Kx1 + Kins, Kx1 + Kins));
   double stat = sum(F2.t()*arma::solve(VF2, F2));
   
   return Rcpp::List::create(_["beta"] = b, _["lambda"] = lambda, _["Vpa"] = Vpa, 
                             _["VF1"] = VF1, _["VF2"] = VF2, _["Overident"] = stat, 
-                              _["df"] = Kins - ntau);
+                              _["df"] = Kins - ntau - Kx2);
 }
 
+// This function return the structural parameters using the GMM estimates
+//[[Rcpp::export]]
+Rcpp::List fStructParam(const arma::vec& param,
+                        const arma::mat& covp,
+                        const arma::uvec& idX1,
+                        const arma::uvec& idX2,
+                        const int& ntau,
+                        const int& Kx,
+                        const int& Kx1,
+                        const int& Kx2) {
+  arma::uvec idx(1 + ntau + Kx);
+  idx.head(ntau + 1) = arma::linspace<arma::uvec>(Kx1, Kx1 + ntau, ntau + 1);
+  idx.elem(ntau + 1 + idX1) = arma::linspace<arma::uvec>(0, Kx1 - 1, Kx1);
+  if (Kx2 > 0) {
+    idx.elem(ntau + 1 + idX2) = arma::linspace<arma::uvec>(Kx1 + ntau + 1, Kx, Kx2);
+  }
+  arma::vec theta(param.elem(idx));
+  arma::mat covt(covp.cols(idx));
+  covt = covt.rows(idx);
+  arma::mat R(arma::eye<arma::mat>(1 + ntau + Kx, 1 + ntau + Kx));
+  
+  // diagonal elements
+  arma::vec Rd(arma::ones<arma::vec>(1 + ntau + Kx));
+  Rd(0)    = -1;
+  if (Kx2 > 0) {
+    Rd.elem(ntau + 1 + idX2) /= param(Kx1);
+  }
+  R.diag() = Rd;
+  
+  // first column
+  if (Kx2 > 0) {
+    arma::vec R0(arma::zeros<arma::vec>(1 + ntau + Kx));
+    R0(0)    = -1;
+    R0.elem(ntau + 1 + idX2) = -param.tail(Kx2)/pow(param(Kx1), 2);
+    R.col(0) = R0;
+  }
+  
+  // theta and covariance
+  theta.elem(ntau + 1 + idX2) /= theta(0);
+  theta(0)                     = 1 - theta(0);
+  covt       = R * covt * R.t();
+  return Rcpp::List::create(_["theta"] = theta, _["Vpa"] = covt);
+}
 
-
-
-        
+// This function estimates F stats and predict endogenous variables
+//[[Rcpp::export]]
+Rcpp::List fFstat(const arma::mat& y,
+                  const arma::mat& Xc,
+                  const arma::mat& Xu) {
+  int n(y.n_rows), ku(Xu.n_cols), kc(Xc.n_cols), df1(ku - kc), df2(n - ku);
+  
+  // constrained models
+  arma::mat bc(arma::solve(Xc.t()*Xc, Xc.t()*y));
+  arma::mat rc(y - Xc*bc);
+  arma::rowvec ssrc(arma::sum(arma::square(rc), 0));
+  
+  // unconstrained models
+  arma::mat bu(arma::solve(Xu.t()*Xu, Xu.t()*y));
+  arma::mat ru(y - Xu*bu);
+  arma::rowvec ssru(arma::sum(arma::square(ru), 0));
+  
+  arma::rowvec F((ssrc - ssru)*df2/(ssru*df1));
+  return Rcpp::List::create(_["F"] = F, _["df1"] = df1, _["df2"] = df2, _["ru"] = ru);
+}

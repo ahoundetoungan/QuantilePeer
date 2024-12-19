@@ -33,8 +33,8 @@ optins_struc <- function(beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, n
     .Call(`_QtNet_optins_struc`, beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, ntau, type, Kx, tol, maxit)
 }
 
-fcheckrank <- function(X) {
-    .Call(`_QtNet_fcheckrank`, X)
+fcheckrank <- function(X, tol = 1e-10) {
+    .Call(`_QtNet_fcheckrank`, X, tol)
 }
 
 demean <- function(X, igroup, ngroup) {
@@ -49,7 +49,15 @@ fgmm_red <- function(y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, HAC = 0L, 
     .Call(`_QtNet_fgmm_red`, y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, HAC, iv)
 }
 
-fgmm_struc <- function(y, X, qy, ins, W1, W2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, HAC = 0L, iv = TRUE) {
-    .Call(`_QtNet_fgmm_struc`, y, X, qy, ins, W1, W2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, HAC, iv)
+fgmm_struc <- function(y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, HAC = 0L, iv = TRUE) {
+    .Call(`_QtNet_fgmm_struc`, y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, HAC, iv)
+}
+
+fStructParam <- function(param, covp, idX1, idX2, ntau, Kx, Kx1, Kx2) {
+    .Call(`_QtNet_fStructParam`, param, covp, idX1, idX2, ntau, Kx, Kx1, Kx2)
+}
+
+fFstat <- function(y, Xc, Xu) {
+    .Call(`_QtNet_fFstat`, y, Xc, Xu)
 }
 
