@@ -100,18 +100,18 @@ Both instrument sets can be computed using `qpeer.inst`. In the `formula` argume
 ```R
 # First instrument set
 Z1  <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1),  
-                 max.distance = 2, checkrank = TRUE) # finer subdivision of quantile levels
+                  max.distance = 2, checkrank = TRUE) # finer subdivision of quantile levels
 Z1  <- Z1$instruments #qpeer.inst returns a list of several object including instruments 
 
 # Second instrument set: y1 is used to order X
 Z21 <- qpeer.inst(formula = y1 ~ X, Glist = G, tau = seq(0, 1, 0.1),  
-                 max.distance = 2, checkrank = TRUE) 
+                  max.distance = 2, checkrank = TRUE) 
 qy1 <- Z21$qy #quantile of y among peers                 
 Z21 <- Z21$instruments
 
 # Second instrument set: y2 is used to order X
 Z22 <- qpeer.inst(formula = y2 ~ X, Glist = G, tau = seq(0, 1, 0.1),  
-                 max.distance = 2, checkrank = TRUE) 
+                  max.distance = 2, checkrank = TRUE) 
 qy2 <- Z22$qy #quantile of y among peers                 
 Z22 <- Z22$instruments
 ```
