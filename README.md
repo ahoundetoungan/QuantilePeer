@@ -1,4 +1,19 @@
-# QtNet Installation
+# QtNet: An R package for estimating Quantile Peer Effect Models
+The **QtNet** package includes all functions for the replication of the results in Houndetoungan (2025).
+The exact replication codes are located in the folder [**test**](https://github.com/ahoundetoungan/QtNet/tree/master/test). 
+Below, we also provide detailed examples of how to use the estimators described in the paper.
+
+## Installation
+Installation is possible from this GitHub repository using the following code:
+```R
+library(remotes)
+install_github("ahoundetoungan/QtNet")
+```
+**Important:** Windows users must first install [**Rtools**](https://cran.r-project.org/bin/windows/Rtools/rtools44/rtools.html) 
+to enable installation from a GitHub repository.
+
+## How to use the **QtNet** package
+
 library(QtNet)
 
 ngr  <- 50  # Number of subnets
