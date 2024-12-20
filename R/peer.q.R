@@ -2,37 +2,23 @@
 #' @param formula An object of class \link[stats]{formula}: a symbolic description of the model. `formula` should be specified as, for example, \code{~ x1 + x2}, 
 #' where `x1` and `x2` are control variables, which can include contextual variables such as averages or quantiles among peers.
 #' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
-#' @param parms A vector defining the true values of \eqn{(\lambda', \beta')'}, where \eqn{\lambda} is a vector of \eqn{\lambda_{\tau}} for each quantile level \eqn{\tau} (see model specification in the details). 
+#' @param parms A vector defining the true values of \eqn{(\lambda', \beta')'}, where \eqn{\lambda} is a vector of \eqn{\lambda_{\tau}} for each quantile level \eqn{\tau} (see model specification in the details section of \code{\link{qpeer}}). 
 #' The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately using the arguments `lambda` and `beta`. For the structural model, 
-#' \eqn{\lambda = (\lambda^{*}, \lambda_{\tau_1}, \lambda_{\tau_2}, \dots)^{\prime}} (see details).
+#' \eqn{\lambda = (\lambda^{*}, \lambda_{\tau_1}, \lambda_{\tau_2}, \dots)^{\prime}} (see the details section of \code{\link{qpeer}}).
 #' @param lambda The true value of the vector \eqn{\lambda}.
 #' @param beta The true value of the vector \eqn{\beta}.
 #' @param tau The vector of quantile levels.
 #' @param type An integer between 1 and 9 selecting one of the nine quantile algorithms used to compute peer quantiles (see the \link[stats]{quantile} function).
-#' @param epsilon A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in details). 
+#' @param epsilon A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in the details section of \code{\link{qpeer}}). 
 #' @param maxit The maximum number of iterations for the Fixed Point Iteration Method.
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 #' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `sim.qpeer` is called.
 #' @param tol The tolerance value used in the Fixed Point Iteration Method to compute the outcome `y`. The process stops if the \eqn{\ell_1}-distance 
 #' between two consecutive values of `y` is less than `tol`.
 #' @param details A logical value indicating whether to save the indices and weights of the two peers whose weighted average determines the quantile.
-#' @param structural A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see details).
+#' @param structural A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see the details section of \code{\link{qpeer}}).
 #' @description
 #' `qpeer.sim` simulates the quantile peer effect models developed by Houndetoungan (2025).
-#' @details 
-#' Let \eqn{\mathcal{T}} be a set of quantile levels. The reduced-form specification of quantile peer effect models is given by:
-#' \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + \mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
-#' where \eqn{\mathbf{y}_{-i} = (y_1, \ldots, y_{i-1}, y_{i+1}, \ldots, y_n)^{\prime}} is the vector of outcomes for other units, and \eqn{q_{\tau,i}(\mathbf{y}_{-i})} is the 
-#' sample \eqn{\tau}-quantile of peer outcomes. The term \eqn{\varepsilon_i} is an idiosyncratic error term, \eqn{\lambda_{\tau}} captures the effect of the \eqn{\tau}-quantile of peer outcomes on \eqn{y_i}, 
-#' and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. For the definition of the sample \eqn{\tau}-quantile, see Hyndman and Fan (1996). The network matrices in `Glist` can be weighted or unweighted. 
-#' If weighted, the sample weighted quantile is computed, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}, the \eqn{(i, j)} entry of the network matrix. It can be shown that
-#' the sample \eqn{\tau}-quantile is a weighted average of two peer outcomes. For more details, see the \link[stats]{quantile} and \code{\link{qpeer.instruments}} functions. \cr
-#' 
-#' The specification of the structural model depends on whether node \eqn{i} is isolated or not. For isolated \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
-#' \deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
-#' If node \eqn{i} is non-isolated, the specification is:
-#' \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,}
-#' where \eqn{\lambda^*} captures whether preferences describe complementarity/substitution or conformism.
 #' @seealso \code{\link{qpeer}}, \code{\link{qpeer.instruments}}
 #' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 #' @return A list containing:
@@ -202,23 +188,32 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @description
 #' `qpeer` estimates the quantile peer effect models introduced by Houndetoungan (2025). In the \code{\link{linpeer}} function, quantile peer variables are replaced with the average peer variable, and they can be replaced with other peer variables in the \code{\link{genpeer}} function.
 #' @details 
+#' Let \eqn{\mathcal{N}} be a set of \eqn{n} agents indexed by the integer \eqn{i \in [1, n]}. 
+#' Agents are connected through a network that is characterized by an adjacency matrix \eqn{\mathbf{G} = [g_{ij}]} of dimension \eqn{n \times n}, where \eqn{g_{ij} = 1} if agent \eqn{j} is a friend of agent \eqn{i}, and \eqn{g_{ij} = 0} otherwise. 
+#' In weighted networks, \eqn{g_{ij}} can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from \eqn{i} to \eqn{j}. The model can also accommodate such networks. Note that the network is generally constituted in many independent subnets (eg: schools). 
+#' The `Glist` argument is the list of subnets. In the case of a single subnet, `Glist` will be a list containing one matrix.\cr
+#' 
 #' Let \eqn{\mathcal{T}} be a set of quantile levels. The reduced-form specification of quantile peer effect models is given by:
 #' \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + \mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
 #' where \eqn{\mathbf{y}_{-i} = (y_1, \ldots, y_{i-1}, y_{i+1}, \ldots, y_n)^{\prime}} is the vector of outcomes for other units, and \eqn{q_{\tau,i}(\mathbf{y}_{-i})} is the 
 #' sample \eqn{\tau}-quantile of peer outcomes. The term \eqn{\varepsilon_i} is an idiosyncratic error term, \eqn{\lambda_{\tau}} captures the effect of the \eqn{\tau}-quantile of peer outcomes on \eqn{y_i}, 
-#' and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. For the definition of the sample \eqn{\tau}-quantile, see Hyndman and Fan (1996). The network matrices in `Glist` can be weighted or unweighted. 
-#' If weighted, the sample weighted quantile is computed, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}, the \eqn{(i, j)} entry of the network matrix. It can be shown that
+#' and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. For the definition of the sample \eqn{\tau}-quantile, see Hyndman and Fan (1996). 
+#' If the network matrix is weighted, the sample weighted quantile can be used, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}. It can be shown that
 #' the sample \eqn{\tau}-quantile is a weighted average of two peer outcomes. For more details, see the \link[stats]{quantile} and \code{\link{qpeer.instruments}} functions. \cr
 #' 
 #' The quantile \eqn{q_{\tau,i}(\mathbf{y}_{-i})} can be replaced with the average peer variable in \code{\link{linpeer}} or with other measures in \code{\link{genpeer}} through the `endogenous.variables` argument. 
 #' In \code{\link{genpeer}}, it is possible to specify multiple peer variables, such as male peer averages and female peer averages. Additionally, both quantiles and averages can be included (\code{\link{genpeer}} 
 #' is general and encompasses \code{\link{qpeer}} and \code{\link{linpeer}}). See examples. \cr
 #' 
-#' The specification of the structural model depends on whether node \eqn{i} is isolated or not. For isolated \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
+#' One issue in linear peer effect models is that individual preferences with conformity and complementarity/substitution lead to the same reduced form. 
+#' However, it is possible to disentangle both types of preferences using isolated individuals (individuals without friends). 
+#' The structural specification of the model differs between isolated and nonisolated individuals.
+#' For isolated \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
 #' \deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
 #' If node \eqn{i} is non-isolated, the specification is given by:
 #' \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,}
-#' where \eqn{\lambda^*} captures conformity in preferences. 
+#' where \eqn{\lambda^*} determines whether preferences exhibit conformity or complementarity/substitution. In general, \eqn{\lambda^* > 0} and this means that that preferences are conformist (anti-conformity may be possible in some models when \eqn{\lambda^* < 0}). 
+#' In contrast, when \eqn{\lambda^* = 0}, there is complementarity/substitution between individuals depending on the signs of the \eqn{\lambda_{\tau}} parameters.
 #' @seealso \code{\link{qpeer.sim}}, \code{\link{qpeer.instruments}}
 #' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 #' @return A list containing:

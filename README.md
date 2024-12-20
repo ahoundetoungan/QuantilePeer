@@ -19,7 +19,9 @@ install_github("ahoundetoungan/QtNet")
 
 ## A brief description of the model
 
-Let $\mathcal{N}$ be a set of $n$ agents indexed by the integer $i \in [1, ~n]$. Agents are connected through a network that is characterized by an adjacency matrix $\mathbf{G} = [g_{ij}]$ of dimension $n \times n$, where $g_{ij} = 1$ if agent $j$ is a friend of agent $i$, and $g_{ij} = 0$ otherwise. The network may be directed, meaning that $g_{ij} = 1$ does not imply that $g_{ji} = 1$. Self-connection is impossible; that is, $g_{ii} = 0$ for all $i$. In weighted networks, $g_{ij}$ can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from $i$ to $j$. The model can also accommodate such networks. Note that the network is generally constituted in many independent subnets (eg: schools).
+Let $\mathcal{N}$ be a set of $n$ agents indexed by the integer $i \in [1, ~n]$. 
+Agents are connected through a network that is characterized by an adjacency matrix $\mathbf{G} = [g_{ij}]$ of dimension $n \times n$, where $g_{ij} = 1$ if agent $j$ is a friend of agent $i$, and $g_{ij} = 0$ otherwise. 
+In weighted networks, $g_{ij}$ can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from $i$ to $j$. The model can also accommodate such networks. Note that the network is generally constituted in many independent subnets (eg: schools).
 
 Let $\mathcal{T}$ be a set of quantile levels. The reduced-form specification of quantile peer effect models is given by:
 
@@ -46,7 +48,10 @@ In contrast, when $`\lambda^* = 0`$, there is complementarity/substitution betwe
 ## How to use the **QtNet** package
 
 In this section, I present the main functions of the package and how they can be used through examples.\
-The main functions of the package include: - `qpeer.sim`: simulating data from models with quantile peer effects; - `qpeer.inst`: computing instruments for models with quantile peer effects; - `qpeer`, `linpeer`, and `genpeer`: estimating models with quantile peer effects.
+The main functions of the package include: 
+- `qpeer.sim`: simulating data from models with quantile peer effects; 
+- `qpeer.inst`: computing instruments for models with quantile peer effects; 
+- `qpeer`, `linpeer`, and `genpeer`: estimating models with quantile peer effects.
 
 Most of these functions are also classes that have `summary` and `print` methods.
 

@@ -86,23 +86,32 @@ A list containing:
 \code{qpeer} estimates the quantile peer effect models introduced by Houndetoungan (2025). In the \code{\link{linpeer}} function, quantile peer variables are replaced with the average peer variable, and they can be replaced with other peer variables in the \code{\link{genpeer}} function.
 }
 \details{
+Let \eqn{\mathcal{N}} be a set of \eqn{n} agents indexed by the integer \eqn{i \in [1, n]}.
+Agents are connected through a network that is characterized by an adjacency matrix \eqn{\mathbf{G} = [g_{ij}]} of dimension \eqn{n \times n}, where \eqn{g_{ij} = 1} if agent \eqn{j} is a friend of agent \eqn{i}, and \eqn{g_{ij} = 0} otherwise.
+In weighted networks, \eqn{g_{ij}} can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from \eqn{i} to \eqn{j}. The model can also accommodate such networks. Note that the network is generally constituted in many independent subnets (eg: schools).
+The \code{Glist} argument is the list of subnets. In the case of a single subnet, \code{Glist} will be a list containing one matrix.\cr
+
 Let \eqn{\mathcal{T}} be a set of quantile levels. The reduced-form specification of quantile peer effect models is given by:
 \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + \mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
 where \eqn{\mathbf{y}_{-i} = (y_1, \ldots, y_{i-1}, y_{i+1}, \ldots, y_n)^{\prime}} is the vector of outcomes for other units, and \eqn{q_{\tau,i}(\mathbf{y}_{-i})} is the
 sample \eqn{\tau}-quantile of peer outcomes. The term \eqn{\varepsilon_i} is an idiosyncratic error term, \eqn{\lambda_{\tau}} captures the effect of the \eqn{\tau}-quantile of peer outcomes on \eqn{y_i},
-and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. For the definition of the sample \eqn{\tau}-quantile, see Hyndman and Fan (1996). The network matrices in \code{Glist} can be weighted or unweighted.
-If weighted, the sample weighted quantile is computed, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}, the \eqn{(i, j)} entry of the network matrix. It can be shown that
+and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. For the definition of the sample \eqn{\tau}-quantile, see Hyndman and Fan (1996).
+If the network matrix is weighted, the sample weighted quantile can be used, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}. It can be shown that
 the sample \eqn{\tau}-quantile is a weighted average of two peer outcomes. For more details, see the \link[stats]{quantile} and \code{\link{qpeer.instruments}} functions. \cr
 
 The quantile \eqn{q_{\tau,i}(\mathbf{y}_{-i})} can be replaced with the average peer variable in \code{\link{linpeer}} or with other measures in \code{\link{genpeer}} through the \code{endogenous.variables} argument.
 In \code{\link{genpeer}}, it is possible to specify multiple peer variables, such as male peer averages and female peer averages. Additionally, both quantiles and averages can be included (\code{\link{genpeer}}
 is general and encompasses \code{\link{qpeer}} and \code{\link{linpeer}}). See examples. \cr
 
-The specification of the structural model depends on whether node \eqn{i} is isolated or not. For isolated \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
+One issue in linear peer effect models is that individual preferences with conformity and complementarity/substitution lead to the same reduced form.
+However, it is possible to disentangle both types of preferences using isolated individuals (individuals without friends).
+The structural specification of the model differs between isolated and nonisolated individuals.
+For isolated \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
 \deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
 If node \eqn{i} is non-isolated, the specification is given by:
 \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,}
-where \eqn{\lambda^*} captures conformity in preferences.
+where \eqn{\lambda^*} determines whether preferences exhibit conformity or complementarity/substitution. In general, \eqn{\lambda^* > 0} and this means that that preferences are conformist (anti-conformity may be possible in some models when \eqn{\lambda^* < 0}).
+In contrast, when \eqn{\lambda^* = 0}, there is complementarity/substitution between individuals depending on the signs of the \eqn{\lambda_{\tau}} parameters.
 }
 \examples{
 \donttest{
