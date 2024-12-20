@@ -33,8 +33,12 @@ optins_struc <- function(beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, n
     .Call(`_QtNet_optins_struc`, beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, ntau, type, Kx, tol, maxit)
 }
 
-fcheckrank <- function(X, tol = 1e-10) {
-    .Call(`_QtNet_fcheckrank`, X, tol)
+fcheckrankcpp <- function(X, tol = 1e-10) {
+    .Call(`_QtNet_fcheckrankcpp`, X, tol)
+}
+
+fmatforrank <- function(X, tol = 1e-10) {
+    .Call(`_QtNet_fmatforrank`, X, tol)
 }
 
 demean <- function(X, igroup, ngroup) {
@@ -45,19 +49,27 @@ demean_separate <- function(X, igroup, Is, ngroup, n) {
     .Call(`_QtNet_demean_separate`, X, igroup, Is, ngroup, n)
 }
 
-fgmm_red <- function(y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, HAC = 0L, iv = TRUE) {
-    .Call(`_QtNet_fgmm_red`, y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, HAC, iv)
+fdatadiagnostic <- function(y, endo, X, ins, theta, idX1, idX2, igroup, Is, nIs, n, ngroup, ntau, struc, FE) {
+    .Call(`_QtNet_fdatadiagnostic`, y, endo, X, ins, theta, idX1, idX2, igroup, Is, nIs, n, ngroup, ntau, struc, FE)
 }
 
-fgmm_struc <- function(y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, HAC = 0L, iv = TRUE) {
-    .Call(`_QtNet_fgmm_struc`, y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, HAC, iv)
+fgmm_red <- function(y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, Kest, HAC = 0L, iv = TRUE) {
+    .Call(`_QtNet_fgmm_red`, y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, Kest, HAC, iv)
+}
+
+fgmm_struc <- function(y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, Kest, HAC = 0L, iv = TRUE) {
+    .Call(`_QtNet_fgmm_struc`, y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, Kest, HAC, iv)
 }
 
 fStructParam <- function(param, covp, idX1, idX2, ntau, Kx, Kx1, Kx2) {
     .Call(`_QtNet_fStructParam`, param, covp, idX1, idX2, ntau, Kx, Kx1, Kx2)
 }
 
-fFstat <- function(y, Xc, Xu) {
-    .Call(`_QtNet_fFstat`, y, Xc, Xu)
+fFstathomo <- function(y, Xc, Xu) {
+    .Call(`_QtNet_fFstathomo`, y, Xc, Xu)
+}
+
+fFstat <- function(y, X, index, igroup, ngroup, HAC = 0L) {
+    .Call(`_QtNet_fFstat`, y, X, index, igroup, ngroup, HAC)
 }
 

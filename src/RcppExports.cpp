@@ -174,15 +174,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fcheckrank
-arma::uvec fcheckrank(const arma::mat& X, const double& tol);
-RcppExport SEXP _QtNet_fcheckrank(SEXP XSEXP, SEXP tolSEXP) {
+// fcheckrankcpp
+arma::uvec fcheckrankcpp(const arma::mat& X, const double& tol);
+RcppExport SEXP _QtNet_fcheckrankcpp(SEXP XSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const double& >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(fcheckrank(X, tol));
+    rcpp_result_gen = Rcpp::wrap(fcheckrankcpp(X, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fmatforrank
+arma::mat fmatforrank(const arma::mat& X, const double& tol);
+RcppExport SEXP _QtNet_fmatforrank(SEXP XSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const double& >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fmatforrank(X, tol));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -214,9 +226,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fdatadiagnostic
+Rcpp::List fdatadiagnostic(arma::vec& y, arma::mat& endo, arma::mat& X, arma::mat& ins, const arma::vec& theta, const arma::uvec& idX1, const arma::uvec& idX2, const arma::mat& igroup, const arma::uvec& Is, const arma::uvec& nIs, const int& n, const int& ngroup, const int& ntau, const bool& struc, const std::string& FE);
+RcppExport SEXP _QtNet_fdatadiagnostic(SEXP ySEXP, SEXP endoSEXP, SEXP XSEXP, SEXP insSEXP, SEXP thetaSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP igroupSEXP, SEXP IsSEXP, SEXP nIsSEXP, SEXP nSEXP, SEXP ngroupSEXP, SEXP ntauSEXP, SEXP strucSEXP, SEXP FESEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type endo(endoSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type ins(insSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type idX1(idX1SEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type idX2(idX2SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type Is(IsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type nIs(nIsSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type struc(strucSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type FE(FESEXP);
+    rcpp_result_gen = Rcpp::wrap(fdatadiagnostic(y, endo, X, ins, theta, idX1, idX2, igroup, Is, nIs, n, ngroup, ntau, struc, FE));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fgmm_red
-Rcpp::List fgmm_red(const arma::vec& y, const arma::mat& V, const arma::mat& ins, arma::mat& W, const arma::mat& igroup, const int& ngroup, const int& Kx, const int& Kins, const int& ntau, const int& n, const int& HAC, const bool& iv);
-RcppExport SEXP _QtNet_fgmm_red(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP WSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP HACSEXP, SEXP ivSEXP) {
+Rcpp::List fgmm_red(const arma::vec& y, const arma::mat& V, const arma::mat& ins, arma::mat& W, const arma::mat& igroup, const int& ngroup, const int& Kx, const int& Kins, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& iv);
+RcppExport SEXP _QtNet_fgmm_red(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP WSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP ivSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -230,15 +267,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type Kins(KinsSEXP);
     Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
     Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
     Rcpp::traits::input_parameter< const bool& >::type iv(ivSEXP);
-    rcpp_result_gen = Rcpp::wrap(fgmm_red(y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, HAC, iv));
+    rcpp_result_gen = Rcpp::wrap(fgmm_red(y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, Kest, HAC, iv));
     return rcpp_result_gen;
 END_RCPP
 }
 // fgmm_struc
-Rcpp::List fgmm_struc(const arma::vec& y, const arma::mat& X, const arma::mat& qy, const arma::mat& ins, arma::mat& W1, arma::mat& W2, const arma::uvec& idX1, const arma::uvec& idX2, const int& Kx1, const int& Kx2, const arma::mat& igroup, const arma::uvec& nIs, const arma::uvec& Is, const int& ngroup, const int& Kins, const int& Kx, const int& ntau, const int& n, const int& HAC, const bool& iv);
-RcppExport SEXP _QtNet_fgmm_struc(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP W1SEXP, SEXP W2SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP igroupSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP ngroupSEXP, SEXP KinsSEXP, SEXP KxSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP HACSEXP, SEXP ivSEXP) {
+Rcpp::List fgmm_struc(const arma::vec& y, const arma::mat& X, const arma::mat& qy, const arma::mat& ins, arma::mat& W1, arma::mat& W2, const arma::uvec& idX1, const arma::uvec& idX2, const int& Kx1, const int& Kx2, const arma::mat& igroup, const arma::uvec& nIs, const arma::uvec& Is, const int& ngroup, const int& Kins, const int& Kx, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& iv);
+RcppExport SEXP _QtNet_fgmm_struc(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP W1SEXP, SEXP W2SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP igroupSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP ngroupSEXP, SEXP KinsSEXP, SEXP KxSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP ivSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -260,9 +298,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
     Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
     Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
     Rcpp::traits::input_parameter< const bool& >::type iv(ivSEXP);
-    rcpp_result_gen = Rcpp::wrap(fgmm_struc(y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, HAC, iv));
+    rcpp_result_gen = Rcpp::wrap(fgmm_struc(y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, Kest, HAC, iv));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -284,16 +323,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fFstat
-Rcpp::List fFstat(const arma::mat& y, const arma::mat& Xc, const arma::mat& Xu);
-RcppExport SEXP _QtNet_fFstat(SEXP ySEXP, SEXP XcSEXP, SEXP XuSEXP) {
+// fFstathomo
+Rcpp::List fFstathomo(const arma::mat& y, const arma::mat& Xc, const arma::mat& Xu);
+RcppExport SEXP _QtNet_fFstathomo(SEXP ySEXP, SEXP XcSEXP, SEXP XuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type Xc(XcSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type Xu(XuSEXP);
-    rcpp_result_gen = Rcpp::wrap(fFstat(y, Xc, Xu));
+    rcpp_result_gen = Rcpp::wrap(fFstathomo(y, Xc, Xu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fFstat
+Rcpp::List fFstat(const arma::mat& y, const arma::mat& X, const arma::uvec& index, const arma::mat& igroup, const int& ngroup, const int& HAC);
+RcppExport SEXP _QtNet_fFstat(SEXP ySEXP, SEXP XSEXP, SEXP indexSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP HACSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type index(indexSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
+    rcpp_result_gen = Rcpp::wrap(fFstat(y, X, index, igroup, ngroup, HAC));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -307,13 +362,16 @@ static const R_CallMethodDef CallEntries[] = {
     {"_QtNet_fNashE", (DL_FUNC) &_QtNet_fNashE, 14},
     {"_QtNet_optins_red", (DL_FUNC) &_QtNet_optins_red, 15},
     {"_QtNet_optins_struc", (DL_FUNC) &_QtNet_optins_struc, 16},
-    {"_QtNet_fcheckrank", (DL_FUNC) &_QtNet_fcheckrank, 2},
+    {"_QtNet_fcheckrankcpp", (DL_FUNC) &_QtNet_fcheckrankcpp, 2},
+    {"_QtNet_fmatforrank", (DL_FUNC) &_QtNet_fmatforrank, 2},
     {"_QtNet_demean", (DL_FUNC) &_QtNet_demean, 3},
     {"_QtNet_demean_separate", (DL_FUNC) &_QtNet_demean_separate, 5},
-    {"_QtNet_fgmm_red", (DL_FUNC) &_QtNet_fgmm_red, 12},
-    {"_QtNet_fgmm_struc", (DL_FUNC) &_QtNet_fgmm_struc, 20},
+    {"_QtNet_fdatadiagnostic", (DL_FUNC) &_QtNet_fdatadiagnostic, 15},
+    {"_QtNet_fgmm_red", (DL_FUNC) &_QtNet_fgmm_red, 13},
+    {"_QtNet_fgmm_struc", (DL_FUNC) &_QtNet_fgmm_struc, 21},
     {"_QtNet_fStructParam", (DL_FUNC) &_QtNet_fStructParam, 8},
-    {"_QtNet_fFstat", (DL_FUNC) &_QtNet_fFstat, 3},
+    {"_QtNet_fFstathomo", (DL_FUNC) &_QtNet_fFstathomo, 3},
+    {"_QtNet_fFstat", (DL_FUNC) &_QtNet_fFstat, 6},
     {NULL, NULL, 0}
 };
 

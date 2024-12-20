@@ -64,6 +64,8 @@ in the model. If not found in \code{data}, the variables are taken from \code{en
 \item{max.distance}{The maximum network distance of friends to consider in computing instruments.}
 
 \item{checkrank}{A logical value indicating whether the instrument matrix should be checked for full rank. If the matrix is not of full rank, unimportant columns will be removed to obtain a full-rank matrix.}
+
+\item{tol}{A tolerance value used in the QR factorization to identify columns that ensure a full-rank matrix (see the \link[base]{qr} function).}
 }
 \value{
 A matrix including quantile peer variables
@@ -105,5 +107,5 @@ summary(Inst)
 Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 }
 \seealso{
-\code{\link{qpeer.estim}}, \code{\link{qpeer.sim}}
+\code{\link{qpeer}}, \code{\link{qpeer.sim}}, \code{\link{linpeer}}
 }

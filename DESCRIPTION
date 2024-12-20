@@ -4,7 +4,7 @@ Title: Quantile Peer Effect Models
 Version: 1.0.0
 Date: 2025-01-18
 Authors@R: person(given = "Aristide", family = "Houndetoungan", role = c("cre","aut"), email =  "ahoundetoungan@gmail.com", comment = c(ORCID = "0009-0003-2733-9362"))
-Description: Simulating and estimating peer effect models and network formation models.
+Description: Simulating and estimating quantile peer effect models.
 License: GPL-3
 Language: en-US
 Encoding: UTF-8

@@ -23,6 +23,7 @@ Rcpp::List fgmm_red(const arma::vec& y,
                     const int& Kins, 
                     const int& ntau,
                     const int& n,
+                    const int& Kest, 
                     const int& HAC = 0,
                     const bool& iv = true){
   arma::mat ZV(ins.t()*V), Zy(ins.t()*y);
@@ -35,10 +36,12 @@ Rcpp::List fgmm_red(const arma::vec& y,
   arma::vec parms(arma::solve(VZWZV, VZW*Zy));
   
   // variance
-  arma::vec e(y - V*parms);
+  arma::vec yhat(V*parms), e(y - yhat);
   arma::mat VZe(Kins, Kins, arma::fill::zeros);
+  double s2(R_NaN);
   if (HAC == 0) {
-    VZe    = (sum(e%e)/(n - Kx - ntau))*(ins.t()*ins);
+    s2     = sum(e%e)/(n - Kest);
+    VZe    = s2*(ins.t()*ins);
   }
   if (HAC == 1) {
     arma::mat Ze(ins.each_col()%e);
@@ -78,8 +81,8 @@ Rcpp::List fgmm_red(const arma::vec& y,
   // // Hausman Wu
   // arma::vec dparms = parms - OLS;
   // double haus = sum(dparms.t()*arma::solve(Vpa - VOLS, dparms));
-  return Rcpp::List::create(_["parms"] = parms, _["Vpa"] = Vpa, _["VZe"] = VZe, 
-                            _["Overident"] = stat, _["df"] = Kins - Kx - ntau);
+  return Rcpp::List::create(_["parms"] = parms, _["Vpa"] = Vpa, _["VZe"] = VZe, _["Overident"] = stat, 
+                            _["df"] = Kins - Kx - ntau, _["yhat"] = yhat, _["sigma2"] = s2);
 }
 
 
@@ -104,6 +107,7 @@ Rcpp::List fgmm_struc(const arma::vec& y,
                       const int& Kx,
                       const int& ntau,
                       const int& n,
+                      const int& Kest,
                       const int& HAC = 0,
                       const bool& iv = true){
   int n_iso(Is.n_elem), n_niso(n - n_iso);
@@ -132,7 +136,9 @@ Rcpp::List fgmm_struc(const arma::vec& y,
   arma::vec lambda(arma::solve(VZWZV2, VZW2*Zy2));
   
   // Variance
-  arma::vec  e1(y1 - Xb1), e2(y2 - V2*lambda);
+  arma::vec y1hat(Xb1), y2hat(V2*lambda), e1(y1 - y1hat), e2(y2 - y2hat), yhat(n);
+  yhat.elem(Is) = y1hat; yhat.elem(nIs) = y2hat;
+  arma::vec e = y - yhat;
   arma::mat H(Kx + ntau + 1, Kx1 + Kins + 1, arma::fill::zeros);
   H.submat(0, 0, Kx1 - 1, Kx1 - 1) = XXW1;
   H.submat(Kx1, Kx1, Kx + ntau, Kx1 + Kins) = VZW2;
@@ -144,9 +150,11 @@ Rcpp::List fgmm_struc(const arma::vec& y,
   dF.submat(Kx1, Kx1, Kx1 + Kins, Kx + ntau) = -ZV2;
   
   arma::mat VF(Kx1 + Kins + 1, Kx1 + Kins + 1, arma::fill::zeros);
+  double s2(R_NaN);
   if (HAC == 0) {
-    VF.submat(0, 0, Kx1 - 1, Kx1 - 1) = (sum(e1%e1)/(n_iso - Kx))*XX1;
-    VF.submat(Kx1, Kx1, Kx1 + Kins, Kx1 + Kins) = (sum(e2%e2)/(n_niso - ntau - 1))*ZZ2;
+    s2     = sum(e%e)/(n - Kest);
+    VF.submat(0, 0, Kx1 - 1, Kx1 - 1) = s2*XX1;
+    VF.submat(Kx1, Kx1, Kx1 + Kins, Kx1 + Kins) = s2*ZZ2;
   }
   if (HAC == 1) {
     arma::mat Xe1(X1.each_col()%e1);
@@ -155,14 +163,14 @@ Rcpp::List fgmm_struc(const arma::vec& y,
     VF.submat(Kx1, Kx1, Kx1 + Kins, Kx1 + Kins) = Ze2.t()*Ze2;
   }
   if (HAC == 2) {
-    X1   = X; X1.rows(nIs).zeros();
-    e1   = y - Xb; e1.elem(nIs).zeros();
+    X1   = X.cols(idX1); X1.rows(nIs).zeros();
     Z2   = arma::join_rows(Xb, ins); Z2.rows(Is).zeros();
-    arma::vec Vl(arma::join_rows(qy, Xb)*lambda);
-    e2   = y - Vl; e2.elem(Is).zeros();
+    e2   = y - yhat;
+    // e1.elem(nIs).zeros();
+    // e2.elem(Is).zeros();
     for (int r(0); r < ngroup; ++ r) {
       int n1(igroup(r, 0)), n2(igroup(r, 1));
-      arma::vec tp(arma::join_cols(X1.rows(n1, n2).t()*e1.subvec(n1, n2),
+      arma::vec tp(arma::join_cols(X1.rows(n1, n2).t()*e2.subvec(n1, n2),
                                    Z2.rows(n1, n2).t()*e2.subvec(n1, n2)));
       VF += tp*tp.t();
     }
@@ -175,9 +183,9 @@ Rcpp::List fgmm_struc(const arma::vec& y,
   arma::mat VF1(VF.submat(0, 0, Kx1 - 1, Kx1 - 1)), VF2(VF.submat(Kx1, Kx1, Kx1 + Kins, Kx1 + Kins));
   double stat = sum(F2.t()*arma::solve(VF2, F2));
   
-  return Rcpp::List::create(_["beta"] = b, _["lambda"] = lambda, _["Vpa"] = Vpa, 
-                            _["VF1"] = VF1, _["VF2"] = VF2, _["Overident"] = stat, 
-                              _["df"] = Kins - ntau - Kx2);
+  return Rcpp::List::create(_["beta"] = b, _["lambda"] = lambda, _["Vpa"] = Vpa, _["VF1"] = VF1, 
+                            _["VF2"] = VF2, _["Overident"] = stat, _["df"] = Kins - ntau - Kx2, 
+                              _["yhat"] = yhat, _["sigma2"] = s2);
 }
 
 // This function return the structural parameters using the GMM estimates
@@ -225,8 +233,9 @@ Rcpp::List fStructParam(const arma::vec& param,
 }
 
 // This function estimates F stats and predict endogenous variables
+// This assumes homoskedasticity
 //[[Rcpp::export]]
-Rcpp::List fFstat(const arma::mat& y,
+Rcpp::List fFstathomo(const arma::mat& y,
                   const arma::mat& Xc,
                   const arma::mat& Xu) {
   int n(y.n_rows), ku(Xu.n_cols), kc(Xc.n_cols), df1(ku - kc), df2(n - ku);
@@ -244,3 +253,40 @@ Rcpp::List fFstat(const arma::mat& y,
   arma::rowvec F((ssrc - ssru)*df2/(ssru*df1));
   return Rcpp::List::create(_["F"] = F, _["df1"] = df1, _["df2"] = df2, _["ru"] = ru);
 }
+
+// Same function without assuming homoskedasticity
+//[[Rcpp::export]]
+Rcpp::List fFstat(const arma::mat& y,
+                  const arma::mat& X,
+                  const arma::uvec& index,
+                  const arma::mat& igroup,
+                  const int& ngroup,
+                  const int& HAC = 0) {
+  int n(y.n_rows), K(X.n_cols), df1(index.n_elem), df2(n - K), S(y.n_cols);
+  
+  arma::mat XX(X.t()*X), iXX(arma::inv(XX));
+  arma::mat b(iXX*X.t()*y), e(y - X*b);
+  arma::vec F(S);
+  for (int s(0); s < S; ++ s) {
+    arma::mat V(K, K, arma::fill::zeros);
+    if (HAC == 0) {
+      V = sum(e.col(s)%e.col(s))*XX/(n - K);
+    }
+    if (HAC == 1) {
+      arma::mat Xe(X.each_col()%e.col(s));
+      V = Xe.t()*Xe;
+    }
+    if (HAC == 2) {
+      for (int r(0); r < ngroup; ++ r) {
+        int n1(igroup(r, 0)), n2(igroup(r, 1));
+        arma::vec tp(X.rows(n1, n2).t()*e.submat(n1, s, n2, s));
+        V += tp*tp.t();
+      }
+    }
+    V   = iXX*V*iXX; V = V.rows(index); V = V.cols(index);
+    arma::vec bs(b.col(s)); bs = bs.elem(index);
+    F(s) = arma::sum(bs % arma::solve(V, bs))/df1;
+  }
+  return Rcpp::List::create(_["F"] = F, _["df1"] = df1, _["df2"] = df2, _["ru"] = e);
+}
+

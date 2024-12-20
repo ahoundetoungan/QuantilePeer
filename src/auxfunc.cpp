@@ -16,7 +16,7 @@ using namespace std;
 
 // This function removes columns to obtain full rank matrices
 //[[Rcpp::export]]
-arma::uvec fcheckrank(const arma::mat& X, const double& tol = 1e-10) {
+arma::uvec fcheckrankcpp(const arma::mat& X, const double& tol = 1e-10) {
   arma::rowvec s(arma::stddev(X, 1, 0)), m(arma::mean(X, 0));
   m.elem(arma::find(s < tol)).zeros();
   s.elem(arma::find(s < tol)).ones();
@@ -28,7 +28,7 @@ arma::uvec fcheckrank(const arma::mat& X, const double& tol = 1e-10) {
 }
 
 
-arma::uvec fcheckrank_this_is_slower(const arma::mat& X) {
+arma::uvec fcheckrankcpp_this_is_slower(const arma::mat& X) {
   arma::rowvec m(arma::mean(X, 0)), s(arma::stddev(X, 1, 0));
   s.elem(arma::find(s == 0)).ones();
   arma::mat U((X.each_row() - m).each_row()/s);
@@ -50,6 +50,16 @@ arma::uvec fcheckrank_this_is_slower(const arma::mat& X) {
   return arma::find(out == 1);
 }
 
+
+// This function computes the matrix that will be used tfor the qr decomp
+//[[Rcpp::export]]
+arma::mat fmatforrank(const arma::mat& X, const double& tol = 1e-10) {
+  arma::rowvec s(arma::stddev(X, 1, 0)), m(arma::mean(X, 0));
+  m.elem(arma::find(s < tol)).zeros();
+  s.elem(arma::find(s < tol)).ones();
+  arma::mat U((X.each_row() - m).each_row()/s);
+  return U.t()*U/U.n_rows;
+}
 
 
 // demean
@@ -96,7 +106,61 @@ arma::mat demean_separate(arma::mat X,
   return X;
 }
 
+// data for the diagnostic function
+//[[Rcpp::export]]
+Rcpp::List fdatadiagnostic(arma::vec& y,
+                           arma::mat& endo,
+                           arma::mat& X,
+                           arma::mat& ins,
+                           const arma::vec& theta,
+                           const arma::uvec& idX1,
+                           const arma::uvec& idX2,
+                           const arma::mat& igroup,
+                           const arma::uvec& Is,
+                           const arma::uvec& nIs,
+                           const int& n,
+                           const int & ngroup,
+                           const int& ntau,
+                           const bool& struc,
+                           const std::string& FE) {
+  if (struc) {
+    arma::vec xb(X.cols(idX1)*theta.elem(idX1 + ntau + 1));
+    if (idX2.n_elem == 0) {
+      X = xb;
+    } else {
+      X = arma::join_rows(xb, X.cols(idX2));
+    }
+    ins = arma::join_rows(xb, ins);
+  }
+  
+  if (FE == "join") {
+    y    = demean(y, igroup, ngroup);
+    endo = demean(endo, igroup, ngroup);
+    X    = demean(X, igroup, ngroup);
+    ins  = demean(ins, igroup, ngroup);
+  } else if(FE == "separate") {
+    y    = demean_separate(y, igroup, Is, ngroup, n);
+    endo = demean_separate(endo, igroup, Is, ngroup, n);
+    X    = demean_separate(X, igroup, Is, ngroup, n);
+    ins  = demean_separate(ins, igroup, Is, ngroup, n);
+  }
+  
+  arma::uvec nvecnIs(ngroup);
+  if (struc) {
+    y      = y.elem(nIs);
+    endo   = endo.rows(nIs);
+    X      = X.rows(nIs);
+    ins    = ins.rows(nIs);
+    arma::uvec isnIs(arma::ones<arma::uvec>(n));
+    isnIs.elem(Is).zeros();
+    for (int r(0); r < ngroup; ++ r) {
+      int n1(igroup(r, 0)), n2(igroup(r, 1));
+      nvecnIs(r) = sum(isnIs.subvec(n1, n2));
+    }
+  }
 
+  return Rcpp::List::create(_["nvecnIs"] = nvecnIs, _["y"] = y, _["endo"] = endo, _["X"] = X, _["ins"] = ins);
+}
 
 // // from unconstrained parameters to constrained parameters
 // // The first lambda is the sum of lambda2

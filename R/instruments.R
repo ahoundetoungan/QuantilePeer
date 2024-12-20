@@ -8,6 +8,7 @@
 #' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `qpeer.instruments` is called.
 #' @param max.distance The maximum network distance of friends to consider in computing instruments.
 #' @param checkrank A logical value indicating whether the instrument matrix should be checked for full rank. If the matrix is not of full rank, unimportant columns will be removed to obtain a full-rank matrix.
+#' @param tol A tolerance value used in the QR factorization to identify columns that ensure a full-rank matrix (see the \link[base]{qr} function).
 #' @description
 #' `qpeer.instruments` computes quantile peer variables. 
 #' @details
@@ -17,7 +18,7 @@
 #' of the outcome within \eqn{i}'s peer group. If `y` is specified, then the ranks \eqn{\pi_i} and the weights \eqn{\omega_i} for the variables in `X` are determined based on `y`.
 #' The network matrices in `Glist` can be weighted or unweighted. If weighted, the sample weighted quantile is computed, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}, the \eqn{(i, j)} entry of the network matrix.
 #' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
-#' @seealso \code{\link{qpeer.estim}}, \code{\link{qpeer.sim}}
+#' @seealso \code{\link{qpeer}}, \code{\link{qpeer.sim}}, \code{\link{linpeer}}
 #' @return A matrix including quantile peer variables
 #' @return A list containing:
 #'     \item{qy}{Quantiles of peer variable y.}
@@ -41,7 +42,8 @@
 #' Inst <- qpeer.instruments(formula = ~ X, Glist = G, tau = tau, max.distance = 2)$instruments
 #' summary(Inst)
 #' @export
-qpeer.instruments <- function(formula, Glist, tau, type = 7, data, max.distance = 1, checkrank = FALSE, tol = 1e-10){
+qpeer.instruments <- function(formula, Glist, tau, type = 7, data, max.distance = 1, 
+                              checkrank = FALSE, tol = 1e-10){
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   stopifnot(max.distance >= 1)

@@ -12,7 +12,7 @@
 #' @param epsilon A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in details). 
 #' @param maxit The maximum number of iterations for the Fixed Point Iteration Method.
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
-#' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `qpeer.sim` is called.
+#' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `sim.qpeer` is called.
 #' @param tol The tolerance value used in the Fixed Point Iteration Method to compute the outcome `y`. The process stops if the \eqn{\ell_1}-distance 
 #' between two consecutive values of `y` is less than `tol`.
 #' @param details A logical value indicating whether to save the indices and weights of the two peers whose weighted average determines the quantile.
@@ -33,7 +33,7 @@
 #' If node \eqn{i} is non-isolated, the specification is:
 #' \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,}
 #' where \eqn{\lambda^*} captures whether preferences describe complementarity/substitution or conformism.
-#' @seealso \code{\link{qpeer.estim}}, \code{\link{qpeer.instruments}}
+#' @seealso \code{\link{qpeer}}, \code{\link{qpeer.instruments}}
 #' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 #' @return A list containing:
 #'     \item{y}{The simulated variable.}
@@ -180,25 +180,27 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
        "iteration" = t)
 } 
 
-#' @title Estimating Linear Models with Quantile Peer Effects
+#' @title Estimating Peer Effects Models
 #' @param formula An object of class \link[stats]{formula}: a symbolic description of the model. `formula` should be specified as \code{y ~ x1 + x2}, 
 #' where `y` is the outcome and `x1` and `x2` are control variables, which can include contextual variables such as averages or quantiles among peers.
 #' @param excluded.instruments An object of class \link[stats]{formula} to indicate excluded instruments. It should be specified as \code{~ z1 + z2}, 
 #' where `z1` and `z2` are excluded instruments for the quantile peer outcomes.
+#' @param endogenous.variables An object of class \link[stats]{formula} that allows specifying endogenous variables. It is used to indicate the peer variables whose effects will be estimated. These can include average peer variables, quantile peer variables, 
+#' or a combination of multiple variables. It should be specified as \code{~ y1 + y2}, where `y1` and `y2` are the endogenous peer variables.
 #' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
 #' @param tau A numeric vector specifying the quantile levels.
 #' @param type An integer between 1 and 9 selecting one of the nine quantile algorithms used to compute peer quantiles (see the \link[stats]{quantile} function).
-#' @param maxit The maximum number of iterations for the Fixed Point Iteration Method used to compute optimal instruments.
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
-#' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `qpeer.estim` is called.
-#' @param tol A numeric tolerance value for the Fixed Point Iteration Method used to compute the outcome `y`. The process stops if the \eqn{\ell_1}-distance 
-#' between two consecutive values of `y` is less than `tol`.
+#' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `qpeer` is called.
+#' @param tol A tolerance value used in the QR factorization to identify columns of explanatory variable and instrument matrices that ensure a full-rank matrix (see the \link[base]{qr} function).
 #' @param structural A logical value indicating whether the reduced-form or structural specification should be estimated (see details).
-#' @param fixed.effects A logical value indicating whether the model includes subnet fixed effects.
+#' @param fixed.effects A logical value or string specifying whether the model includes subnet fixed effects. The fixed effects may differ between isolated and non-isolated nodes. Accepted values are `"no"` or `"FALSE"` (indicating no fixed effects), 
+#' `"join"` or `TRUE` (indicating the same fixed effects for isolated and non-isolated nodes within each subnet), and `"separate"` (indicating different fixed effects for isolated and non-isolated nodes within each subnet). Note that `"join"` fixed effects are not applicable for structural models; 
+#' `"join"` and `TRUE` are automatically converted to `"separate"`.
 #' @param gmm.weight A character string specifying the GMM weight: either `"IV"` for the standard instrumental variable weight, `"optimal"` for the optimal GMM weight, or `"ident"` for the identity matrix.
 #' @param HAC A character string specifying the correlation structure among the idiosyncratic error terms for covariance computation. Options are `"iid"` for independent errors, `"hetero"` for heteroskedastic non-autocorrelated errors, and `"cluster"` for heteroskedastic errors with potential within-subnet correlation.
 #' @description
-#' `qpeer.estim` estimates the quantile peer effect models developed by Houndetoungan (2025).
+#' `qpeer` estimates the quantile peer effect models introduced by Houndetoungan (2025). In the \code{\link{linpeer}} function, quantile peer variables are replaced with the average peer variable, and they can be replaced with other peer variables in the \code{\link{genpeer}} function.
 #' @details 
 #' Let \eqn{\mathcal{T}} be a set of quantile levels. The reduced-form specification of quantile peer effect models is given by:
 #' \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + \mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
@@ -208,116 +210,144 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' If weighted, the sample weighted quantile is computed, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}, the \eqn{(i, j)} entry of the network matrix. It can be shown that
 #' the sample \eqn{\tau}-quantile is a weighted average of two peer outcomes. For more details, see the \link[stats]{quantile} and \code{\link{qpeer.instruments}} functions. \cr
 #' 
+#' The quantile \eqn{q_{\tau,i}(\mathbf{y}_{-i})} can be replaced with the average peer variable in \code{\link{linpeer}} or with other measures in \code{\link{genpeer}} through the `endogenous.variables` argument. 
+#' In \code{\link{genpeer}}, it is possible to specify multiple peer variables, such as male peer averages and female peer averages. Additionally, both quantiles and averages can be included (\code{\link{genpeer}} 
+#' is general and encompasses \code{\link{qpeer}} and \code{\link{linpeer}}). See examples. \cr
+#' 
 #' The specification of the structural model depends on whether node \eqn{i} is isolated or not. For isolated \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
 #' \deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
-#' If node \eqn{i} is non-isolated, the specification is:
+#' If node \eqn{i} is non-isolated, the specification is given by:
 #' \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,}
-#' where \eqn{\lambda^*} captures whether preferences describe complementarity/substitution or conformism.
+#' where \eqn{\lambda^*} captures conformity in preferences. 
 #' @seealso \code{\link{qpeer.sim}}, \code{\link{qpeer.instruments}}
 #' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 #' @return A list containing:
 #'     \item{model.info}{A list with information about the model, such as the number of subnets, number of observations, and other key details.}
 #'     \item{gmm}{A list of GMM estimation results, including parameter estimates, the covariance matrix, and related statistics.}
-#'     \item{gmm.opt.ins}{GMM estimation results using optimal instruments, if specified.}
 #'     \item{data}{A list containing the outcome, outcome quantiles among peers, control variables, and excluded instruments used in the model.}
 #' @examples
 #' \donttest{
-#' ## Simulating and estimating the reduced-form model
-#' ngr  <- 50
-#' nvec <- rep(30, ngr)
+#' ngr  <- 50  # Number of subnets
+#' nvec <- rep(30, ngr)  # Size of subnets
 #' n    <- sum(nvec)
-#' G    <- lapply(1:ngr, function(z){
-#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
+#' 
+#' ### Simulating Data
+#' ## Network matrix
+#' G <- lapply(1:ngr, function(z) {
+#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
 #'   diag(Gz) <- 0
+#'   # Adding isolated nodes (important for the structural model)
+#'   niso <- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1))
+#'   if (niso > 0) {
+#'     Gz[sample(1:nvec[z], niso), ] <- 0
+#'   }
 #'   Gz
-#' }) 
-#' tau  <- seq(0, 1, 0.25)
-#' X    <- cbind(rnorm(n), rpois(n, 2))
-#' l    <- c(0.2, 0.1, 0.05, 0.1, 0.2)
-#' b    <- c(2, -0.5, 1)
-#' eps  <- rnorm(n, 0, 0.4)
+#' })
 #' 
-#' # Simulate y
-#' y    <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, 
-#'                   beta = b, epsilon = eps)$y
+#' tau <- seq(0, 1, 1/3)
+#' X   <- cbind(rnorm(n), rpois(n, 2))
+#' l   <- c(0.2, 0.15, 0.1, 0.2)
+#' b   <- c(2, -0.5, 1)
+#' eps <- rnorm(n, 0, 0.4)
 #' 
-#' # Compute instruments
-#' Z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), 
-#'                    max.distance = 3, checkrank = TRUE)
-#' Z   <- Z$instruments
+#' ## Generating `y`
+#' y <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, 
+#'                beta = b, epsilon = eps)$y
 #' 
-#' # Estimation
-#' # Standard IV
-#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau))
+#' ### Estimation
+#' ## Computing instruments
+#' Z <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), 
+#'                 max.distance = 2, checkrank = TRUE)
+#' Z <- Z$instruments
 #' 
-#' # Optimal instruments
-#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
-#'                     tau = tau, optimal.instruments = TRUE))
+#' ## Reduced-form model 
+#' rest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau)
+#' summary(rest)
+#' summary(rest, diagnostic = TRUE)  # Summary with diagnostics
 #' 
-#' # Optimal instruments with optimal GMM weight
-#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
-#'                     tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal"))
+#' ## Structural model
+#' sest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau,
+#'               structural = TRUE)
+#' summary(sest, diagnostic = TRUE)
+#' # The lambda^* parameter is y_q (conformity) in the outputs.
+#' # There is no conformity in the data, so the estimate will be approximately 0.
 #' 
-#' # Fixed effects
-#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
-#'                     tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal",
-#'                     fixed.effects = TRUE))
+#' ## Structural model with double fixed effects per subnet using optimal GMM 
+#' ## and controlling for heteroskedasticity
+#' sesto <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau,
+#'                structural = TRUE, fixed.effects = "separate", HAC = "hetero", 
+#'                gmm.weight = "optimal")
+#' summary(sesto, diagnostic = TRUE)
 #' 
+#' ## Average peer effect model
+#' # Row-normalized network to compute instruments
+#' Gnorm <- lapply(G, function(g) {
+#'   d <- rowSums(g)
+#'   d[d == 0] <- 1
+#'   g / d
+#' })
 #' 
-#' ## Simulating and estimating the structural model
-#' # Isolated nodes are necessary for the structural model
-#' ngr  <- 50
-#' nvec <- rep(30, ngr)
-#' n    <- sum(nvec)
-#' G    <- lapply(1:ngr, function(z){
-#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
-#'   diag(Gz) <- 0
-#'   Gz[sample(1:nvec[z], round(nvec[z]*0.1)),] <- 0 #10% of isolated nodes
-#'   Gz
-#' }) 
-#' tau  <- seq(0, 1, 0.25)
-#' X    <- cbind(rnorm(n), rpois(n, 2))
-#' l    <- c(0.4, 0.2, 0.1, 0.05, 0.1, 0.2)
-#' b    <- c(2, -0.5, 1)
-#' eps  <- rnorm(n, 0, 0.4)
+#' # GX and GGX
+#' Gall <- Matrix::bdiag(Gnorm)
+#' GX   <- as.matrix(Gall %*% X)
+#' GGX  <- as.matrix(Gall %*% GX)
 #' 
-#' # Simulate y
-#' y    <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, 
-#'                   beta = b, epsilon = eps, structural = TRUE)$y
+#' # Standard linear model
+#' lpeer <- linpeer(formula = y ~ X + GX, excluded.instruments = ~ GGX, Glist = Gnorm)
+#' summary(lpeer, diagnostic = TRUE)
+#' # Note: The normalized network is used here by definition of the model.
+#' # Contextual effects are also included (this is also possible for the quantile model).
 #' 
-#' # Compute instruments
-#' Z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), 
-#'                    max.distance = 3, checkrank = TRUE)
-#' Z   <- Z$instruments
+#' # The standard model can also be structural
+#' lpeers <- linpeer(formula = y ~ X + GX, excluded.instruments = ~ GGX, Glist = Gnorm,
+#'                   structural = TRUE, fixed.effects = "separate")
+#' summary(lpeers, diagnostic = TRUE)
 #' 
-#' # Estimation
-#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
-#'                     tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal",
-#'                     structural = TRUE))
+#' ## Estimation using `genpeer`
+#' # Average peer variable computed manually and included as an endogenous variable
+#' Gy     <- as.vector(Gall %*% y)
+#' gpeer1 <- genpeer(formula = y ~ X + GX, excluded.instruments = ~ GGX, 
+#'                   endogenous.variables = ~ Gy, Glist = Gnorm, structural = TRUE, 
+#'                   fixed.effects = "separate")
+#' summary(gpeer1, diagnostic = TRUE)
 #' 
-#' summary(qpeer.estim(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, 
-#'                     tau = tau, optimal.instruments = TRUE, gmm.weight = "optimal",
-#'                     structural = TRUE, fixed.effects = TRUE))
-#' }
+#' # Using both average peer variables and quantile peer variables as endogenous,
+#' # or only the quantile peer variable
+#' # Quantile peer `y`
+#' qy <- qpeer.inst(formula = y ~ 1, Glist = G, tau = tau)
+#' qy <- qy$qy
+#' 
+#' # Model estimation
+#' gpeer2 <- genpeer(formula = y ~ X + GX, excluded.instruments = ~ GGX + Z, 
+#'                   endogenous.variables = ~ Gy + qy, Glist = Gnorm, structural = TRUE, 
+#'                   fixed.effects = "separate")
+#' summary(gpeer2, diagnostic = TRUE)}
 #' @importFrom stats pchisq
 #' @export
-qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, data, 
+qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data, 
                         gmm.weight = "IV", structural = FALSE, fixed.effects = FALSE, 
                         HAC = "iid", tol = 1e-10){
+  # Quantiles
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   ntau       <- length(tau)
+  
+  # GMM weight
   gmm.weight <- tolower(gmm.weight)
   stopifnot(gmm.weight %in% c("iv", "optimal", "ident"))
+  
+  # Variance structure
   HAC        <- tolower(HAC[1])
   stopifnot(HAC %in% c("iid", "hetero", "cluster"))
   HACnum     <- (0:2)[HAC == c("iid", "hetero", "cluster")]
   
+  # Fixed effects
   if (is.character(fixed.effects[1])) fixed.effects <- tolower(fixed.effects)
   stopifnot(fixed.effects %in% c(FALSE, "no", TRUE, "yes", "join", "separate"))
   if (fixed.effects == FALSE) fixed.effects <- "no"
   if (fixed.effects == TRUE | fixed.effects == "yes") fixed.effects <- "join"
   if (structural & fixed.effects != "no") fixed.effects <- "separate"
+  FEnum = (0:2)[fixed.effects == c("no", "join", "separate")]
   
   # Network
   if (!is.list(Glist)) {
@@ -325,14 +355,14 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
   }
   dg       <- fnetwork(Glist = Glist)
   M        <- dg$M
+  MIs      <- dg$MIs
+  MnIs     <- dg$MnIs
   nvec     <- dg$nvec
   n        <- dg$n
   igr      <- dg$igr
   Is       <- dg$Is
   nIs      <- dg$nIs
   dg       <- dg$dg
-  if (length(Is) <= 1 & structural) stop("The structural model requires isolated nodes.")
-  if (length(nIs) <= 1) stop("Insufficient links in the networks.")
   
   # Data
   # y and X
@@ -349,7 +379,7 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
   
   # Instruments
   inst       <- as.formula(excluded.instruments)
-  if(length(inst) != 2) stop("Expected format for instruments is ~ z1 + z2 + ....")
+  if(length(inst) != 2) stop("The `excluded.instruments` argument must be in the format ~ `z1 + z2 + ....`.")
   f.t.data   <- formula.to.data(formula = inst, data = data, fixed.effects = (fixed.effects != "no"), 
                                 simulations = TRUE)
   ins        <- f.t.data$X
@@ -419,20 +449,31 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
   GMMe       <- list()
   iv         <- (gmm.weight %in% c("iv", "optimal"))
   estname    <- NULL
+  Kest       <- NULL
   if (structural) {
     Kx1      <- length(idX1)
     Kx2      <- length(idX2)
     if (Kins < Kx2 + ntau) stop("Insufficient number of instruments: the model is not identified.")
-    estname  <- c(paste0(yname, paste0("_q", c("*", 1:ntau))), xname)
+    Kest1    <- ifelse(FEnum == 0, Kx1, Kx1 + MIs)
+    Kest2    <- ifelse(FEnum == 0, Kx2 + ntau + 1, Kx2 + ntau + MnIs)
+    if (length(Is) <= Kest1) stop("Insufficient number of isolated nodes for estimating the structural model.")
+    if (length(nIs) <= Kest2) stop("Insufficient number of nonisolated nodes for estimating the structural model.")
+    Kest     <- Kest1 + Kest2
+    if (HACnum == 2 && (Kx1 >= MIs || Kins + 1 >= MnIs)) {
+      warning("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. HAC is set to 'hetero'.")
+      HACnum <- 1
+      HAC    <- "hetero"
+    }
+    estname  <- c(paste0(yname, paste0("_q", c("(conformity)", 1:ntau))), xname)
     
     # Estimation
-    GMMe     <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = diag(Kx), W2 = diag(Kins + 1), 
-                           idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igroup = igr, nIs = nIs, 
-                           Is = Is, ngroup = M, Kins = Kins, Kx = Kx, ntau = ntau, n = n, HAC = HACnum, iv = iv)
-    if (gmm.weight == "optimal") {
-      GMMe   <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = solve(GMMe$VF1), W2 = solve(GMMe$VF2), 
-                           idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igroup = igr, nIs = nIs, 
-                           Is = Is, ngroup = M, Kins = Kins, Kx = Kx, ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
+    GMMe     <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = diag(Kx1), W2 = diag(Kins + 1), idX1 = idX1, 
+                           idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igroup = igr, nIs = nIs, Is = Is, ngroup = M, 
+                           Kins = Kins, Kx = Kx, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = iv)
+    if (gmm.weight == "optimal" & HACnum != 0) {
+      GMMe   <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = solve(GMMe$VF1), W2 = solve(GMMe$VF2), idX1 = idX1, 
+                           idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igroup = igr, nIs = nIs, Is = Is, ngroup = M, Kins = Kins, 
+                           Kx = Kx, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = FALSE)
     }
     Vpa        <- fStructParam(param = c(GMMe$beta, GMMe$lambda), covp = GMMe$Vpa, idX1 = idX1, idX2 = idX2, 
                              ntau = ntau, Kx = Kx, Kx1 = Kx1, Kx2 = Kx2)
@@ -440,18 +481,32 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
     GMMe$Vpa   <- Vpa$Vpa
   } else {
     if (Kins < Kx + ntau) stop("Insufficient number of instruments: the model is not identified.")
+    Kest     <- ifelse(FEnum == 0, Kx + ntau, ifelse(FEnum == 1, Kx + ntau + M, Kx + ntau + MIs + MnIs))
+    if (n <= Kest) stop("Insufficient number of observations.")
+    if (HACnum == 2 && Kins >= M) {
+      warning("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. HAC is set to 'hetero'.")
+      HACnum <- 1
+      HAC    <- "hetero"
+    }
     estname  <- c(paste0(yname, paste0("_q", 1:ntau)), xname)
     V        <- cbind(qy, X)
     
     # Estimation
     GMMe     <- fgmm_red(y = y, V = V, ins = ins, W = diag(Kins), igroup = igr, ngroup = M, 
-                         Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = iv)
-    if (gmm.weight == "optimal") {
-      GMMe   <- fgmm_red(y = y, V = V, ins = ins, W = solve(GMMe$VZe), igroup = igr, 
-                         ngroup = M, Kx = Kx, Kins = Kins, ntau = ntau, n = n, HAC = HACnum, iv = FALSE)
+                         Kx = Kx, Kins = Kins, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = iv)
+    if (gmm.weight == "optimal" & HACnum != 0) {
+      GMMe   <- fgmm_red(y = y, V = V, ins = ins, W = solve(GMMe$VZe), igroup = igr, ngroup = M, Kx = Kx, 
+                         Kins = Kins, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = FALSE)
     }
   }
-  GMMe       <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, Jtest = c("statistic" = GMMe$Overident, "df" = as.integer(GMMe$df)))
+  fv         <- c(GMMe$yhat)
+  res        <- y - fv
+  rs         <- sum((fv - mean(fv))^2)/sum((y - mean(y))^2)
+  ars        <- 1 - (1 -rs)*(n - 1)/(n - length(c(GMMe$parms)))
+  sigma      <- sqrt(GMMe$sigma2);  if(is.na(sigma)) sigma = NULL
+  GMMe       <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
+                     residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
+                     Jtest = c("statistic" = GMMe$Overident, "df" = as.integer(GMMe$df)))
   names(GMMe$Estimate)  <- estname
   colnames(GMMe$cov)    <- estname
   rownames(GMMe$cov)    <- estname
@@ -464,78 +519,92 @@ qpeer.estim <- function(formula, excluded.instruments, Glist, tau, type = 7, dat
     colnames(qy0) <- paste0(yname, "_q", 1:ntau)
   }
   
-  out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, tau = tau, structural = structural, formula = formula, 
+  out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
                                        excluded.instruments = excluded.instruments, tau = tau, ntau = ntau, type = type, 
                                        gmm.weight = gmm.weight, fixed.effects = fixed.effects, idX1 = idX1 + 1,  
                                        idX2 = idX2 + 1, HAC = HAC),
                     gmm         = GMMe,
-                    data        = list(y = y0, qy = qy0, X = X0, instruments = ins0, isolated = Is + 1, non.isolated = nIs + 1))
-  class(out) <- "qpeer.estim"
+                    data        = list(y = y0, qy = qy0, X = X0, instruments = ins0, isolated = Is + 1, 
+                                       non.isolated = nIs + 1, degree = dg))
+  class(out) <- "qpeer"
   out
 }
 
-#' @title Summary for the Estimation of Linear Models with Quantile Peer Effects
-#' @param object An object of class \code{\link{qpeer.estim}}.
+#' @title Summary for the Estimation of Peer Effects Models
+#' @param object An object of class \code{\link{qpeer}}.
+#' @param diagnostics,diagnostic Logical. Should diagnostic tests for the instrumental-variable regression be performed? 
+#' These include an F-test of the first-stage regression for weak instruments, a Wu-Hausman test for endogeneity, 
+#' and a Sargan test for overidentifying restrictions (only if there are more instruments than regressors).
 #' @param ... Further arguments passed to or from other methods.
-#' @param x An object of class \code{\link{summary.qpeer.estim}} or \code{\link{qpeer.estim}}.
-#' @description Summary and print methods for the class \code{\link{qpeer.estim}}.
+#' @param x An object of class \code{\link{summary.qpeer}} or \code{\link{qpeer}}.
+#' @description Summary and print methods for the class \code{\link{qpeer}}.
 #' @return A list containing:
 #'     \item{model.info}{A list with information about the model, such as the number of subnets, number of observations, and other key details.}
 #'     \item{coefficients}{A summary of the estimates, standard errors, and p-values.}
-#'     \item{Estimate}{The vector of parameter estimates.}
-#'     \item{cov}{The covariance matrix of the estimates.}
-#'     \item{Jtest}{A summary of Hansen's J-test for overidentifying restrictions.}
-#'     \item{data}{A list containing the outcome, outcome quantiles among peers, control variables, and excluded instruments used in the model.}
+#'     \item{diagnostics}{A summary of the diagnostic tests for the instrumental-variable regression if requested.}
+#'     \item{gmm}{A list of GMM estimation results, including parameter estimates, the covariance matrix, and related statistics.}
 #' @importFrom stats pchisq
 #' @importFrom stats pnorm
 #' @export
-summary.qpeer.estim <- function(object, diagnostic = FALSE, diagnostics = FALSE, ...) {
-  stopifnot(inherits(object, "qpeer.estim"))
+summary.qpeer <- function(object, diagnostic = FALSE, diagnostics = FALSE, ...) {
+  stopifnot(inherits(object, "qpeer"))
   diagn          <- NULL
-  if (diagnostic | diagnostics) {
-    diagn        <- fdiagnostic(estim = object, sar = FALSE)
+  if (diagnostic || diagnostics) {
+    diagn        <- fdiagnostic(object, nendo = "qy")
   }
   coef           <- fcoef(Estimate = object$gmm$Estimate, cov = object$gmm$cov)
   out            <- c(object["model.info"], 
                       list(coefficients = coef, diagnostics = diagn),
                       object["gmm"], list(...))
-  class(out)     <- "summary.qpeer.estim"
+  class(out)     <- "summary.qpeer"
   out
 }
 
-#' @rdname summary.qpeer.estim
+#' @rdname summary.qpeer
 #' @export
-print.summary.qpeer.estim <- function(x, ...) {
+print.summary.qpeer <- function(x, ...) {
   ntau <- x$model.info$ntau
+  gmmw <- x$model.info$gmm.weight
+  gmmw <- ifelse(gmmw == "ident", "Identity Matrix", ifelse(gmmw == "optimal", "Optimal", "IV"))
+  hete <- x$model.info$HAC
+  hete <- ifelse(hete == "iid", "IID", ifelse(hete == "hetero", "Individual", "Cluster"))
+  sig  <- x$gmm$sigma
   FE   <- x$model.info$fixed.effects
-  cat("Formula:", as.character(x$model.info$formula), "\n")
-  cat("Excluded instruments:", as.character(x$model.info$excluded.instruments), "\n")
+  cat("Formula: ", as.character(x$model.info$formula),
+      "\nExcluded instruments: ", as.character(x$model.info$excluded.instruments), 
+      "\n\nModel: ", ifelse(x$model.info$structural, "Structural", "Reduced Form"),
+      "\nFixed effects: ", paste0(toupper(substr(FE, 1, 1)), tolower(substr(FE, 2, nchar(FE)))), "\n", sep = "")
   
-  
-  cat("\nType:", ifelse(x$model.info$structural, "Structural\n", "Reduced Form\n"))
-  cat("Fixed effects:", paste0(toupper(substr(FE, 1, 1)), tolower(substr(FE, 2, nchar(FE)))), "\n")
-  cat("Quantile levels (", ntau, "): ", sep = "")
+  cat("Quantile type: ", x$model.info$type,
+      "\nQuantile levels (", ntau, "): ", sep = "")
   cat(x$model.info$tau, "\n")
   
   coef       <- x$coefficients
-  coef[,1:2] <- round(coef[,1:2], 4)
-  coef[,3]   <- round(coef[,3], 3)
+  coef[,1:2] <- round(coef[,1:2], 7)
+  coef[,3]   <- round(coef[,3], 5)
   cat("\nCoefficients:\n")
   fprintcoeft(coef)
   
   if (!is.null(x$diagnostics)) {
     coef       <- x$diagnostics
-    coef[,3]   <- round(coef[,3], 3)
+    coef[,3]   <- round(coef[,3], 5)
     cat("\nDiagnostic tests:\n")
     fprintcoeft(coef) 
   }
-  cat("---\nSignif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1")
-  class(x) <- "print.summary.qpeer.estim"
+  cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n\n")
+  cat("GMM weight: ", gmmw, ", HAC: ", hete, sep = "")
+  if (!is.null(sig)) {
+    cat(", sigma: ", format(sig, digits = 5), sep = "")
+  }
+  cat("\nR-Squared: ", format(x$gmm$rsquared, digits = 5), 
+      ", Adjusted R-squared: ", format(x$gmm$adjusted.rsquared, digits = 5), 
+      "\nDegree of freedoms of residuals: ", x$gmm$df.residual, sep = "")
+  class(x) <- "print.summary.qpeer"
   invisible(x)
 }
 
-#' @rdname summary.qpeer.estim
+#' @rdname summary.qpeer
 #' @export
-print.qpeer.estim <- function(x, ...) {
+print.qpeer <- function(x, ...) {
   print(summary(x))
 }
