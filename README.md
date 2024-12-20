@@ -180,3 +180,5 @@ M10 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1,
                fixed.effects = "separate", HAC = "hetero", gmm.weight = "optimal")
 summary(M10, diagnostic = TRUE)
 ```
+
+### Optimal instruments
