@@ -106,7 +106,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
       stop("Define either `parms` or both `lambda` and `beta`.")
     }
     if (structural) {
-      if (length(parms) != (ntau + Kx)) stop("length(parms) is different from length(tau) + ncol(X) + 1. See details on the structural model.")
+      if (length(parms) != (ntau + Kx + 1)) stop("length(parms) is different from length(tau) + ncol(X) + 1. See details on the structural model.")
       ltst <- parms[1]
       lt   <- parms[2:(ntau + 1)]
     } else {

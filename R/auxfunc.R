@@ -75,10 +75,10 @@ fcoef           <- function(Estimate, cov) {
 
 fprintcoeft <- function(coef) {
   pval      <- coef[,ncol(coef)]
-  pval_pt   <- sapply(pval, function(s){ifelse(s < 2e-16, "<2e-16", format(s, digit = 4))})
+  pval_pt   <- sapply(pval, function(s){ifelse(is.na(s), "NA", ifelse(s < 2e-16, "<2e-16", format(s, digit = 4)))})
   refprob   <- c(0.001, 0.01, 0.05, 0.1)
   refstr    <- c("***",  "**", "*", ".", "")
-  str       <- sapply(pval, function(s) refstr[1 + sum(s > refprob)])
+  str       <- sapply(pval, function(s) ifelse(is.na(s), "", refstr[1 + sum(s > refprob)]))
   out       <- data.frame(coef[,-ncol(coef)], "P" = pval_pt, "S" = str); colnames(out) <- c(colnames(coef), "")
   print(out)
 }

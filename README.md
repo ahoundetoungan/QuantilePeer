@@ -81,13 +81,13 @@ lambdast  <- 0.2 # lambda_start
 beta      <- c(2, -0.5, 1)
 
 # First dependent variable (reduced form without conformity)
-y1        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = lambdatau, 
-                       structural = FALSE, beta = beta, epsilon = rnorm(n, 0, 0.4)) 
+y1        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = lambdatau, beta = beta, 
+                       structural = FALSE, epsilon = rnorm(n, 0, 0.4)) 
 y1        <- y1$y #qpeer.sim returns a list of several object including y
 
 # Second dependent variable (structural form with conformity)
 y2        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = c(lambdast, lambdatau), 
-                       structural = TRUE, beta = beta, epsilon = rnorm(n, 0, 0.4)) 
+                       beta = beta, structural = TRUE, epsilon = rnorm(n, 0, 0.4)) 
 y2        <- y2$y 
 ```
 Note that we can also include contextual variables, such as averages of `X` among peers, as additional exogenous variables. In real-life situations, the practitioner would also have their networks, exogenous variables `X`, and dependent variables. In the next sections, I illustrate how instruments for quantile peer variables can be computed. The same process can also be applied to real-life data instead of the simulated data I am using.
@@ -182,3 +182,11 @@ summary(M10, diagnostic = TRUE)
 ```
 
 ### Optimal instruments
+```R
+Ey2     <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, parms = M5$gmm$Estimate, 
+                    structural = TRUE, epsilon = 0) 
+Eqy2    <- Ey2$qy  
+M5prime <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Eqy2, Glist = G, tau = tau,
+            structural = TRUE)
+summary(M5prime, diagnostic = TRUE)
+```
