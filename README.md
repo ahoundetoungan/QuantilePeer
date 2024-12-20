@@ -94,3 +94,25 @@ Note that we can also include contextual variables, such as averages of `X` amon
 
 
 ### Estimation of quantile peer effects
+As discussed in the paper, there are two possible instrument sets for quantile peer outcome. The first instrument set includes quantile of `X` among peers. However, one does not need to keep the same quantile level as in the model. To enhance the instrument strength, I recommend using finer quantile levels than those used in the model. The second instrument set is still quantile of `X` among peers, but with the key difference that the values of `X` of peers are ordered using the values of their dependent variable. 
+
+Both instrument sets can be computed using `qpeer.inst`. In the `formula` argument, if a dependent variable is specified, then the second instrument set is computed. 
+```R
+# First instrument set
+Z1  <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1),  
+                 max.distance = 2, checkrank = TRUE) # finer subdivision of quantile levels
+Z1  <- Z1$instruments #qpeer.inst returns a list of several object including instruments 
+
+# Second instrument set: y1 is used to order X
+Z21 <- qpeer.inst(formula = y1 ~ X, Glist = G, tau = seq(0, 1, 0.1),  
+                 max.distance = 2, checkrank = TRUE) 
+qy1 <- Z21$qy #quantile of y among peers                 
+Z21 <- Z21$instruments
+
+# Second instrument set: y2 is used to order X
+Z22 <- qpeer.inst(formula = y2 ~ X, Glist = G, tau = seq(0, 1, 0.1),  
+                 max.distance = 2, checkrank = TRUE) 
+qy2 <- Z22$qy #quantile of y among peers                 
+Z22 <- Z22$instruments
+```
+As in the standard linear model, it is possible to use the quantile of direct friends' and long-distance `X` (such as friends' friends) to strengthen the instruments. I set `max.distance = 2`, which means that I use the quantiles of `X` among direct friends and friends' friends. The `checkrank` argument ensures that the resulting instrument set is a full-rank matrix by removing columns that are linear combinations of others.
