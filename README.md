@@ -55,7 +55,8 @@ The main functions of the package include:
 
 Most of these functions are also classes that have `summary` and `print` methods.
 
-Throughout this section, I use simulated data. To begin, I first create a network matrix `G` and two exogenous variables, `X1` and `X2`.
+Throughout this section, I use simulated data. To begin, I first create a network matrix `G` and two exogenous variables, `X1` and `X2`.  
+Importantly, I impose some isolated nodes for the identification of the structural model. Otherwise, only the reduced-form parameters can be identified.
 ```R
 library(QtNet)
 ngr  <- 50  # Number of subnets
@@ -75,4 +76,24 @@ G <- lapply(1:ngr, function(z) {
 })
 
 X   <- cbind(rnorm(n), rpois(n, 2)); colnames(X) <- c("X1", "X2")
+```
+
+Using the network matrix and the exogenous variables, I can now generate the dependent variables.  
+I consider the quantile levels `seq(0, 1, 1/3)` (which defines four quantiles) and two dependent variables. The first one is based on the reduced-form model (where there is no conformity parameter),  
+while the second is based on the structural model. The following code assigns values to the parameters of the model, followed by simulating the dependent variables. 
+```R
+tau       <- seq(0, 1, 1/3) #quantile level
+lambdatau <- c(0.1, 0.25, 0.2, 0.15) #lambda_tau
+lambdast  <- 0.2 # lambda_start
+beta      <- c(2, -0.5, 1)
+
+# First dependent variable (reduced form without conformity)
+y1        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = lambdatau, 
+                       structural = FALSE, beta = beta, epsilon = rnorm(n, 0, 0.4)) 
+y1        <- y1$y #qpeer.sim returns a list of several object including y
+
+# Second dependent variable (structural form with conformity)
+y2        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = c(lambdast, lambdatau), 
+                       structural = TRUE, beta = beta, epsilon = rnorm(n, 0, 0.4)) 
+y2        <- y2$y 
 ```
