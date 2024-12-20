@@ -1,4 +1,7 @@
-# QtNet: An R package for estimating Quantile Peer Effect Models
+# QtNet: An R Package for estimating Models with Quantile Peer Effects
+Aristide Houndetoungan
+
+## Introduction
 The **QtNet** package includes all functions for the replication of the results in Houndetoungan (2025).
 The exact replication codes are located in the folder [**test**](https://github.com/ahoundetoungan/QtNet/tree/master/test). 
 Below, we also provide detailed examples of how to use the estimators described in the paper.
@@ -13,6 +16,16 @@ install_github("ahoundetoungan/QtNet")
 to enable installation from a GitHub repository.
 
 ## How to use the **QtNet** package
+In this section, I present the main functions of the package and how they can be used through examples.  
+The main functions of the package include:
+- `qpeer.sim`: simulating data from models with quantile peer effects;
+- `qpeer.inst`: computing instruments for models with quantile peer effects;
+- `qpeer`, `linpeer`, and `genpeer`: models with quantile peer effects.
+
+Most of these functions are also classes that have `summary` and `print` methods.  
+
+Throughout this section, I use simulated data. To begin, I first create a network matrix `G` and two exogenous variables `X1` and `X2`.
+
 
 library(QtNet)
 
