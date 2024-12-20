@@ -50,6 +50,7 @@ In this section, I present the main functions of the package and how they can be
 
 Most of these functions are also classes that have `summary` and `print` methods.
 
+### Data simulation
 Throughout this section, I use simulated data. To begin, I first create a network matrix `G` and two exogenous variables, `X1` and `X2`. Importantly, I impose some isolated nodes for the identification of the structural model. Otherwise, only the reduced-form parameters can be identified.
 ```R
 library(QtNet)
@@ -89,3 +90,5 @@ y2        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = c(lambdast,
                        structural = TRUE, beta = beta, epsilon = rnorm(n, 0, 0.4)) 
 y2        <- y2$y 
 ```
+
+### Estimation of quantile peer effects
