@@ -90,5 +90,7 @@ y2        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = c(lambdast,
                        structural = TRUE, beta = beta, epsilon = rnorm(n, 0, 0.4)) 
 y2        <- y2$y 
 ```
+Note that we can also include contextual variables, such as averages of `X` among peers, as additional exogenous variables. In real-life situations, the practitioner would also have their networks, exogenous variables `X`, and dependent variables. In the next section, I illustrate how quantile peer effects can be estimated. The same process can also be applied to real-life data instead of the simulated data I am using.
+
 
 ### Estimation of quantile peer effects
