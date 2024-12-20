@@ -93,7 +93,7 @@ y2        <- y2$y
 Note that we can also include contextual variables, such as averages of `X` among peers, as additional exogenous variables. In real-life situations, the practitioner would also have their networks, exogenous variables `X`, and dependent variables. In the next sections, I illustrate how instruments for quantile peer variables can be computed. The same process can also be applied to real-life data instead of the simulated data I am using.
 
 
-### Estimation of quantile peer effects
+### Instruments
 As discussed in the paper, there are two possible instrument sets for quantile peer outcome. The first instrument set includes quantile of `X` among peers. However, one does not need to keep the same quantile level as in the model. To enhance the instrument strength, I recommend using finer quantile levels than those used in the model. The second instrument set is still quantile of `X` among peers, but with the key difference that the values of `X` of peers are ordered using the values of their dependent variable. 
 
 Both instrument sets can be computed using `qpeer.inst`. In the `formula` argument, if a dependent variable is specified, then the second instrument set is computed. 
@@ -116,3 +116,67 @@ qy2 <- Z22$qy #quantile of y among peers
 Z22 <- Z22$instruments
 ```
 As in the standard linear model, it is possible to use the quantile of direct friends' and long-distance `X` (such as friends' friends) to strengthen the instruments. I set `max.distance = 2`, which means that I use the quantiles of `X` among direct friends and friends' friends. The `checkrank` argument ensures that the resulting instrument set is a full-rank matrix by removing columns that are linear combinations of others.
+
+### Estimation of quantile peer effects
+```R
+M1 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau)
+summary(M1, diagnostic = TRUE)
+
+M2 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z21, Glist = G, tau = tau)
+summary(M2, diagnostic = TRUE)
+```
+
+```R
+M3 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
+            structural = TRUE)
+summary(M3, diagnostic = TRUE)
+
+M4 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z21, Glist = G, tau = tau,
+            structural = TRUE)
+summary(M4, diagnostic = TRUE)
+
+M5 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
+            structural = TRUE)
+summary(M5, diagnostic = TRUE)
+
+M6 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z22, Glist = G, tau = tau,
+            structural = TRUE)
+summary(M6, diagnostic = TRUE)
+```
+
+```R
+M7 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
+            structural = FALSE, fixed.effects = "separate", HAC = "hetero", 
+            gmm.weight = "optimal")
+summary(M7, diagnostic = TRUE)
+
+M8 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
+            structural = TRUE, fixed.effects = "separate", HAC = "hetero", 
+            gmm.weight = "optimal")
+summary(M8, diagnostic = TRUE)
+```
+
+```R
+Gn <- lapply(G, function(g) {
+  d <- rowSums(g)
+  d[d == 0] <- 1
+  g / d
+})
+
+Gall <- Matrix::bdiag(Gn)
+GX   <- as.matrix(Gall %*% X)
+GGX  <- as.matrix(Gall %*% GX)
+M9 <- linpeer(formula = y2 ~ X, excluded.instruments = ~ GX + GGX, Glist = Gn, 
+              structural = TRUE, fixed.effects = "separate", HAC = "hetero", 
+              gmm.weight = "optimal")
+summary(M9, diagnostic = TRUE)
+```
+
+```R
+Gy2 <- as.vector(Gall %*% y2)
+qy2 <- qpeer.inst(formula = y2 ~ 1, Glist = G, tau = tau)$qy 
+M10 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, 
+               endogenous.variables = ~ Gy2 + qy2, Glist = G, structural = TRUE, 
+               fixed.effects = "separate", HAC = "hetero", gmm.weight = "optimal")
+summary(M10, diagnostic = TRUE)
+```
