@@ -214,6 +214,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' \deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,}
 #' where \eqn{\lambda^*} determines whether preferences exhibit conformity or complementarity/substitution. In general, \eqn{\lambda^* > 0} and this means that that preferences are conformist (anti-conformity may be possible in some models when \eqn{\lambda^* < 0}). 
 #' In contrast, when \eqn{\lambda^* = 0}, there is complementarity/substitution between individuals depending on the signs of the \eqn{\lambda_{\tau}} parameters.
+#' It is obvious that \eqn{\beta} and \eqn{\lambda^*} can be identified only if the network includes enough isolated individuals.
 #' @seealso \code{\link{qpeer.sim}}, \code{\link{qpeer.instruments}}
 #' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 #' @return A list containing:

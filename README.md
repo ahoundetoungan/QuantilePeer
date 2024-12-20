@@ -43,88 +43,36 @@ If $`i`$ is non-isolated, the specification is given by:
 y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,
 ```
 where $`\lambda^*`$ determines whether preferences exhibit conformity or complementarity/substitution. In general, $`\lambda^* > 0`$ and this means that that preferences are conformist (anti-conformity may be possible in some models when $`\lambda^* < 0`$). 
-In contrast, when $`\lambda^* = 0`$, there is complementarity/substitution between individuals depending on the signs of the $`\lambda_{\tau}`$ parameters.
+In contrast, when $`\lambda^* = 0`$, there is complementarity/substitution between individuals depending on the signs of the $`\lambda_{\tau}`$ parameters. It is obvious that $`\beta`$ and $`\lambda^*`$ can be identified only if the network includes enough isolated individuals.
 
 ## How to use the **QtNet** package
 
-In this section, I present the main functions of the package and how they can be used through examples.\
-The main functions of the package include: 
-- `qpeer.sim`: simulating data from models with quantile peer effects; 
-- `qpeer.inst`: computing instruments for models with quantile peer effects; 
+In this section, I present the main functions of the package and how they can be used through examples.  
+The main functions of the package include:
+- `qpeer.sim`: simulating data from models with quantile peer effects;
+- `qpeer.inst`: computing instruments for models with quantile peer effects;
 - `qpeer`, `linpeer`, and `genpeer`: estimating models with quantile peer effects.
 
 Most of these functions are also classes that have `summary` and `print` methods.
 
-Throughout this section, I use simulated data. To begin, I first create a network matrix `G` and two exogenous variables `X1` and `X2`.
-
+Throughout this section, I use simulated data. To begin, I first create a network matrix `G` and two exogenous variables, `X1` and `X2`.
+```R
 library(QtNet)
+ngr  <- 50  # Number of subnets
+nvec <- rep(30, ngr)  # Size of subnets
+n    <- sum(nvec)
 
-ngr \<- 50 \# Number of subnets nvec \<- rep(30, ngr) \# Size of subnets n \<- sum(nvec)
+# Network matrix
+G <- lapply(1:ngr, function(z) {
+  Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
+  diag(Gz) <- 0
+  # Adding isolated nodes (important for the structural model)
+  niso <- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1))
+  if (niso > 0) {
+    Gz[sample(1:nvec[z], niso), ] <- 0
+  }
+  Gz
+})
 
-### Simulating Data
-
-## Network matrix
-
-G \<- lapply(1:ngr, function(z) { Gz \<- matrix(rbinom(nvec[z]\^2, 1, 0.3), nvec[z], nvec[z]) diag(Gz) \<- 0 \# Adding isolated nodes (important for the structural model) niso \<- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1)) if (niso \> 0) { Gz[sample(1:nvec[z], niso), ] \<- 0 } Gz })
-
-tau \<- seq(0, 1, 1/3) X \<- cbind(rnorm(n), rpois(n, 2)) l \<- c(0.2, 0.15, 0.1, 0.2) b \<- c(2, -0.5, 1) eps \<- rnorm(n, 0, 0.4)
-
-## Generating `y`
-
-y \<- qpeer.sim(formula = \~ X, Glist = G, tau = tau, lambda = l, beta = b, epsilon = eps)\$y
-
-### Estimation
-
-## Computing instruments
-
-Z \<- qpeer.inst(formula = \~ X, Glist = G, tau = seq(0, 1, 0.1), max.distance = 2, checkrank = TRUE) Z \<- Z\$instruments
-
-## Reduced-form model
-
-rest \<- qpeer(formula = y \~ X, excluded.instruments = \~ Z, Glist = G, tau = tau) summary(rest) summary(rest, diagnostic = TRUE) \# Summary with diagnostics
-
-## Structural model
-
-sest \<- qpeer(formula = y \~ X, excluded.instruments = \~ Z, Glist = G, tau = tau, structural = TRUE) summary(sest, diagnostic = TRUE) \# The lambda\^\* parameter is y_q (conformity) in the outputs. \# There is no conformity in the data, so the estimate will be approximately 0.
-
-## Structural model with double fixed effects per subnet using optimal GMM
-
-## and controlling for heteroskedasticity
-
-sesto \<- qpeer(formula = y \~ X, excluded.instruments = \~ Z, Glist = G, tau = tau, structural = TRUE, fixed.effects = "separate", HAC = "hetero", gmm.weight = "optimal") summary(sesto, diagnostic = TRUE)
-
-## Average peer effect model
-
-# Row-normalized network to compute instruments
-
-Gnorm \<- lapply(G, function(g) { d \<- rowSums(g) d[d == 0] \<- 1 g / d })
-
-# GX and GGX
-
-Gall \<- Matrix::bdiag(Gnorm) GX \<- as.matrix(Gall %*% X) GGX \<- as.matrix(Gall %*% GX)
-
-# Standard linear model
-
-lpeer \<- linpeer(formula = y \~ X + GX, excluded.instruments = \~ GGX, Glist = Gnorm) summary(lpeer, diagnostic = TRUE) \# Note: The normalized network is used here by definition of the model. \# Contextual effects are also included (this is also possible for the quantile model).
-
-# The standard model can also be structural
-
-lpeers \<- linpeer(formula = y \~ X + GX, excluded.instruments = \~ GGX, Glist = Gnorm, structural = TRUE, fixed.effects = "separate") summary(lpeers, diagnostic = TRUE)
-
-## Estimation using `genpeer`
-
-# Average peer variable computed manually and included as an endogenous variable
-
-Gy \<- as.vector(Gall %\*% y) gpeer1 \<- genpeer(formula = y \~ X + GX, excluded.instruments = \~ GGX, endogenous.variables = \~ Gy, Glist = Gnorm, structural = TRUE, fixed.effects = "separate") summary(gpeer1, diagnostic = TRUE)
-
-# Using both average peer variables and quantile peer variables as endogenous,
-
-# or only the quantile peer variable
-
-# Quantile peer `y`
-
-qy \<- qpeer.inst(formula = y \~ 1, Glist = G, tau = tau) qy \<- qy\$qy
-
-# Model estimation
-
-gpeer2 \<- genpeer(formula = y \~ X + GX, excluded.instruments = \~ GGX + Z, endogenous.variables = \~ Gy + qy, Glist = Gnorm, structural = TRUE, fixed.effects = "separate") summary(gpeer2, diagnostic = TRUE)
+X   <- cbind(rnorm(n), rpois(n, 2)); colnames(X) <- c("X1", "X2")
+```
