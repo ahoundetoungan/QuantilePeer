@@ -90,13 +90,14 @@ y2        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = c(lambdast,
                        beta = beta, structural = TRUE, epsilon = rnorm(n, 0, 0.4)) 
 y2        <- y2$y 
 ```
-Note that we can also include contextual variables, such as averages of `X` among peers, as additional exogenous variables. In real-life situations, the practitioner would also have their networks, exogenous variables `X`, and dependent variables. In the next sections, I illustrate how instruments for quantile peer variables can be computed. The same process can also be applied to real-life data instead of the simulated data I am using.
-
+Note that we can also include contextual variables, such as averages of `X` among peers, as additional exogenous variables. 
 
 ### Instruments
-As discussed in the paper, there are two possible instrument sets for quantile peer outcome. The first instrument set includes quantile of `X` among peers. However, one does not need to keep the same quantile level as in the model. To enhance the instrument strength, I recommend using finer quantile levels than those used in the model. The second instrument set is still quantile of `X` among peers, but with the key difference that the values of `X` of peers are ordered using the values of their dependent variable. 
 
-Both instrument sets can be computed using `qpeer.inst`. In the `formula` argument, if a dependent variable is specified, then the second instrument set is computed. 
+As discussed in the paper, there are two possible instrument sets for quantile peer outcomes. The first type of instruments is the quantiles of `X` among peers. The second type is also the quantiles of `X` among peers, but with a key distinction that the values of `X` for peers are ordered using the values of their dependent variable. The second type of instruments can lead to the most efficient estimators.
+
+Instruments can be computed using `qpeer.inst`. The choice of the instrument type can be specified through the `formula` argument. If `formula` is defined without a dependent variable (i.e., an expression of the type `~ X1 + X2 + ...`), then the first type is computed. In contrast, if `formula` is defined with a dependent variable (i.e., an expression of the type `y ~ X1 + X2 + ...`), the second type is computed. Importantly, it is not necessary to use the same quantile level as in the model. To enhance instrument strength, I recommend using finer quantile levels than those employed in the model.
+
 ```R
 # First instrument set
 Z1  <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1),  
@@ -118,42 +119,73 @@ Z22 <- Z22$instruments
 As in the standard linear model, it is possible to use the quantile of direct friends' and long-distance `X` (such as friends' friends) to strengthen the instruments. I set `max.distance = 2`, which means that I use the quantiles of `X` among direct friends and friends' friends. The `checkrank` argument ensures that the resulting instrument set is a full-rank matrix by removing columns that are linear combinations of others.
 
 ### Estimation of quantile peer effects
+Quantile peer effects are estimated using the general method of moments (GMM). The estimates can be obtained by employing the `qpeer` function. I begin with the reduced-form specification using both types of instruments for each dependent variable.
 ```R
 M1 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau)
 summary(M1, diagnostic = TRUE)
 
 M2 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z21, Glist = G, tau = tau)
 summary(M2, diagnostic = TRUE)
-```
 
-```R
-M3 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
-            structural = TRUE)
+M3 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau)
 summary(M3, diagnostic = TRUE)
 
-M4 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z21, Glist = G, tau = tau,
-            structural = TRUE)
+M4 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z21, Glist = G, tau = tau)
 summary(M4, diagnostic = TRUE)
 
-M5 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
+```
+Note that the `formula` argument does not include the quantile of peers, but only exogenous variables. The quantiles will be directly computed by the function given the quantile levels in the `tau` argument. Additionally, `excluded.instruments` should not include all instruments, but only those not used as exogenous variables.
+
+The output of the `qpeer` function is a `class` to which one can apply a `summary` method. An important argument of the `summary` function is `diagnostics`, a logical value to specify whether diagnostic tests for the instrumental-variable regression should be performed. These tests include an F-test of the first-stage regression for weak instruments, a Wu-Hausman test for endogeneity, and a Hansen's J-test for overidentifying restrictions (only if there are more instruments than regressors).
+
+The estimation results for `y2` are likely biased (even for the exogenous variable) because, for this dependent variable, preferences exhibit both conformity and complementarity, which make the coefficients of the exogenous variable different for isolated and non-isolated individuals. However, in the above code, the reduced-form specification is considered without distinction between the coefficient of `X` for isolated and non-isolated individuals (the underlying assumption is that preferences exhibit either conformity or complementarity). The following code replicates the same estimation using the structural specification.
+
+```R
+M5 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
             structural = TRUE)
 summary(M5, diagnostic = TRUE)
 
-M6 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z22, Glist = G, tau = tau,
+M6 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z21, Glist = G, tau = tau,
             structural = TRUE)
 summary(M6, diagnostic = TRUE)
-```
 
-```R
-M7 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
-            structural = FALSE, fixed.effects = "separate", HAC = "hetero", 
-            gmm.weight = "optimal")
+M7 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
+            structural = TRUE)
 summary(M7, diagnostic = TRUE)
 
-M8 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
-            structural = TRUE, fixed.effects = "separate", HAC = "hetero", 
-            gmm.weight = "optimal")
+M8 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z22, Glist = G, tau = tau,
+            structural = TRUE)
 summary(M8, diagnostic = TRUE)
+```
+In the new results, the estimates seem reliable. For the dependent variable `y1`, the conformity parameter is not significant because the data are simulated by assuming complementarity.
+
+The `qpeer` function offers several useful options, including changing the weight of the GMM estimator, controlling for subnet fixed effects, and accounting for heteroskedasticity. The GMM weight can be controlled through the `gmm.weight` argument. The default value `"IV"` corresponds to the standard instrumental variable (IV) weight. It is also possible to use the identity matrix (`gmm.weight = "ident"`) and the optimal GMM weight (`gmm.weight = "optimal"`).
+
+The `fixed.effects` argument can be used to specify how to control for subnet fixed effects. The default value is `FALSE` or `"no"` to indicate that there are no fixed effects. Two levels of subnet fixed effects are possible: a single fixed effect per subnet (`fixed.effects = "join"`) and double fixed effects per subnet (`fixed.effects = "separate"`), each for isolated and non-isolated individuals (see [Houndetoungan et al., 2024](https://doi.org/10.48550/arXiv.2405.06850)). For the structural specification, the fixed effects are necessarily double per subnet.
+
+The `HAC` argument can indicate the covariance structure of errors. The default value assumes homoscedasticity (`HAC = "iid"`). To control for heteroskedasticity at the individual level, `HAC` can be set to `"hetero"`. To control for heteroskedasticity at the subnet level, where the errors associated with individuals in the same subnet can be correlated, `HAC` can be set to `"cluster"`.
+
+```R
+M9  <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
+             structural = FALSE, gmm.weight = "optimal", fixed.effects = "separate", 
+             HAC = "hetero")
+summary(M9, diagnostic = TRUE)
+
+M10 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
+             structural = TRUE, gmm.weight = "optimal", fixed.effects = "separate", 
+             HAC = "hetero")
+summary(M10, diagnostic = TRUE)
+```
+
+
+### Optimal instruments
+```R
+Ey2     <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, parms = M5$gmm$Estimate, 
+                     structural = TRUE, epsilon = 0) 
+Eqy2    <- Ey2$qy  
+M7prime <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Eqy2, Glist = G, tau = tau,
+                 structural = TRUE)
+summary(M7prime, diagnostic = TRUE)
 ```
 
 ```R
@@ -166,27 +198,18 @@ Gn <- lapply(G, function(g) {
 Gall <- Matrix::bdiag(Gn)
 GX   <- as.matrix(Gall %*% X)
 GGX  <- as.matrix(Gall %*% GX)
-M9 <- linpeer(formula = y2 ~ X, excluded.instruments = ~ GX + GGX, Glist = Gn, 
-              structural = TRUE, fixed.effects = "separate", HAC = "hetero", 
-              gmm.weight = "optimal")
-summary(M9, diagnostic = TRUE)
+M11  <- linpeer(formula = y2 ~ X, excluded.instruments = ~ GX + GGX, Glist = Gn, 
+                structural = TRUE, gmm.weight = "optimal", fixed.effects = "separate", 
+                HAC = "hetero")
+summary(M11, diagnostic = TRUE)
 ```
 
 ```R
 Gy2 <- as.vector(Gall %*% y2)
 qy2 <- qpeer.inst(formula = y2 ~ 1, Glist = G, tau = tau)$qy 
-M10 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, 
+M12 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + GX, 
                endogenous.variables = ~ Gy2 + qy2, Glist = G, structural = TRUE, 
-               fixed.effects = "separate", HAC = "hetero", gmm.weight = "optimal")
-summary(M10, diagnostic = TRUE)
+               gmm.weight = "optimal", fixed.effects = "separate", HAC = "hetero")
+summary(M12, diagnostic = TRUE)
 ```
 
-### Optimal instruments
-```R
-Ey2     <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, parms = M5$gmm$Estimate, 
-                    structural = TRUE, epsilon = 0) 
-Eqy2    <- Ey2$qy  
-M5prime <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Eqy2, Glist = G, tau = tau,
-            structural = TRUE)
-summary(M5prime, diagnostic = TRUE)
-```

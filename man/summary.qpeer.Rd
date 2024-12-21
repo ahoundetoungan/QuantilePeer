@@ -35,7 +35,7 @@
 
 \item{diagnostics, diagnostic}{Logical. Should diagnostic tests for the instrumental-variable regression be performed?
 These include an F-test of the first-stage regression for weak instruments, a Wu-Hausman test for endogeneity,
-and a Sargan test for overidentifying restrictions (only if there are more instruments than regressors).}
+and a Hansen's J-test for overidentifying restrictions (only if there are more instruments than regressors).}
 
 \item{...}{Further arguments passed to or from other methods.}
 

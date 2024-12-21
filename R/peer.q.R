@@ -530,7 +530,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
 #' @param object An object of class \code{\link{qpeer}}.
 #' @param diagnostics,diagnostic Logical. Should diagnostic tests for the instrumental-variable regression be performed? 
 #' These include an F-test of the first-stage regression for weak instruments, a Wu-Hausman test for endogeneity, 
-#' and a Sargan test for overidentifying restrictions (only if there are more instruments than regressors).
+#' and a Hansen's J-test for overidentifying restrictions (only if there are more instruments than regressors).
 #' @param ... Further arguments passed to or from other methods.
 #' @param x An object of class \code{\link{summary.qpeer}} or \code{\link{qpeer}}.
 #' @description Summary and print methods for the class \code{\link{qpeer}}.

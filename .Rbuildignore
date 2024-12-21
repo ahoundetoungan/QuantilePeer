@@ -1,15 +1,15 @@
 ^.*\.Rproj$
-^\.Rproj\.user$
-^doc$
-^Meta$
-^test$
-^\.travis\.yml$
-^\.gitignore$
-^\.Rbuildignore$
-^\.Rhistory$
-^CDatanet\.Rproj$
-^CDatanet\.Rproj, README\.md$
-^vignettes/\.gitignore$
-^scr/*\.so$
-^scr/*\.o$
-^README\.md$
+  ^\.Rproj\.user$
+  ^doc$
+  ^Meta$
+  ^test$
+  ^\.travis\.yml$
+  ^\.gitignore$
+  ^\.Rbuildignore$
+  ^\.Rhistory$
+  ^CDatanet\.Rproj$
+  ^CDatanet\.Rproj, README\.md$
+  ^vignettes/\.gitignore$
+  ^scr/*\.so$
+  ^scr/*\.o$
+  ^README\.md$
