@@ -1,8 +1,3 @@
----
-output:
-  html_document: default
-  pdf_document: default
----
 # QtNet: An R Package for estimating Models with Quantile Peer Effects
 
 Aristide Houndetoungan
