@@ -205,6 +205,8 @@ M12 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + GX + GGX,
                gmm.weight = "optimal", fixed.effects = "separate", HAC = "hetero")
 summary(M12, diagnostic = TRUE)
 ```
+Thank you for reading this documentation. Please use the [Issues](https://github.com/ahoundetoungan/QtNet/issues) page to report any problems. If you use **QtNet** in your publications, kindly cite it using `citation("QtNet")`.
+
 ## References
 - Boucher, V., & Fortin, B. (2016). Some challenges in the empirics of the effects of networks. *Handbook on the Economics of Networks*, 45, 48, <[doi:10.1093/oxfordhb/9780199948277.013.22](https://doi.org/10.1093/oxfordhb/9780199948277.013.22)>
 - Boucher, V., Rendall, M., Ushchev, P., & Zenou, Y. (2024). Toward a general theory of peer effects. *Econometrica*, 92(2), 543-565. <[doi:10.3982/ECTA21048](https://doi.org/10.3982/ECTA21048)>
