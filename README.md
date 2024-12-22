@@ -1,10 +1,15 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
 # QtNet: An R Package for estimating Models with Quantile Peer Effects
 
 Aristide Houndetoungan
 
 ## Introduction
 
-The **QtNet** package includes all functions for the replication of the results in Houndetoungan (2025). The exact replication codes are located in the folder [**test**](https://github.com/ahoundetoungan/QtNet/tree/master/test). Below, we also provide detailed examples of how to use the estimators described in the paper.
+The **QtNet** package simulates and estimates quantile peer effect models that were introduced by Houndetoungan (2025). The exact replication codes of the results in the paper are located in the folder [**test**](https://github.com/ahoundetoungan/QtNet/tree/master/test). Below, I also provide detailed examples of how to use the package.
 
 ## Installation
 
@@ -96,7 +101,7 @@ Note that we can also include contextual variables, such as averages of `X` amon
 
 As discussed in the paper, there are two possible instrument sets for quantile peer outcomes. The first type of instruments is the quantiles of `X` among peers. The second type is also the quantiles of `X` among peers, but with a key distinction that the values of `X` for peers are ordered using the values of their dependent variable. The second type of instruments can lead to the most efficient estimators.
 
-Instruments can be computed using `qpeer.inst`. The choice of the instrument type can be specified through the `formula` argument. If `formula` is defined without a dependent variable (i.e., an expression of the type `~ X1 + X2 + ...`), then the first type is computed. In contrast, if `formula` is defined with a dependent variable (i.e., an expression of the type `y ~ X1 + X2 + ...`), the second type is computed. Importantly, it is not necessary to use the same quantile level as in the model. To enhance instrument strength, I recommend using finer quantile levels than those employed in the model.
+Instruments can be computed using `qpeer.inst`. The choice of the instrument type can be specified through the `formula` argument. If `formula` is defined without a dependent variable (i.e., an expression of the type `~ X1 + X2 + ...`), then the first type is computed. In contrast, if `formula` is defined with a dependent variable (i.e., an expression of the type `y ~ X1 + X2 + ...`), the second type is computed. Importantly, it is not necessary to use the same quantile level as in the model, especially for the first instrument type. To enhance instrument strength, I recommend using finer quantile levels than those employed in the model.
 
 ```R
 # First instrument set
@@ -178,38 +183,40 @@ summary(M10, diagnostic = TRUE)
 ```
 
 
-### Optimal instruments
-```R
-Ey2     <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, parms = M5$gmm$Estimate, 
-                     structural = TRUE, epsilon = 0) 
-Eqy2    <- Ey2$qy  
-M7prime <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Eqy2, Glist = G, tau = tau,
-                 structural = TRUE)
-summary(M7prime, diagnostic = TRUE)
-```
 ### Other specifications
-```R
-Gn <- lapply(G, function(g) {
-  d <- rowSums(g)
-  d[d == 0] <- 1
-  g / d
-})
+The package also provides a method for estimating the standard linear peer effect model, where the average of the outcome among peers serves as an explanatory variable. The `linpeer` function performs this estimation. The function arguments are similar to the `qpper` function (except for the quantile-specific arguments such as `tau` and `type`).  
 
-Gall <- Matrix::bdiag(Gn)
-GX   <- as.matrix(Gall %*% X)
-GGX  <- as.matrix(Gall %*% GX)
-M11  <- linpeer(formula = y2 ~ X, excluded.instruments = ~ GX + GGX, Glist = Gn, 
-                structural = TRUE, gmm.weight = "optimal", fixed.effects = "separate", 
-                HAC = "hetero")
+For the standard linear model, instruments can be `GX` when the model does not include contextual effects or `G^2X` otherwise, where `G` is row-normalized so that `GX` can be interpreted as averages of `X` among peers (see [Bramoullé et al., 2009](http://dx.doi.org/10.1016/j.jeconom.2008.12.021)). It is also possible to include higher powers of `G` to enhance instrument strength (see [Houndetoungan and Maoude, 2024](https://doi.org/10.48550/arXiv.2402.05030)). To normalize the network and compute `GX`, I use the functions `norm.network` and `peer.avg` from the [**PartialNetwork**](https://cran.r-project.org/package=PartialNetwork) package. In the following code, I use both `GX` and `G^2X` as instruments.  
+```R
+library(PartialNetwork)
+Gn  <- norm.network(G)
+GX  <- peer.avg(Gn, X)
+GGX <- peer.avg(Gn, GX)
+M11 <- linpeer(formula = y2 ~ X, excluded.instruments = ~ GX + GGX, Glist = Gn, 
+               structural = TRUE, gmm.weight = "optimal", fixed.effects = "separate", 
+               HAC = "hetero")
 summary(M11, diagnostic = TRUE)
 ```
+The conformity parameter appears consistent, as the estimate is similar to what was obtained from the previous estimations using the quantile model. However, the total effect seems to correspond to the sum of the estimates across different quantiles from the previous estimations.  
 
+In the `qpeer` and `linpeer` functions, the endogenous variables are not defined by the user. For example, in the quantile model, one only needs to set the quantile levels. This feature can limit the estimation of certain specifications. To address this issue, the `QtNet` package provides the generic function `genpeer`, which allows users to define their endogenous variables. This option is useful for estimating the effects of quantiles among girl and boy peers, combining average peer effects with quantile peer effects in the same model, or specifying other social norms.  
+
+The `endogenous.variables` argument of the function must be defined as a formula where the endogenous variables are specified. Below is an example where average peer effects and quantile peer effects are estimated.  
 ```R
-Gy2 <- as.vector(Gall %*% y2)
-qy2 <- qpeer.inst(formula = y2 ~ 1, Glist = G, tau = tau)$qy 
-M12 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + GX, 
+Gy2 <- peer.avg(Gn, y2)
+qy2 <- qpeer.inst(formula = y2 ~ 1, Glist = G, tau = tau[1])$qy 
+M12 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + GX + GGX, 
                endogenous.variables = ~ Gy2 + qy2, Glist = G, structural = TRUE, 
                gmm.weight = "optimal", fixed.effects = "separate", HAC = "hetero")
 summary(M12, diagnostic = TRUE)
 ```
+## References
+- Boucher, V., & Fortin, B. (2016). Some challenges in the empirics of the effects of networks. *Handbook on the Economics of Networks*, 45, 48, <[doi:10.1093/oxfordhb/9780199948277.013.22](https://doi.org/10.1093/oxfordhb/9780199948277.013.22)>
+- Boucher, V., Rendall, M., Ushchev, P., & Zenou, Y. (2024). Toward a general theory of peer effects. *Econometrica*, 92(2), 543-565. <[doi:10.3982/ECTA21048](https://doi.org/10.3982/ECTA21048)>
+- Bramoullé, Y., Djebbari, H., & Fortin, B. (2009). Identification of peer effects through social networks. Journal of econometrics, 150(1), 41-55. <[doi:10.1016/j.jeconom.2008.12.021](https://doi.org/10.1016/j.jeconom.2008.12.021)>
+- Houndetoungan, A. (2025). Quantile Peer Effect Models, *arXiv preprint arXiv:*. <[doi:]()>
+- Houndetoungan, A., Kouame, C., & Vlassopoulos, M. (2024). Identifying Peer Effects in Networks with Unobserved Effort and Isolated Students, *arXiv preprint arXiv:2405.06850*. <[doi:10.48550/arXiv.2405.06850](https://doi.org/10.48550/arXiv.2405.06850)>
+- Houndetoungan, A., & Maoude, A. H. (2024). Inference for Two-Stage Extremum Estimators, *arXiv preprint arXiv:2402.05030*. <[doi:10.48550/arXiv.2402.05030](https://doi.org/10.48550/arXiv.2402.05030)>
+- Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. *The American Statistician*, 50(4), 361-365. <[doi:10.1080/00031305.1996.10473566](https://doi.org/10.1080/00031305.1996.10473566)>
+
 
