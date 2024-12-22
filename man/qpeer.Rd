@@ -16,6 +16,7 @@ genpeer(
   structural = FALSE,
   fixed.effects = FALSE,
   HAC = "iid",
+  checkrank = FALSE,
   tol = 1e-10
 )
 
@@ -28,6 +29,7 @@ linpeer(
   structural = FALSE,
   fixed.effects = FALSE,
   HAC = "iid",
+  checkrank = FALSE,
   tol = 1e-10
 )
 
@@ -42,6 +44,7 @@ qpeer(
   structural = FALSE,
   fixed.effects = FALSE,
   HAC = "iid",
+  checkrank = FALSE,
   tol = 1e-10
 )
 }
@@ -69,6 +72,8 @@ in the model. If not found in \code{data}, the variables are taken from \code{en
 \code{"join"} and \code{TRUE} are automatically converted to \code{"separate"}.}
 
 \item{HAC}{A character string specifying the correlation structure among the idiosyncratic error terms for covariance computation. Options are \code{"iid"} for independent errors, \code{"hetero"} for heteroskedastic non-autocorrelated errors, and \code{"cluster"} for heteroskedastic errors with potential within-subnet correlation.}
+
+\item{checkrank}{A logical value indicating whether the instrument matrix should be checked for full rank. If the matrix is not of full rank, unimportant columns will be removed to obtain a full-rank matrix.}
 
 \item{tol}{A tolerance value used in the QR factorization to identify columns of explanatory variable and instrument matrices that ensure a full-rank matrix (see the \link[base]{qr} function).}
 

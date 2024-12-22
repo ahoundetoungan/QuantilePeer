@@ -185,6 +185,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' `"join"` and `TRUE` are automatically converted to `"separate"`.
 #' @param gmm.weight A character string specifying the GMM weight: either `"IV"` for the standard instrumental variable weight, `"optimal"` for the optimal GMM weight, or `"ident"` for the identity matrix.
 #' @param HAC A character string specifying the correlation structure among the idiosyncratic error terms for covariance computation. Options are `"iid"` for independent errors, `"hetero"` for heteroskedastic non-autocorrelated errors, and `"cluster"` for heteroskedastic errors with potential within-subnet correlation.
+#' @param checkrank A logical value indicating whether the instrument matrix should be checked for full rank. If the matrix is not of full rank, unimportant columns will be removed to obtain a full-rank matrix.
 #' @description
 #' `qpeer` estimates the quantile peer effect models introduced by Houndetoungan (2025). In the \code{\link{linpeer}} function, quantile peer variables are replaced with the average peer variable, and they can be replaced with other peer variables in the \code{\link{genpeer}} function.
 #' @details 
@@ -322,7 +323,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @export
 qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data, 
                         gmm.weight = "IV", structural = FALSE, fixed.effects = FALSE, 
-                        HAC = "iid", tol = 1e-10){
+                        HAC = "iid", checkrank = FALSE, tol = 1e-10){
   # Quantiles
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
@@ -410,7 +411,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   
   # Remove useless columns
   idX1       <- 0:(ncol(X) - 1)
-  tlm        <- NULL
+  tlm        <- idX1
   if (structural) {
     idX1     <- c(fcheckrank(X = X[Is + 1,], tol = tol))
     tlm      <- c(fcheckrank(X = X[nIs + 1,], tol = tol))
@@ -423,22 +424,33 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   X0         <- X0[, tlm + 1, drop = FALSE]
   xname      <- xname[tlm + 1]
   Kx         <- ncol(X)
-  if (length(c(fcheckrank(X = cbind(qy, X), tol = tol))) != (ntau + Kx)) stop("The design matrix is not full rank.")
+  if (structural) {
+    if (length(c(fcheckrank(X = cbind(qy, X)[nIs + 1,], tol = tol))) != (ntau + Kx)) stop("The design matrix is not full rank.")
+  } else {
+    if (length(c(fcheckrank(X = cbind(qy, X), tol = tol))) != (ntau + Kx)) stop("The design matrix is not full rank.")
+  }
   
+
   if (structural) {
     ins      <- cbind(X[, idX2 + 1], ins)
     ins0     <- cbind(X0[, idX2 + 1], ins0)
     zename   <- c(xname[idX2 + 1], zename)
-    tlm      <- c(fcheckrank(X = ins[nIs + 1,], tol = tol))
+    if (checkrank) {
+      tlm      <- c(fcheckrank(X = ins[nIs + 1,], tol = tol))
+    }
   } else {
     ins      <- cbind(X, ins)
     ins0     <- cbind(X0, ins0)
     zename   <- c(xname, zename)
-    tlm      <- c(fcheckrank(X = ins, tol = tol))
+    if (checkrank) {
+      tlm      <- c(fcheckrank(X = ins, tol = tol))
+    }
   }
-  ins        <- ins[, tlm + 1, drop = FALSE]
-  ins0       <- ins0[, tlm + 1, drop = FALSE]
-  zename     <- zename[tlm + 1]
+  if (checkrank) {
+    ins        <- ins[, tlm + 1, drop = FALSE]
+    ins0       <- ins0[, tlm + 1, drop = FALSE]
+    zename     <- zename[tlm + 1]
+  }
   Kins       <- ncol(ins)
   
   # GMM
@@ -594,7 +606,7 @@ print.summary.qpeer <- function(x, ...) {
   }
   cat("\nR-Squared: ", format(x$gmm$rsquared, digits = 5), 
       ", Adjusted R-squared: ", format(x$gmm$adjusted.rsquared, digits = 5), 
-      "\nDegree of freedoms of residuals: ", x$gmm$df.residual, sep = "")
+      "\nDegree of freedoms of residuals: ", x$gmm$df.residual, "\n", sep = "")
   class(x) <- "print.summary.qpeer"
   invisible(x)
 }

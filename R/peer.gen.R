@@ -1,7 +1,7 @@
 #' @rdname qpeer
 #' @export
 genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, data, gmm.weight = "IV", 
-                    structural = FALSE, fixed.effects = FALSE, HAC = "iid", tol = 1e-10){
+                    structural = FALSE, fixed.effects = FALSE, HAC = "iid", checkrank = FALSE, tol = 1e-10){
   # GMM weight
   gmm.weight <- tolower(gmm.weight)
   stopifnot(gmm.weight %in% c("iv", "optimal", "ident"))
@@ -92,7 +92,7 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   
   # Remove useless columns
   idX1       <- 0:(ncol(X) - 1)
-  tlm        <- NULL
+  tlm        <- idX1
   if (structural) {
     idX1     <- c(fcheckrank(X = X[Is + 1,], tol = tol))
     tlm      <- c(fcheckrank(X = X[nIs + 1,], tol = tol))
@@ -105,22 +105,33 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   X0         <- X0[, tlm + 1, drop = FALSE]
   xname      <- xname[tlm + 1]
   Kx         <- ncol(X)
-  if (length(c(fcheckrank(X = cbind(endo, X), tol = tol))) != (Kendo + Kx)) stop("The design matrix is not full rank.")
+  if (structural) {
+    if (length(c(fcheckrank(X = cbind(endo, X)[nIs + 1,], tol = tol))) != (Kendo + Kx)) stop("The design matrix is not full rank.")
+  } else {
+    if (length(c(fcheckrank(X = cbind(endo, X), tol = tol))) != (Kendo + Kx)) stop("The design matrix is not full rank.")
+  }
   
+
   if (structural) {
     ins      <- cbind(X[, idX2 + 1], ins)
     ins0     <- cbind(X0[, idX2 + 1], ins0)
     zename   <- c(xname[idX2 + 1], zename)
-    tlm      <- c(fcheckrank(X = ins[nIs + 1,], tol = tol))
+    if (checkrank) {
+      tlm    <- c(fcheckrank(X = ins[nIs + 1,], tol = tol))
+    }
   } else {
     ins      <- cbind(X, ins)
     ins0     <- cbind(X0, ins0)
     zename   <- c(xname, zename)
-    tlm      <- c(fcheckrank(X = ins, tol = tol))
+    if (checkrank) {
+      tlm    <- c(fcheckrank(X = ins, tol = tol))
+    }
   }
-  ins        <- ins[, tlm + 1, drop = FALSE]
-  ins0       <- ins0[, tlm + 1, drop = FALSE]
-  zename     <- zename[tlm + 1]
+  if (checkrank) {
+    ins      <- ins[, tlm + 1, drop = FALSE]
+    ins0     <- ins0[, tlm + 1, drop = FALSE]
+    zename   <- zename[tlm + 1]
+  }
   Kins       <- ncol(ins)
   
   # GMM
@@ -250,7 +261,7 @@ print.summary.genpeer <- function(x, ...) {
   }
   cat("\nR-Squared: ", format(x$gmm$rsquared, digits = 5), 
       ", Adjusted R-squared: ", format(x$gmm$adjusted.rsquared, digits = 5), 
-      "\nDegree of freedoms of residuals: ", x$gmm$df.residual, sep = "")
+      "\nDegree of freedoms of residuals: ", x$gmm$df.residual, "\n", sep = "")
   class(x) <- "print.summary.genpeer"
   invisible(x)
 }
