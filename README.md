@@ -187,7 +187,7 @@ M7prime <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Eqy2, Glist = G, tau
                  structural = TRUE)
 summary(M7prime, diagnostic = TRUE)
 ```
-
+### Other specifications
 ```R
 Gn <- lapply(G, function(g) {
   d <- rowSums(g)
