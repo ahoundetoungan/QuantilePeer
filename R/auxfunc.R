@@ -44,25 +44,30 @@ formula.to.data <- function(formula,
        "xname"     = xname)
 }
 
-
-fnetwork <- function(Glist) {
-  ldg      <- lapply(Glist, rowSums)
-  MIs      <- sum(sapply(ldg, function(s) any(s == 0)))
-  MnIs     <- sum(sapply(ldg, function(s) any(s != 0)))
-  dg       <- unlist(ldg)
-  Is       <- which(dg == 0) - 1
-  nIs      <- which(dg != 0) - 1
+#' @importFrom utils head
+#' @importFrom utils tail
+fnetwork   <- function(Glist) {
   M        <- length(Glist)
   nvec     <- unlist(lapply(Glist, nrow))
   n        <- sum(nvec)
-  igr      <- matrix(c(cumsum(c(0, nvec[-M])), cumsum(nvec) - 1), ncol = 2)
-  list(dg = dg, M = M, nvec = nvec, n = n, igr = igr, Is = Is, nIs = nIs, MIs = MIs, MnIs = MnIs)
+  ncs      <- c(0, cumsum(nvec))
+  igr      <- cbind(head(ncs, M), tail(ncs, M) - 1)
+  
+  ldg      <- lapply(Glist, rowSums)
+  dg       <- unlist(ldg)
+  MIs      <- sum(sapply(ldg, function(s) any(s == 0)))
+  MnIs     <- sum(sapply(ldg, function(s) any(s != 0)))
+  lIs      <- sapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
+  Is       <- unlist(lIs)
+  lnIs     <- sapply(1:M, function(m) which(ldg[[m]] != 0) - 1 + ncs[m])
+  nIs      <- unlist(lnIs)
+
+  list(dg = dg, M = M, nvec = nvec, n = n, igr = igr, Is = Is, nIs = nIs, 
+       lIs = lIs, lnIs = lnIs, MIs = MIs, MnIs = MnIs)
 }
 
-#' @importFrom Matrix qr
 fcheckrank <- function(X, tol = 1e-10) {
-  tp       <- qr(fmatforrank(X = X, tol = tol), tol = tol)
-  head(tp$pivot, tp$rank) - 1
+  which(fcheckrankEigen(X, tol)) - 1
 }
 
 fcoef           <- function(Estimate, cov) {
@@ -92,7 +97,8 @@ fdiagnostic  <- function(object, nendo) {
   n        <- object$model.info$n
   HAC      <- object$model.info$HAC
   HACnum   <- (0:2)[HAC == c("iid", "hetero", "cluster")]
-  igr      <- matrix(c(cumsum(c(0, nvec[-M])), cumsum(nvec) - 1), ncol = 2)
+  ncs      <- c(0, cumsum(nvec))
+  igr      <- cbind(head(ncs, M), tail(ncs, M) - 1)
   idX1     <- object$model.info$idX1 - 1
   idX2     <- object$model.info$idX2 - 1
   y        <- as.matrix(object$data$y)
@@ -101,40 +107,64 @@ fdiagnostic  <- function(object, nendo) {
   ntau     <- ncol(endo)
   X        <- object$data$X
   ins      <- object$data$instruments
+  dg       <- object$data$degree
   index    <- which(!(colnames(ins) %in% colnames(X))) - 1
-  Is       <- object$data$isolated - 1
-  nIs      <- object$data$non.isolated - 1
+  lIs      <- sapply(1:M, function(m) which(dg[(ncs[m] + 1):ncs[m + 1]] == 0) - 1 + ncs[m])
+  Is       <- unlist(lIs)
+  lnIs     <- sapply(1:M, function(m) which(dg[(ncs[m] + 1):ncs[m + 1]] != 0) - 1 + ncs[m])
+  nIs      <- unlist(lnIs)
+  nvc      <- sapply(lnIs, length)
   theta    <- object$gmm$Estimate
   
-  nvc      <- c(fdatadiagnostic(y = y, endo = endo, X = X, ins = ins, theta = theta, idX1 = idX1, idX2 = idX2, igroup = igr, 
-                  Is = Is, nIs = nIs, n = n, ngroup = M, ntau = ntau, struc = struc, FE = FE))
-  y        <- nvc$y
-  endo     <- nvc$endo
-  X        <- nvc$X
-  ins      <- nvc$ins
-  nvc      <- c(nvc$nvecnIs)
+  ins      <- fdatadiagnostic(y = y, endo = endo, X = X, ins = ins, theta = theta, idX1 = idX1, idX2 = idX2, igroup = igr, 
+                  nIs = nIs, LIs = lIs, LnIs = lnIs, n = n, ngroup = M, ntau = ntau, struc = struc, FE = FE)
+  y        <- ins$y
+  endo     <- ins$endo
+  X        <- ins$X
+  ins      <- ins$ins
+
   if (struc) {
     nvc    <- nvc[nvc > 0]
     M      <- length(nvc)
     igr    <- matrix(c(cumsum(c(0, nvc[-M])), cumsum(nvc) - 1), ncol = 2)
   }
   
-  ## Weak instrument test
-  tpF      <- fFstat(y = endo, X = ins, index = index, igroup = igr, ngroup = M, HAC = HACnum)
-
-  ## Endogeneity test
-  tpend    <- fFstat(y = y, X = cbind(tpF$ru, endo, X), index = (0:(ntau - 1)), igroup = igr, ngroup = M, HAC = HACnum)
-  
-  out      <- cbind(df1        = c(rep(tpF$df1, ntau) , tpend$df1, object$gmm$Jtest["df"]),
-                    df2        = c(rep(tpF$df2, ntau), tpend$df2, NA),
-                    statistic  = c(tpF$F, tpend$F, object$gmm$Jtest["statistic"]),
+  out      <- NULL
+  if (object$model.info$estimator %in% c("JIVE", "JIVE2")) {
+    ## Weak instrument test
+    tpF    <- fFstat(y = endo, X = ins, index = index, igroup = igr, ngroup = M, HAC = HACnum)
+    ## Endogeneity test
+    
+    
+    out    <- cbind(df1        = c(rep(tpF$df1, ntau), object$gmm$Jtest["df"]),
+                    df2        = c(rep(tpF$df2, ntau), NA),
+                    statistic  = c(tpF$F, object$gmm$Jtest["statistic"]),
                     "p-value"  = object$gmm$Jtest["p-value"])
-  out[-ntau - 2, 4] <- pf(out[-ntau - 2, 3], out[-ntau - 2, 1], out[-ntau - 2, 2], lower.tail = FALSE)
-  rn            <- "Weak instruments"
-  if (ntau > 1) {
-    rn          <- paste0(rn, " (", cnendo, ")")
+    out[-ntau - 1, 4] <- pf(out[-ntau - 1, 3], out[-ntau - 1, 1], out[-ntau - 1, 2], lower.tail = FALSE)
+    rn            <- "Weak many instruments"
+    if (ntau > 1) {
+      rn          <- paste0(rn, " (", cnendo, ")")
+    }
+    rn            <- c(rn, "Hansen's J-test")
+    rownames(out) <- rn
+  } else {
+    ## Weak instrument test
+    tpF    <- fFstat(y = endo, X = ins, index = index, igroup = igr, ngroup = M, HAC = HACnum)
+    
+    ## Endogeneity test
+    tpend  <- fFstat(y = y, X = cbind(tpF$ru, endo, X), index = (0:(ntau - 1)), igroup = igr, ngroup = M, HAC = HACnum)
+    
+    out    <- cbind(df1        = c(rep(tpF$df1, ntau) , tpend$df1, object$gmm$Jtest["df"]),
+                      df2        = c(rep(tpF$df2, ntau), tpend$df2, NA),
+                      statistic  = c(tpF$F, tpend$F, object$gmm$Jtest["statistic"]),
+                      "p-value"  = object$gmm$Jtest["p-value"])
+    out[-ntau - 2, 4] <- pf(out[-ntau - 2, 3], out[-ntau - 2, 1], out[-ntau - 2, 2], lower.tail = FALSE)
+    rn            <- "Weak instruments"
+    if (ntau > 1) {
+      rn          <- paste0(rn, " (", cnendo, ")")
+    }
+    rn            <- c(rn, "Wu-Hausman", "Hansen's J-test")
+    rownames(out) <- rn
   }
-  rn            <- c(rn, "Wu-Hausman", "Hansen's J-test")
-  rownames(out) <- rn
   out
 }

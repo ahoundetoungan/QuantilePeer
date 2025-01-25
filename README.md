@@ -159,7 +159,7 @@ summary(M8, diagnostic = TRUE)
 ```
 In the new results, the estimates seem reliable. For the dependent variable `y1`, the conformity parameter is not significant because the data are simulated by assuming complementarity.
 
-The `qpeer` function offers several useful options, including changing the weight of the GMM estimator, controlling for subnet fixed effects, and accounting for heteroskedasticity. The GMM weight can be controlled through the `gmm.weight` argument. The default value `"IV"` corresponds to the standard instrumental variable (IV) weight. It is also possible to use the identity matrix (`gmm.weight = "ident"`) and the optimal GMM weight (`gmm.weight = "optimal"`).
+The `qpeer` function offers several useful options, including changing type of GMM estimator, controlling for subnet fixed effects, and accounting for heteroskedasticity. The type GMM estimator can be controlled through the `estimator` argument. The default value `"IV"` corresponds to the standard instrumental variable (IV). It is also possible to use the GMM estimator with the identity matrix as weight (`estimator = "gmm.identity"`) and the optimal GMM weight (`estimator = "gmm.optimal"`). Jackknife estimators (type 1 and type 2) are also available (`estimator = "JIVE"` or `estimator = "JIVE2"`). 
 
 The `fixed.effects` argument can be used to specify how to control for subnet fixed effects. The default value is `FALSE` or `"no"` to indicate that there are no fixed effects. Two levels of subnet fixed effects are possible: a single fixed effect per subnet (`fixed.effects = "join"`) and double fixed effects per subnet (`fixed.effects = "separate"`), each for isolated and non-isolated individuals (see [Houndetoungan et al., 2024](https://doi.org/10.48550/arXiv.2405.06850)). For the structural specification, the fixed effects are necessarily double per subnet.
 
@@ -167,12 +167,12 @@ The `HAC` argument can indicate the covariance structure of errors. The default 
 
 ```R
 M9  <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
-             structural = FALSE, gmm.weight = "optimal", fixed.effects = "separate", 
+             structural = FALSE, estimator = "gmm.optimal", fixed.effects = "separate", 
              HAC = "hetero")
 summary(M9, diagnostic = TRUE)
 
 M10 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau,
-             structural = TRUE, gmm.weight = "optimal", fixed.effects = "separate", 
+             structural = TRUE, estimator = "gmm.optimal", fixed.effects = "separate", 
              HAC = "hetero")
 summary(M10, diagnostic = TRUE)
 ```
@@ -188,7 +188,7 @@ Gn  <- norm.network(G)
 GX  <- peer.avg(Gn, X)
 GGX <- peer.avg(Gn, GX)
 M11 <- linpeer(formula = y2 ~ X, excluded.instruments = ~ GX + GGX, Glist = Gn, 
-               structural = TRUE, gmm.weight = "optimal", fixed.effects = "separate", 
+               structural = TRUE, estimator = "gmm.optimal", fixed.effects = "separate", 
                HAC = "hetero")
 summary(M11, diagnostic = TRUE)
 ```
@@ -202,7 +202,7 @@ Gy2 <- peer.avg(Gn, y2)
 qy2 <- qpeer.inst(formula = y2 ~ 1, Glist = G, tau = tau[1])$qy 
 M12 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + GX + GGX, 
                endogenous.variables = ~ Gy2 + qy2, Glist = G, structural = TRUE, 
-               gmm.weight = "optimal", fixed.effects = "separate", HAC = "hetero")
+               estimator = "gmm.optimal", fixed.effects = "separate", HAC = "hetero")
 summary(M12, diagnostic = TRUE)
 ```
 Thank you for reading this documentation. Please use the [Issues](https://github.com/ahoundetoungan/QtNet/issues) page to report any problems. If you use **QtNet** in your publications, kindly cite it using `citation("QtNet")`.

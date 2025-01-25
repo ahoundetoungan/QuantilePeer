@@ -1,10 +1,9 @@
-// [[Rcpp::depends(RcppArmadillo)]]
-
+// [[Rcpp::depends(RcppArmadillo, RcppEigen)]]
 #include <RcppArmadillo.h>
 //#define NDEBUG
 // #include <RcppNumerical.h>
-// #include <RcppEigen.h>
-
+#include <RcppEigen.h>
+// typedef Eigen::Array<bool, Eigen::Dynamic, 1> ArrayXb;
 // typedef Eigen::Map<Eigen::MatrixXd> MapMatr;
 // typedef Eigen::Map<Eigen::VectorXd> MapVect;
 
@@ -16,51 +15,19 @@ using namespace std;
 
 // This function removes columns to obtain full rank matrices
 //[[Rcpp::export]]
-arma::uvec fcheckrankcpp(const arma::mat& X, const double& tol = 1e-10) {
-  arma::rowvec s(arma::stddev(X, 1, 0)), m(arma::mean(X, 0));
-  m.elem(arma::find(s < tol)).zeros();
-  s.elem(arma::find(s < tol)).ones();
-  arma::mat U((X.each_row() - m).each_row()/s);
-  U = U.t()*U/U.n_rows; 
-  arma::mat Q, R;
-  arma::qr(Q, R, U);
-  return arma::find(arma::abs(R.diag()) > tol);
+Eigen::Array<bool, Eigen::Dynamic, 1> fcheckrankEigen(const Eigen::MatrixXd& X, const double& tol = 1e-10) {
+  int n(X.rows());
+  Eigen::RowVectorXd m(X.colwise().mean());
+  Eigen::RowVectorXd s(((X.rowwise() - m).array().square().colwise().sum() / n).sqrt());
+  m = (s.array() < tol).select(0, m);
+  s = (s.array() < tol).select(1, s);
+  Eigen::MatrixXd U((X.rowwise() - m).array().rowwise() / s.array());
+  U = U.transpose()*U/n;
+  Eigen::HouseholderQR<Eigen::MatrixXd> qr(U);
+  Eigen::MatrixXd R(qr.matrixQR().topRows(U.cols()));
+  // std::cout<<R.diagonal().transpose()<<std::endl;
+  return R.diagonal().array().abs() > tol;
 }
-
-
-arma::uvec fcheckrankcpp_this_is_slower(const arma::mat& X) {
-  arma::rowvec m(arma::mean(X, 0)), s(arma::stddev(X, 1, 0));
-  s.elem(arma::find(s == 0)).ones();
-  arma::mat U((X.each_row() - m).each_row()/s);
-  U = U.t()*U/X.n_rows;
-
-  int Kx(X.n_cols), Rout(arma::rank(U));
-  unsigned int tp(1);
-  arma::uvec out(arma::ones<arma::uvec>(Kx));
-  if (Rout < Kx) {
-    for (int k(0); k < Kx; ++ k) {
-      arma::mat Up(U.cols(arma::find(out.head(k + 1) == 1)));
-      if (arma::rank(Up) != tp) {
-        out(k) = 0;
-      } else {
-        ++ tp;
-      }
-    }
-  }
-  return arma::find(out == 1);
-}
-
-
-// This function computes the matrix that will be used tfor the qr decomp
-//[[Rcpp::export]]
-arma::mat fmatforrank(const arma::mat& X, const double& tol = 1e-10) {
-  arma::rowvec s(arma::stddev(X, 1, 0)), m(arma::mean(X, 0));
-  m.elem(arma::find(s < tol)).zeros();
-  s.elem(arma::find(s < tol)).ones();
-  arma::mat U((X.each_row() - m).each_row()/s);
-  return U.t()*U/U.n_rows;
-}
-
 
 // demean
 //[[Rcpp::export]]
@@ -78,33 +45,26 @@ arma::mat demean(arma::mat X,
 //[[Rcpp::export]]
 arma::mat demean_separate(arma::mat X,
                           const arma::mat& igroup,
-                          const arma::uvec& Is,
+                          const Rcpp::List& LIs,
+                          const Rcpp::List& LnIs,
                           const int & ngroup,
                           const int& n) {
-  arma::uvec isnIs = arma::ones<arma::uvec>(n);
-  isnIs.elem(Is).zeros();
   for (int r(0); r < ngroup; ++ r) {
-    int n1(igroup(r, 0)), n2(igroup(r, 1));
-    arma::mat Xm(X.rows(n1, n2));
-    arma::uvec tp(isnIs.subvec(n1, n2));
+    arma::uvec Isr(LIs[r]), nIsr(LnIs[r]);
     // For isolated
-    arma::uvec itp(arma::find(tp == 0));
-    if (itp.n_elem > 0) {
-      arma::mat Xm1 = Xm.rows(itp);
-      Xm1.each_row() -= arma::mean(Xm1, 0);
-      Xm.rows(itp) = Xm1;
+    if (Isr.n_elem > 0) {
+      arma::mat Xr(X.rows(Isr));
+      X.rows(Isr) = Xr.each_row() - arma::mean(Xr, 0);
     }
     // For non-isolated
-    itp = arma::find(tp != 0);
-    if (itp.n_elem > 0) {
-      arma::mat Xm1 = Xm.rows(itp);
-      Xm1.each_row() -= arma::mean(Xm1, 0);
-      Xm.rows(itp) = Xm1;
+    if (nIsr.n_elem > 0) {
+      arma::mat Xr(X.rows(nIsr));
+      X.rows(nIsr) = Xr.each_row() - arma::mean(Xr, 0);
     }
-    X.rows(n1, n2) = Xm;
   }
   return X;
 }
+
 
 // data for the diagnostic function
 //[[Rcpp::export]]
@@ -116,8 +76,9 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
                            const arma::uvec& idX1,
                            const arma::uvec& idX2,
                            const arma::mat& igroup,
-                           const arma::uvec& Is,
                            const arma::uvec& nIs,
+                           const Rcpp::List& LIs,
+                           const Rcpp::List& LnIs,
                            const int& n,
                            const int & ngroup,
                            const int& ntau,
@@ -139,10 +100,10 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
     X    = demean(X, igroup, ngroup);
     ins  = demean(ins, igroup, ngroup);
   } else if(FE == "separate") {
-    y    = demean_separate(y, igroup, Is, ngroup, n);
-    endo = demean_separate(endo, igroup, Is, ngroup, n);
-    X    = demean_separate(X, igroup, Is, ngroup, n);
-    ins  = demean_separate(ins, igroup, Is, ngroup, n);
+    y    = demean_separate(y, igroup, LIs, LnIs, ngroup, n);
+    endo = demean_separate(endo, igroup, LIs, LnIs, ngroup, n);
+    X    = demean_separate(X, igroup, LIs, LnIs, ngroup, n);
+    ins  = demean_separate(ins, igroup, LIs, LnIs, ngroup, n);
   }
   
   arma::uvec nvecnIs(ngroup);
@@ -151,16 +112,101 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
     endo   = endo.rows(nIs);
     X      = X.rows(nIs);
     ins    = ins.rows(nIs);
-    arma::uvec isnIs(arma::ones<arma::uvec>(n));
-    isnIs.elem(Is).zeros();
-    for (int r(0); r < ngroup; ++ r) {
-      int n1(igroup(r, 0)), n2(igroup(r, 1));
-      nvecnIs(r) = sum(isnIs.subvec(n1, n2));
-    }
   }
-
-  return Rcpp::List::create(_["nvecnIs"] = nvecnIs, _["y"] = y, _["endo"] = endo, _["X"] = X, _["ins"] = ins);
+  
+  return Rcpp::List::create(_["y"] = y, _["endo"] = endo, _["X"] = X, _["ins"] = ins);
 }
+
+// //[[Rcpp::export]]
+// arma::uvec fcheckrankcpp(const arma::mat& X, const double& tol = 1e-10) {
+//   arma::rowvec s(arma::stddev(X, 1, 0)), m(arma::mean(X, 0));
+//   m.elem(arma::find(s < tol)).zeros();
+//   s.elem(arma::find(s < tol)).ones();
+//   arma::mat U((X.each_row() - m).each_row()/s);
+//   U = U.t()*U/U.n_rows; 
+//   arma::mat Q, R;
+//   arma::qr(Q, R, U);
+//   return arma::find(arma::abs(R.diag()) > tol);
+// }
+// 
+// 
+// arma::uvec fcheckrankcpp_this_is_slower(const arma::mat& X) {
+//   arma::rowvec m(arma::mean(X, 0)), s(arma::stddev(X, 1, 0));
+//   s.elem(arma::find(s == 0)).ones();
+//   arma::mat U((X.each_row() - m).each_row()/s);
+//   U = U.t()*U/X.n_rows;
+// 
+//   int Kx(X.n_cols), Rout(arma::rank(U));
+//   unsigned int tp(1);
+//   arma::uvec out(arma::ones<arma::uvec>(Kx));
+//   if (Rout < Kx) {
+//     for (int k(0); k < Kx; ++ k) {
+//       arma::mat Up(U.cols(arma::find(out.head(k + 1) == 1)));
+//       if (arma::rank(Up) != tp) {
+//         out(k) = 0;
+//       } else {
+//         ++ tp;
+//       }
+//     }
+//   }
+//   return arma::find(out == 1);
+// }
+// 
+// 
+// // This function computes the matrix that will be used tfor the qr decomp
+// //[[Rcpp::export]]
+// arma::mat fmatforrankarma(const arma::mat& X, const double& tol = 1e-10) {
+//   arma::rowvec s(arma::stddev(X, 1, 0)), m(arma::mean(X, 0));
+//   m.elem(arma::find(s < tol)).zeros();
+//   s.elem(arma::find(s < tol)).ones();
+//   arma::mat U((X.each_row() - m).each_row()/s);
+//   return U.t()*U/U.n_rows;
+// }
+// 
+// //[[Rcpp::export]]
+// Eigen::MatrixXd fmatforrank(const Eigen::MatrixXd& X, const double& tol = 1e-10) {
+//   int n(X.rows());
+//   Eigen::RowVectorXd m(X.colwise().mean());
+//   Eigen::RowVectorXd s(((X.rowwise() - m).array().square().colwise().sum() / n).sqrt());
+//   m = (s.array() < tol).select(0, m);
+//   s = (s.array() < tol).select(1, s);
+//   Eigen::MatrixXd U((X.rowwise() - m).array().rowwise() / s.array());
+//   return U.transpose()*U/n;
+// }
+// 
+// 
+// //[[Rcpp::export]]
+// Eigen::MatrixXd demean(Eigen::MatrixXd& X,
+//                        const Eigen::MatrixXi& igroup,
+//                        const int & ngroup) {
+//   for (int r(0); r < ngroup; ++ r) {
+//     int n1(igroup(r, 0)), n2(igroup(r, 1));
+//     X(Eigen::seq(n1, n2), Eigen::all).rowwise() -= X(Eigen::seq(n1, n2), Eigen::all).colwise().mean();
+//   }
+//   return X;
+// }
+
+// // demean for the structural model
+// //[[Rcpp::export]]
+// Eigen::MatrixXd demean_separate(Eigen::MatrixXd& X,
+//                                 const Eigen::MatrixXi& igroup,
+//                                 const LVectorXi& LIs,
+//                                 const LVectorXi& LnIs,
+//                                 const int & ngroup,
+//                                 const int& n) {
+//   for (int r(0); r < ngroup; ++ r) {
+//     Eigen::VectorXi Isr(LIs[r]), nIsr(LnIs[r]);
+//     // For isolated
+//     if (Isr.size() > 0) {
+//       X(Isr, Eigen::all).rowwise() -= X(Isr, Eigen::all).colwise().mean();
+//     }
+//     // For non-isolated
+//     if (nIsr.size() > 0) {
+//       X(nIsr, Eigen::all).rowwise() -= X(nIsr, Eigen::all).colwise().mean();
+//     }
+//   }
+//   return X;
+// }
 
 // // from unconstrained parameters to constrained parameters
 // // The first lambda is the sum of lambda2
@@ -273,4 +319,59 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
 //   // Derivative with respect to beta
 //   out.tail_cols(Kx) = -arma::trans(arma::sum(X.rows(Is), 0) + arma::sum(X.rows(nIs), 0)*(1 - lambda(0)));
 //   return out.t()/n;
+// }
+
+// //[[Rcpp::export]]
+// Rcpp::List fdatadiagnostic(arma::vec& y,
+//                            arma::mat& endo,
+//                            arma::mat& X,
+//                            arma::mat& ins,
+//                            const arma::vec& theta,
+//                            const arma::uvec& idX1,
+//                            const arma::uvec& idX2,
+//                            const arma::mat& igroup,
+//                            const arma::uvec& Is,
+//                            const arma::uvec& nIs,
+//                            const int& n,
+//                            const int & ngroup,
+//                            const int& ntau,
+//                            const bool& struc,
+//                            const std::string& FE) {
+//   if (struc) {
+//     arma::vec xb(X.cols(idX1)*theta.elem(idX1 + ntau + 1));
+//     if (idX2.n_elem == 0) {
+//       X = xb;
+//     } else {
+//       X = arma::join_rows(xb, X.cols(idX2));
+//     }
+//     ins = arma::join_rows(xb, ins);
+//   }
+//   
+//   if (FE == "join") {
+//     y    = demean(y, igroup, ngroup);
+//     endo = demean(endo, igroup, ngroup);
+//     X    = demean(X, igroup, ngroup);
+//     ins  = demean(ins, igroup, ngroup);
+//   } else if(FE == "separate") {
+//     y    = demean_separate(y, igroup, Is, ngroup, n);
+//     endo = demean_separate(endo, igroup, Is, ngroup, n);
+//     X    = demean_separate(X, igroup, Is, ngroup, n);
+//     ins  = demean_separate(ins, igroup, Is, ngroup, n);
+//   }
+//   
+//   arma::uvec nvecnIs(ngroup);
+//   if (struc) {
+//     y      = y.elem(nIs);
+//     endo   = endo.rows(nIs);
+//     X      = X.rows(nIs);
+//     ins    = ins.rows(nIs);
+//     arma::uvec isnIs(arma::ones<arma::uvec>(n));
+//     isnIs.elem(Is).zeros();
+//     for (int r(0); r < ngroup; ++ r) {
+//       int n1(igroup(r, 0)), n2(igroup(r, 1));
+//       nvecnIs(r) = sum(isnIs.subvec(n1, n2));
+//     }
+//   }
+//   
+//   return Rcpp::List::create(_["nvecnIs"] = nvecnIs, _["y"] = y, _["endo"] = endo, _["X"] = X, _["ins"] = ins);
 // }

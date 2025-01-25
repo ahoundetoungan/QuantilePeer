@@ -13,3 +13,9 @@
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) 
 PKG_CPPFLAGS = -DARMA_64BIT_WORD=1
 PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+CXX11FLAGS+=-Wno-ignored-attributes
+CXX14FLAGS+=-Wno-ignored-attributes
+XTRAFLAGS=-Wno-ignored-attributes
+CFLAGS= -g -O3 -Wall -pipe $(PEDANTIC) $(XTRAFLAGS) -std=gnu99
+

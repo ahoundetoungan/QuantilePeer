@@ -183,7 +183,13 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @param fixed.effects A logical value or string specifying whether the model includes subnet fixed effects. The fixed effects may differ between isolated and non-isolated nodes. Accepted values are `"no"` or `"FALSE"` (indicating no fixed effects), 
 #' `"join"` or `TRUE` (indicating the same fixed effects for isolated and non-isolated nodes within each subnet), and `"separate"` (indicating different fixed effects for isolated and non-isolated nodes within each subnet). Note that `"join"` fixed effects are not applicable for structural models; 
 #' `"join"` and `TRUE` are automatically converted to `"separate"`.
-#' @param gmm.weight A character string specifying the GMM weight: either `"IV"` for the standard instrumental variable weight, `"optimal"` for the optimal GMM weight, or `"ident"` for the identity matrix.
+#' @param estimator A character string specifying the estimator to be used. The available options are:
+#' `"IV"` for the standard instrumental variable estimator,
+#' `"gmm.identity"` for the GMM estimator with the identity matrix as the weight,
+#' `"gmm.optimal"` for the GMM estimator with the optimal weight matrix,
+#' `"JIVE"` for the Jackknife instrumental variable estimator, and
+#' `"JIVE2"` for the Type 2 Jackknife instrumental variable estimator.
+#' @param compute.cov A logical value indicating whether the covariance matrix of the estimator should be computed.
 #' @param HAC A character string specifying the correlation structure among the idiosyncratic error terms for covariance computation. Options are `"iid"` for independent errors, `"hetero"` for heteroskedastic non-autocorrelated errors, and `"cluster"` for heteroskedastic errors with potential within-subnet correlation.
 #' @param checkrank A logical value indicating whether the instrument matrix should be checked for full rank. If the matrix is not of full rank, unimportant columns will be removed to obtain a full-rank matrix.
 #' @description
@@ -273,7 +279,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' ## and controlling for heteroskedasticity
 #' sesto <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau,
 #'                structural = TRUE, fixed.effects = "separate", HAC = "hetero", 
-#'                gmm.weight = "optimal")
+#'                estimator = "gmm.optimal")
 #' summary(sesto, diagnostic = TRUE)
 #' 
 #' ## Average peer effect model
@@ -322,16 +328,17 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @importFrom stats pchisq
 #' @export
 qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data, 
-                        gmm.weight = "IV", structural = FALSE, fixed.effects = FALSE, 
-                        HAC = "iid", checkrank = FALSE, tol = 1e-10){
+                        estimator = "IV", structural = FALSE, fixed.effects = FALSE, 
+                        HAC = "iid", checkrank = FALSE, compute.cov = TRUE, tol = 1e-10){
   # Quantiles
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   ntau       <- length(tau)
   
-  # GMM weight
-  gmm.weight <- tolower(gmm.weight)
-  stopifnot(gmm.weight %in% c("iv", "optimal", "ident"))
+  # Estimator
+  estimator <- tolower(estimator)
+  stopifnot(estimator %in% c("iv", "gmm.optimal", "gmm.identity", "jive", "jive2"))
+  estimator <- c("IV", "GMM.optimal", "GMM.identity", "JIVE", "JIVE2")[estimator == c("iv", "gmm.optimal", "gmm.identity", "jive", "jive2")]
   
   # Variance structure
   HAC        <- tolower(HAC[1])
@@ -345,6 +352,10 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   if (fixed.effects == TRUE | fixed.effects == "yes") fixed.effects <- "join"
   if (structural & fixed.effects != "no") fixed.effects <- "separate"
   FEnum = (0:2)[fixed.effects == c("no", "join", "separate")]
+  if ((HACnum == 1) & (FEnum != 0)) {
+    HACnum   <- 2
+    HAC      <- "cluster"
+  }
   
   # Network
   if (!is.list(Glist)) {
@@ -357,7 +368,9 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   nvec     <- dg$nvec
   n        <- dg$n
   igr      <- dg$igr
+  lIs      <- dg$lIs
   Is       <- dg$Is
+  lnIs     <- dg$lnIs
   nIs      <- dg$nIs
   dg       <- dg$dg
   
@@ -400,10 +413,10 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
       X      <- demean(X, igroup = igr, ngroup = M)
       ins    <- demean(ins, igroup = igr, ngroup = M)
     } else {
-      y      <- c(demean_separate(as.matrix(y), igroup = igr, Is = Is, ngroup = M, n = n))
-      qy     <- demean_separate(qy, igroup = igr, Is = Is, ngroup = M, n = n)
-      X      <- demean_separate(X, igroup = igr, Is = Is, ngroup = M, n = n)
-      ins    <- demean_separate(ins, igroup = igr, Is = Is, ngroup = M, n = n)
+      y      <- c(demean_separate(as.matrix(y), igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n))
+      qy     <- demean_separate(qy, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+      X      <- demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+      ins    <- demean_separate(ins, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
     }
     colnames(X)   <- xname
     colnames(ins) <- zename
@@ -413,10 +426,10 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   idX1       <- 0:(ncol(X) - 1)
   tlm        <- idX1
   if (structural) {
-    idX1     <- c(fcheckrank(X = X[Is + 1,], tol = tol))
-    tlm      <- c(fcheckrank(X = X[nIs + 1,], tol = tol))
+    idX1     <- fcheckrank(X = X[Is + 1,], tol = tol)
+    tlm      <- fcheckrank(X = X[nIs + 1,], tol = tol)
   } else {
-    tlm      <- c(fcheckrank(X = X, tol = tol))
+    tlm      <- fcheckrank(X = X, tol = tol)
   }
   idX2       <- which(!(tlm %in% idX1)) - 1 
   idX1       <- which(tlm %in% idX1) - 1 
@@ -425,9 +438,9 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   xname      <- xname[tlm + 1]
   Kx         <- ncol(X)
   if (structural) {
-    if (length(c(fcheckrank(X = cbind(qy, X)[nIs + 1,], tol = tol))) != (ntau + Kx)) stop("The design matrix is not full rank.")
+    if (length(fcheckrank(X = cbind(qy, X)[nIs + 1,], tol = tol)) != (ntau + Kx)) stop("The design matrix is not full rank.")
   } else {
-    if (length(c(fcheckrank(X = cbind(qy, X), tol = tol))) != (ntau + Kx)) stop("The design matrix is not full rank.")
+    if (length(fcheckrank(X = cbind(qy, X), tol = tol)) != (ntau + Kx)) stop("The design matrix is not full rank.")
   }
   
 
@@ -436,14 +449,14 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
     ins0     <- cbind(X0[, idX2 + 1], ins0)
     zename   <- c(xname[idX2 + 1], zename)
     if (checkrank) {
-      tlm      <- c(fcheckrank(X = ins[nIs + 1,], tol = tol))
+      tlm      <- fcheckrank(X = ins[nIs + 1,], tol = tol)
     }
   } else {
     ins      <- cbind(X, ins)
     ins0     <- cbind(X0, ins0)
     zename   <- c(xname, zename)
     if (checkrank) {
-      tlm      <- c(fcheckrank(X = ins, tol = tol))
+      tlm      <- fcheckrank(X = ins, tol = tol)
     }
   }
   if (checkrank) {
@@ -455,7 +468,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   
   # GMM
   GMMe       <- list()
-  iv         <- (gmm.weight %in% c("iv", "optimal"))
+  iv         <- (estimator %in% c("IV", "GMM.optimal"))
   estname    <- NULL
   Kest       <- NULL
   if (structural) {
@@ -467,60 +480,31 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
     if (length(Is) <= Kest1) stop("Insufficient number of isolated nodes for estimating the structural model.")
     if (length(nIs) <= Kest2) stop("Insufficient number of nonisolated nodes for estimating the structural model.")
     Kest     <- Kest1 + Kest2
-    if (HACnum == 2 && (Kx1 >= MIs || Kins + 1 >= MnIs)) {
-      warning("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. HAC is set to 'hetero'.")
-      HACnum <- 1
-      HAC    <- "hetero"
+    if (HACnum == 2 && (Kx1 >= MIs || Kins + 1 >= MnIs) && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
+      stop("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. HAC is set to 'iid' or 'hetero'.")
     }
     estname  <- c(paste0(yname, paste0("_q", c("(conformity)", 1:ntau))), xname)
     
     # Estimation
-    GMMe     <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = diag(Kx1), W2 = diag(Kins + 1), idX1 = idX1, 
-                           idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igroup = igr, nIs = nIs, Is = Is, ngroup = M, 
-                           Kins = Kins, Kx = Kx, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = iv)
-    if (gmm.weight == "optimal" & HACnum != 0) {
-      GMMe   <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = solve(GMMe$VF1), W2 = solve(GMMe$VF2), idX1 = idX1, 
-                           idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igroup = igr, nIs = nIs, Is = Is, ngroup = M, Kins = Kins, 
-                           Kx = Kx, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = FALSE)
-    }
-    Vpa        <- fStructParam(param = c(GMMe$beta, GMMe$lambda), covp = GMMe$Vpa, idX1 = idX1, idX2 = idX2, 
-                             ntau = ntau, Kx = Kx, Kx1 = Kx1, Kx2 = Kx2)
-    GMMe$parms <- c(Vpa$theta)
-    GMMe$Vpa   <- Vpa$Vpa
+    GMMe     <- fstruct(y = y, X = X, qy = qy, ins = ins, idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igr = igr, 
+                        nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, M = M, Kins = Kins, Kx = Kx, ntau = ntau, 
+                        Kest = Kest, n = n, HACnum = HACnum, iv = iv, estimator = estimator, compute.cov = compute.cov, 
+                        estname = estname)
   } else {
     if (Kins < Kx + ntau) stop("Insufficient number of instruments: the model is not identified.")
     Kest     <- ifelse(FEnum == 0, Kx + ntau, ifelse(FEnum == 1, Kx + ntau + M, Kx + ntau + MIs + MnIs))
     if (n <= Kest) stop("Insufficient number of observations.")
-    if (HACnum == 2 && Kins >= M) {
-      warning("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. HAC is set to 'hetero'.")
-      HACnum <- 1
-      HAC    <- "hetero"
+    if (HACnum == 2 && Kins >= M && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
+      stop("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. HAC is set to 'iid' or 'hetero'.")
     }
     estname  <- c(paste0(yname, paste0("_q", 1:ntau)), xname)
     V        <- cbind(qy, X)
     
     # Estimation
-    GMMe     <- fgmm_red(y = y, V = V, ins = ins, W = diag(Kins), igroup = igr, ngroup = M, 
-                         Kx = Kx, Kins = Kins, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = iv)
-    if (gmm.weight == "optimal" & HACnum != 0) {
-      GMMe   <- fgmm_red(y = y, V = V, ins = ins, W = solve(GMMe$VZe), igroup = igr, ngroup = M, Kx = Kx, 
-                         Kins = Kins, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = FALSE)
-    }
+    GMMe     <- freduce(y = y, V = V, ins = ins, igr = igr, nvec = nvec, M = M, Kins = Kins, Kx = Kx, ntau = ntau, 
+                        Kest = Kest, n = n, HACnum = HACnum, iv = iv, estimator = estimator, compute.cov = compute.cov, 
+                        estname = estname)
   }
-  fv         <- c(GMMe$yhat)
-  res        <- y - fv
-  rs         <- sum((fv - mean(fv))^2)/sum((y - mean(y))^2)
-  ars        <- 1 - (1 -rs)*(n - 1)/(n - length(c(GMMe$parms)))
-  sigma      <- sqrt(GMMe$sigma2);  if(is.na(sigma)) sigma = NULL
-  GMMe       <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
-                     residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
-                     Jtest = c("statistic" = GMMe$Overident, "df" = as.integer(GMMe$df)))
-  names(GMMe$Estimate)  <- estname
-  colnames(GMMe$cov)    <- estname
-  rownames(GMMe$cov)    <- estname
-  GMMe$Jtest["p-value"] <- ifelse(GMMe$Jtest["df"] > 0, 1 - pchisq(GMMe$Jtest["statistic"], GMMe$Jtest["df"]), NA)
-  
-
   if (ntau == 1) {
     colnames(qy0) <- paste0(yname, "_q")
   } else {
@@ -529,7 +513,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   
   out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
                                        excluded.instruments = excluded.instruments, tau = tau, ntau = ntau, type = type, 
-                                       gmm.weight = gmm.weight, fixed.effects = fixed.effects, idX1 = idX1 + 1,  
+                                       estimator = estimator, fixed.effects = fixed.effects, idX1 = idX1 + 1,  
                                        idX2 = idX2 + 1, HAC = HAC),
                     gmm         = GMMe,
                     data        = list(y = y0, qy = qy0, X = X0, instruments = ins0, isolated = Is + 1, 
@@ -572,8 +556,11 @@ summary.qpeer <- function(object, diagnostic = FALSE, diagnostics = FALSE, ...) 
 #' @export
 print.summary.qpeer <- function(x, ...) {
   ntau <- x$model.info$ntau
-  gmmw <- x$model.info$gmm.weight
-  gmmw <- ifelse(gmmw == "ident", "Identity Matrix", ifelse(gmmw == "optimal", "Optimal", "IV"))
+  esti <- x$model.info$estimator
+  esti <- ifelse(esti == "GMM.identity", "GMM (Weight: Identity Matrix)", 
+                 ifelse(esti == "GMM.optimal", "GMM (Weight: Optimal)",
+                        ifelse(esti == "IV", "IV", 
+                               ifelse(esti == "JIVE", "JIVE", "JIVE2"))))
   hete <- x$model.info$HAC
   hete <- ifelse(hete == "iid", "IID", ifelse(hete == "hetero", "Individual", "Cluster"))
   sig  <- x$gmm$sigma
@@ -581,6 +568,7 @@ print.summary.qpeer <- function(x, ...) {
   cat("Formula: ", as.character(x$model.info$formula),
       "\nExcluded instruments: ", as.character(x$model.info$excluded.instruments), 
       "\n\nModel: ", ifelse(x$model.info$structural, "Structural", "Reduced Form"),
+      "\nEstimator: ", esti,
       "\nFixed effects: ", paste0(toupper(substr(FE, 1, 1)), tolower(substr(FE, 2, nchar(FE)))), "\n", sep = "")
   
   cat("Quantile type: ", x$model.info$type,
@@ -600,7 +588,7 @@ print.summary.qpeer <- function(x, ...) {
     fprintcoeft(coef) 
   }
   cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n\n")
-  cat("GMM weight: ", gmmw, ", HAC: ", hete, sep = "")
+  cat("HAC: ", hete, sep = "")
   if (!is.null(sig)) {
     cat(", sigma: ", format(sig, digits = 5), sep = "")
   }

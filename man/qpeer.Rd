@@ -12,11 +12,12 @@ genpeer(
   endogenous.variables,
   Glist,
   data,
-  gmm.weight = "IV",
+  estimator = "IV",
   structural = FALSE,
   fixed.effects = FALSE,
   HAC = "iid",
   checkrank = FALSE,
+  compute.cov = TRUE,
   tol = 1e-10
 )
 
@@ -25,11 +26,12 @@ linpeer(
   excluded.instruments,
   Glist,
   data,
-  gmm.weight = "IV",
+  estimator = "IV",
   structural = FALSE,
   fixed.effects = FALSE,
   HAC = "iid",
   checkrank = FALSE,
+  compute.cov = TRUE,
   tol = 1e-10
 )
 
@@ -40,11 +42,12 @@ qpeer(
   tau,
   type = 7,
   data,
-  gmm.weight = "IV",
+  estimator = "IV",
   structural = FALSE,
   fixed.effects = FALSE,
   HAC = "iid",
   checkrank = FALSE,
+  compute.cov = TRUE,
   tol = 1e-10
 )
 }
@@ -63,7 +66,12 @@ or a combination of multiple variables. It should be specified as \code{~ y1 + y
 \item{data}{An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 in the model. If not found in \code{data}, the variables are taken from \code{environment(formula)}, typically the environment from which \code{qpeer} is called.}
 
-\item{gmm.weight}{A character string specifying the GMM weight: either \code{"IV"} for the standard instrumental variable weight, \code{"optimal"} for the optimal GMM weight, or \code{"ident"} for the identity matrix.}
+\item{estimator}{A character string specifying the estimator to be used. The available options are:
+\code{"IV"} for the standard instrumental variable estimator,
+\code{"gmm.identity"} for the GMM estimator with the identity matrix as the weight,
+\code{"gmm.optimal"} for the GMM estimator with the optimal weight matrix,
+\code{"JIVE"} for the Jackknife instrumental variable estimator, and
+\code{"JIVE2"} for the Type 2 Jackknife instrumental variable estimator.}
 
 \item{structural}{A logical value indicating whether the reduced-form or structural specification should be estimated (see details).}
 
@@ -74,6 +82,8 @@ in the model. If not found in \code{data}, the variables are taken from \code{en
 \item{HAC}{A character string specifying the correlation structure among the idiosyncratic error terms for covariance computation. Options are \code{"iid"} for independent errors, \code{"hetero"} for heteroskedastic non-autocorrelated errors, and \code{"cluster"} for heteroskedastic errors with potential within-subnet correlation.}
 
 \item{checkrank}{A logical value indicating whether the instrument matrix should be checked for full rank. If the matrix is not of full rank, unimportant columns will be removed to obtain a full-rank matrix.}
+
+\item{compute.cov}{A logical value indicating whether the covariance matrix of the estimator should be computed.}
 
 \item{tol}{A tolerance value used in the QR factorization to identify columns of explanatory variable and instrument matrices that ensure a full-rank matrix (see the \link[base]{qr} function).}
 
@@ -170,7 +180,7 @@ summary(sest, diagnostic = TRUE)
 ## and controlling for heteroskedasticity
 sesto <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau,
                structural = TRUE, fixed.effects = "separate", HAC = "hetero", 
-               gmm.weight = "optimal")
+               estimator = "gmm.optimal")
 summary(sesto, diagnostic = TRUE)
 
 ## Average peer effect model

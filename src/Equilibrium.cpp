@@ -57,6 +57,7 @@ int ceilP(const long double& x, const unsigned int& k = 10){
 // IyP includes the indexes of sorterd yj of peers in the original y
 // cumsumgP cumulative sum of gP
 // This function computes list of gP, IyP, cumsumgP
+//[[Rcpp::export]]
 Rcpp::List fgPIyP(const arma::vec& y,
                   Rcpp::List& G,
                   const arma::vec d,
