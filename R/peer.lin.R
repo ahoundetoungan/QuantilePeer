@@ -1,7 +1,8 @@
 #' @rdname qpeer
 #' @export
 linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV", 
-                    structural = FALSE, fixed.effects = FALSE, HAC = "iid", checkrank = FALSE, 
+                    structural = FALSE, isolated = NULL, drop.falseisolated = FALSE, 
+                    fixed.effects = FALSE, HAC = "iid", checkrank = FALSE, 
                     compute.cov = TRUE, tol = 1e-10){
   # Estimator
   estimator <- tolower(estimator)
@@ -29,7 +30,10 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   if (!is.list(Glist)) {
     Glist  <- list(Glist)
   }
-  dg       <- fnetwork(Glist = Glist)
+  if (is.null(isolated) & drop.falseisolated) {
+    stop("False isolated nodes cannot be dropped if `isolated` is missing.")
+  }
+  dg       <- fnetwork(Glist = Glist, isol = isolated)
   M        <- dg$M
   MIs      <- dg$MIs
   MnIs     <- dg$MnIs
@@ -41,6 +45,7 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   Is       <- dg$Is
   lnIs     <- dg$lnIs
   nIs      <- dg$nIs
+  ldg      <- dg$ldg
   dg       <- dg$dg
   
   # Data
@@ -56,7 +61,7 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   Gy         <- as.matrix(unlist(lapply(1:M, function(m) Glist[[m]] %*% y[(ncum[m] + 1):ncum[m + 1]])))
   
   # Instruments
-  inst       <- as.formula(excluded.instruments)
+  inst       <- as.formula(excluded.instruments); excluded.instruments <- inst
   if(length(inst) != 2) stop("The `excluded.instruments` argument must be in the format ~ `z1 + z2 + ....`.")
   f.t.data   <- formula.to.data(formula = inst, data = data, fixed.effects = (fixed.effects != "no"), 
                                 simulations = TRUE)
@@ -66,6 +71,28 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
     ins      <- ins[, zename != "(Intercept)"]
   } else {
     ins      <- ins
+  }
+  
+  # Drop false isolated
+  if (drop.falseisolated) {
+    dg       <- fdropfalseiso(isol = isolated, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
+                              lnIs = lnIs, y = y, X = X, qy = Gy, ins = ins)
+    M        <- dg$M
+    MIs      <- dg$MIs
+    MnIs     <- dg$MnIs
+    nvec     <- dg$nvec
+    n        <- dg$n
+    igr      <- dg$igr
+    lIs      <- dg$lIs
+    Is       <- dg$Is
+    lnIs     <- dg$lnIs
+    nIs      <- dg$nIs
+    ldg      <- dg$ldg
+    y        <- dg$y
+    X        <- dg$X
+    Gy       <- dg$qy
+    ins      <- dg$ins
+    dg       <- dg$dg
   }
   
   # Demean fixed effect models
@@ -213,8 +240,8 @@ print.summary.linpeer <- function(x, ...) {
   hete <- ifelse(hete == "iid", "IID", ifelse(hete == "hetero", "Individual", "Cluster"))
   sig  <- x$gmm$sigma
   FE   <- x$model.info$fixed.effects
-  cat("Formula: ", as.character(x$model.info$formula),
-      "\nExcluded instruments: ", as.character(x$model.info$excluded.instruments), 
+  cat("Formula: ", deparse(x$model.info$formula),
+      "\nExcluded instruments: ", deparse(x$model.info$excluded.instruments), 
       "\n\nModel: ", ifelse(x$model.info$structural, "Structural", "Reduced Form"),
       "\nEstimator: ", esti,
       "\nFixed effects: ", paste0(toupper(substr(FE, 1, 1)), tolower(substr(FE, 2, nchar(FE)))), "\n", sep = "")

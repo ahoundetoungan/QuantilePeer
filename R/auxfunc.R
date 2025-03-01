@@ -46,7 +46,7 @@ formula.to.data <- function(formula,
 
 #' @importFrom utils head
 #' @importFrom utils tail
-fnetwork   <- function(Glist) {
+fnetwork   <- function(Glist, isol = NULL) {
   M        <- length(Glist)
   nvec     <- unlist(lapply(Glist, nrow))
   n        <- sum(nvec)
@@ -55,15 +55,72 @@ fnetwork   <- function(Glist) {
   
   ldg      <- lapply(Glist, rowSums)
   dg       <- unlist(ldg)
-  MIs      <- sum(sapply(ldg, function(s) any(s == 0)))
-  MnIs     <- sum(sapply(ldg, function(s) any(s != 0)))
-  lIs      <- sapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
-  Is       <- unlist(lIs)
-  lnIs     <- sapply(1:M, function(m) which(ldg[[m]] != 0) - 1 + ncs[m])
-  nIs      <- unlist(lnIs)
-
-  list(dg = dg, M = M, nvec = nvec, n = n, igr = igr, Is = Is, nIs = nIs, 
+  MIs      <- NULL
+  MnIs     <- NULL
+  lIs      <- NULL
+  Is       <- NULL
+  lnIs     <- NULL
+  nIs      <- NULL
+  if (length(isol) == 0) {
+    MIs    <- sum(sapply(ldg, function(s) any(s == 0)))
+    MnIs   <- sum(sapply(ldg, function(s) any(s != 0)))
+    lIs    <- sapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
+    Is     <- unlist(lIs)
+    lnIs   <- sapply(1:M, function(m) which(ldg[[m]] != 0) - 1 + ncs[m])
+    nIs    <- unlist(lnIs)
+  } else {
+    if (any(!(isol %in% 0:1) | !is.finite(isol))) {
+      stop("`isolated` must be a binary (0/1) variable and contain only finite values.")
+    }
+    if (length(isol) != n) {
+      stop("`isolated` must be a vector of length n.")
+    }
+    lisol  <- lapply(1:M, function(m) isol[(ncs[m] + 1):ncs[m + 1]])
+    MIs    <- sum(sapply(lisol, function(s) any(s == 1)))
+    MnIs   <- sum(sapply(lisol, function(s) any(s != 1)))
+    lIs    <- sapply(1:M, function(m) which(lisol[[m]] == 1) - 1 + ncs[m])
+    Is     <- unlist(lIs)
+    lnIs   <- sapply(1:M, function(m) which(lisol[[m]] != 1) - 1 + ncs[m])
+    nIs    <- unlist(lnIs)
+  }
+  
+  list(dg = dg, ldg = ldg, M = M, nvec = nvec, n = n, igr = igr, Is = Is, nIs = nIs, 
        lIs = lIs, lnIs = lnIs, MIs = MIs, MnIs = MnIs)
+}
+
+fdropfalseiso <- function(isol, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
+  n        <- sum(nvec)
+  if(length(isol) != n) stop("`isolated` should be an n-dimensional vector.")
+  ncs      <- c(0, cumsum(nvec))
+  olIs     <- sapply(1:M, function(m) ldg[[m]] == 0)
+  oIs      <- unlist(olIs)
+  if(any(isol[!oIs] == 1)){
+    stop("Agents with nonzero degrees should not be flagged as isolated in the `isolated` argument.")
+  }
+  lkeep    <- lapply(1:M, function(m) !((isol[(ncs[m] + 1):ncs[m + 1]] == 0) & (olIs[[m]] == TRUE)))
+  keep     <- unlist(lkeep)
+  gkeep    <- sapply(1:M, function(m) sum(lkeep[[m]]) >= 1)
+  ldg      <- lapply(1:M, function(m) ldg[[m]][lkeep[[m]]])[gkeep]
+  dg       <- unlist(ldg)
+  M        <- length(ldg)
+  nvec     <- sapply(ldg, length)
+  n        <- sum(nvec)
+  ncs      <- c(0, cumsum(nvec))
+  igr      <- cbind(head(ncs, M), tail(ncs, M) - 1)
+  isol     <- isol[keep]
+  lisol    <- lapply(1:M, function(m) isol[(ncs[m] + 1):ncs[m + 1]])
+  MIs      <- sum(sapply(lisol, function(s) any(s == 1)))
+  MnIs     <- sum(sapply(lisol, function(s) any(s != 1)))
+  lIs      <- sapply(1:M, function(m) which(lisol[[m]] == 1) - 1 + ncs[m])
+  Is       <- unlist(lIs)
+  lnIs     <- sapply(1:M, function(m) which(lisol[[m]] != 1) - 1 + ncs[m])
+  nIs      <- unlist(lnIs)
+  y        <- y[keep]
+  X        <- X[keep, , drop = FALSE]
+  qy       <- qy[keep, , drop = FALSE]
+  ins      <- ins[keep, , drop = FALSE]
+  list(dg = dg, ldg = ldg, M = M, nvec = nvec, n = n, igr = igr, Is = Is, nIs = nIs, 
+       lIs = lIs, lnIs = lnIs, MIs = MIs, MnIs = MnIs, y = y, X = X, qy = qy, ins = ins)
 }
 
 fcheckrank <- function(X, tol = 1e-10) {
@@ -109,10 +166,14 @@ fdiagnostic  <- function(object, nendo) {
   ins      <- object$data$instruments
   dg       <- object$data$degree
   index    <- which(!(colnames(ins) %in% colnames(X))) - 1
-  lIs      <- sapply(1:M, function(m) which(dg[(ncs[m] + 1):ncs[m + 1]] == 0) - 1 + ncs[m])
-  Is       <- unlist(lIs)
-  lnIs     <- sapply(1:M, function(m) which(dg[(ncs[m] + 1):ncs[m + 1]] != 0) - 1 + ncs[m])
-  nIs      <- unlist(lnIs)
+  Is       <- object$data$isolated - 1
+  nIs      <- object$data$non.isolated - 1
+  lIs      <- lapply(1:M, function(m) {
+    Is[Is %in% ncs[m]:(ncs[m + 1] - 1)]
+  })
+  lnIs     <- lapply(1:M, function(m) {
+    nIs[nIs %in% ncs[m]:(ncs[m + 1] - 1)]
+  })
   nvc      <- sapply(lnIs, length)
   theta    <- object$gmm$Estimate
   

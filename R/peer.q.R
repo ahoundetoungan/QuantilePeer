@@ -53,6 +53,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   # Network
+  
   dg       <- fnetwork(Glist = Glist)
   M        <- dg$M
   nvec     <- dg$nvec
@@ -179,6 +180,10 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 #' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `qpeer` is called.
 #' @param tol A tolerance value used in the QR factorization to identify columns of explanatory variable and instrument matrices that ensure a full-rank matrix (see the \link[base]{qr} function).
+#' @param isolated A binary vector (0/1) of the same length as the sample, 
+#' where 1 indicates that the individual is isolated. 
+#' If missing, isolated individuals will be identified from the network 
+#' as those with a degree of zero.
 #' @param structural A logical value indicating whether the reduced-form or structural specification should be estimated (see details).
 #' @param fixed.effects A logical value or string specifying whether the model includes subnet fixed effects. The fixed effects may differ between isolated and non-isolated nodes. Accepted values are `"no"` or `"FALSE"` (indicating no fixed effects), 
 #' `"join"` or `TRUE` (indicating the same fixed effects for isolated and non-isolated nodes within each subnet), and `"separate"` (indicating different fixed effects for isolated and non-isolated nodes within each subnet). Note that `"join"` fixed effects are not applicable for structural models; 
@@ -328,8 +333,9 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @importFrom stats pchisq
 #' @export
 qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data, 
-                        estimator = "IV", structural = FALSE, fixed.effects = FALSE, 
-                        HAC = "iid", checkrank = FALSE, compute.cov = TRUE, tol = 1e-10){
+                  estimator = "IV", structural = FALSE, fixed.effects = FALSE, 
+                  HAC = "iid", checkrank = FALSE, isolated = NULL, drop.falseisolated = FALSE,
+                  compute.cov = TRUE, tol = 1e-10){
   # Quantiles
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
@@ -361,7 +367,10 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   if (!is.list(Glist)) {
     Glist  <- list(Glist)
   }
-  dg       <- fnetwork(Glist = Glist)
+  if (is.null(isolated) & drop.falseisolated) {
+    stop("False isolated nodes cannot be dropped if `isolated` is missing.")
+  }
+  dg       <- fnetwork(Glist = Glist, isol = isolated)
   M        <- dg$M
   MIs      <- dg$MIs
   MnIs     <- dg$MnIs
@@ -372,6 +381,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   Is       <- dg$Is
   lnIs     <- dg$lnIs
   nIs      <- dg$nIs
+  ldg      <- dg$ldg
   dg       <- dg$dg
   
   # Data
@@ -388,7 +398,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
                        ngroup = M, n = n, ntau = ntau, type = type)
   
   # Instruments
-  inst       <- as.formula(excluded.instruments)
+  inst       <- as.formula(excluded.instruments); excluded.instruments <- inst
   if(length(inst) != 2) stop("The `excluded.instruments` argument must be in the format ~ `z1 + z2 + ....`.")
   f.t.data   <- formula.to.data(formula = inst, data = data, fixed.effects = (fixed.effects != "no"), 
                                 simulations = TRUE)
@@ -398,6 +408,28 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
     ins      <- ins[, zename != "(Intercept)"]
   } else {
     ins      <- ins
+  }
+  
+  # Drop false isolated
+  if (drop.falseisolated) {
+    dg       <- fdropfalseiso(isol = isolated, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
+                              lnIs = lnIs, y = y, X = X, qy = qy, ins = ins)
+    M        <- dg$M
+    MIs      <- dg$MIs
+    MnIs     <- dg$MnIs
+    nvec     <- dg$nvec
+    n        <- dg$n
+    igr      <- dg$igr
+    lIs      <- dg$lIs
+    Is       <- dg$Is
+    lnIs     <- dg$lnIs
+    nIs      <- dg$nIs
+    ldg      <- dg$ldg
+    y        <- dg$y
+    X        <- dg$X
+    qy       <- dg$qy
+    ins      <- dg$ins
+    dg       <- dg$dg
   }
   
   # Demean fixed effect models
@@ -565,8 +597,8 @@ print.summary.qpeer <- function(x, ...) {
   hete <- ifelse(hete == "iid", "IID", ifelse(hete == "hetero", "Individual", "Cluster"))
   sig  <- x$gmm$sigma
   FE   <- x$model.info$fixed.effects
-  cat("Formula: ", as.character(x$model.info$formula),
-      "\nExcluded instruments: ", as.character(x$model.info$excluded.instruments), 
+  cat("Formula: ", deparse(x$model.info$formula),
+      "\nExcluded instruments: ", deparse(x$model.info$excluded.instruments), 
       "\n\nModel: ", ifelse(x$model.info$structural, "Structural", "Reduced Form"),
       "\nEstimator: ", esti,
       "\nFixed effects: ", paste0(toupper(substr(FE, 1, 1)), tolower(substr(FE, 2, nchar(FE)))), "\n", sep = "")

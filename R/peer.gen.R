@@ -1,7 +1,8 @@
 #' @rdname qpeer
 #' @export
 genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, data, estimator = "IV", 
-                    structural = FALSE, fixed.effects = FALSE, HAC = "iid", checkrank = FALSE, 
+                    structural = FALSE, isolated = NULL, drop.falseisolated = FALSE, fixed.effects = FALSE, 
+                    HAC = "iid", checkrank = FALSE, 
                     compute.cov = TRUE, tol = 1e-10){
   # Estimator
   estimator <- tolower(estimator)
@@ -29,7 +30,10 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   if (!is.list(Glist)) {
     Glist  <- list(Glist)
   }
-  dg       <- fnetwork(Glist = Glist)
+  if (is.null(isolated) & drop.falseisolated) {
+    stop("False isolated nodes cannot be dropped if `isolated` is missing.")
+  }
+  dg       <- fnetwork(Glist = Glist, isol = isolated)
   M        <- dg$M
   MIs      <- dg$MIs
   MnIs     <- dg$MnIs
@@ -41,6 +45,7 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   Is       <- dg$Is
   lnIs     <- dg$lnIs
   nIs      <- dg$nIs
+  ldg      <- dg$ldg
   dg       <- dg$dg
   
   # Data
@@ -55,7 +60,7 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   xint       <- f.t.data$intercept
   
   # Endo
-  EnVar      <- as.formula(endogenous.variables)
+  EnVar      <- as.formula(endogenous.variables); endogenous.variables <- EnVar
   if (length(EnVar) != 2) stop("The `endogenous.variables` argument must be in the format `~ y1 + y2 + ...`.")
   f.t.data   <- formula.to.data(formula = EnVar, data = data, fixed.effects = TRUE, simulations = TRUE)
   endo       <- f.t.data$X
@@ -63,7 +68,7 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   Kendo      <- ncol(endo)
   
   # Instruments
-  inst       <- as.formula(excluded.instruments)
+  inst       <- as.formula(excluded.instruments); excluded.instruments <- inst
   if(length(inst) != 2) stop("The `excluded.instruments` argument must be in the format ~ `z1 + z2 + ....`.")
   f.t.data   <- formula.to.data(formula = inst, data = data, fixed.effects = (fixed.effects != "no"), 
                                 simulations = TRUE)
@@ -73,6 +78,28 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
     ins      <- ins[, zename != "(Intercept)"]
   } else {
     ins      <- ins
+  }
+  
+  # Drop false isolated
+  if (drop.falseisolated) {
+    dg       <- fdropfalseiso(isol = isolated, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
+                              lnIs = lnIs, y = y, X = X, qy = endo, ins = ins)
+    M        <- dg$M
+    MIs      <- dg$MIs
+    MnIs     <- dg$MnIs
+    nvec     <- dg$nvec
+    n        <- dg$n
+    igr      <- dg$igr
+    lIs      <- dg$lIs
+    Is       <- dg$Is
+    lnIs     <- dg$lnIs
+    nIs      <- dg$nIs
+    ldg      <- dg$ldg
+    y        <- dg$y
+    X        <- dg$X
+    endo     <- dg$qy
+    ins      <- dg$ins
+    dg       <- dg$dg
   }
   
   # Demean fixed effect models
@@ -219,9 +246,9 @@ print.summary.genpeer <- function(x, ...) {
   hete <- ifelse(hete == "iid", "IID", ifelse(hete == "hetero", "Individual", "Cluster"))
   sig  <- x$gmm$sigma
   FE   <- x$model.info$fixed.effects
-  cat("Formula: ", as.character(x$model.info$formula),
-      "\nEndogenous variables: ", as.character(x$model.info$endogenous.variables), 
-      "\nExcluded instruments: ", as.character(x$model.info$excluded.instruments), 
+  cat("Formula: ", deparse(x$model.info$formula),
+      "\nEndogenous variables: ", deparse(x$model.info$endogenous.variables), 
+      "\nExcluded instruments: ", deparse(x$model.info$excluded.instruments), 
       "\n\nModel: ", ifelse(x$model.info$structural, "Structural", "Reduced Form"),
       "\nEstimator: ", esti,
       "\nFixed effects: ", paste0(toupper(substr(FE, 1, 1)), tolower(substr(FE, 2, nchar(FE)))), "\n", sep = "")
