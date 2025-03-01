@@ -14,8 +14,7 @@ genpeer(
   data,
   estimator = "IV",
   structural = FALSE,
-  isolated = NULL,
-  drop.falseisolated = FALSE,
+  drop = NULL,
   fixed.effects = FALSE,
   HAC = "iid",
   checkrank = FALSE,
@@ -30,8 +29,7 @@ linpeer(
   data,
   estimator = "IV",
   structural = FALSE,
-  isolated = NULL,
-  drop.falseisolated = FALSE,
+  drop = NULL,
   fixed.effects = FALSE,
   HAC = "iid",
   checkrank = FALSE,
@@ -51,8 +49,7 @@ qpeer(
   fixed.effects = FALSE,
   HAC = "iid",
   checkrank = FALSE,
-  isolated = NULL,
-  drop.falseisolated = FALSE,
+  drop = NULL,
   compute.cov = TRUE,
   tol = 1e-10
 )
@@ -81,10 +78,9 @@ in the model. If not found in \code{data}, the variables are taken from \code{en
 
 \item{structural}{A logical value indicating whether the reduced-form or structural specification should be estimated (see details).}
 
-\item{isolated}{A binary vector (0/1) of the same length as the sample,
-where 1 indicates that the individual is isolated.
-If missing, isolated individuals will be identified from the network
-as those with a degree of zero.}
+\item{drop}{A dummy vector of the same length as the sample, indicating whether an observation should be dropped.
+This can be used, for example, to remove false isolates or to estimate the model only on non-isolated agents.
+These observations cannot be directly removed from the network by the user because they may still be friends with other agents.}
 
 \item{fixed.effects}{A logical value or string specifying whether the model includes subnet fixed effects. The fixed effects may differ between isolated and non-isolated nodes. Accepted values are \code{"no"} or \code{"FALSE"} (indicating no fixed effects),
 \code{"join"} or \code{TRUE} (indicating the same fixed effects for isolated and non-isolated nodes within each subnet), and \code{"separate"} (indicating different fixed effects for isolated and non-isolated nodes within each subnet). Note that \code{"join"} fixed effects are not applicable for structural models;

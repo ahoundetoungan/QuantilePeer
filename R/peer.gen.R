@@ -1,7 +1,7 @@
 #' @rdname qpeer
 #' @export
 genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, data, estimator = "IV", 
-                    structural = FALSE, isolated = NULL, drop.falseisolated = FALSE, fixed.effects = FALSE, 
+                    structural = FALSE, drop = NULL, fixed.effects = FALSE, 
                     HAC = "iid", checkrank = FALSE, 
                     compute.cov = TRUE, tol = 1e-10){
   # Estimator
@@ -30,10 +30,7 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   if (!is.list(Glist)) {
     Glist  <- list(Glist)
   }
-  if (is.null(isolated) & drop.falseisolated) {
-    stop("False isolated nodes cannot be dropped if `isolated` is missing.")
-  }
-  dg       <- fnetwork(Glist = Glist, isol = isolated)
+  dg       <- fnetwork(Glist = Glist)
   M        <- dg$M
   MIs      <- dg$MIs
   MnIs     <- dg$MnIs
@@ -82,8 +79,8 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   
   # Drop false isolated
   if (drop.falseisolated) {
-    dg       <- fdropfalseiso(isol = isolated, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
-                              lnIs = lnIs, y = y, X = X, qy = endo, ins = ins)
+    dg       <- fdrop(drop = drop, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
+                      lnIs = lnIs, y = y, X = X, qy = endo, ins = ins)
     M        <- dg$M
     MIs      <- dg$MIs
     MnIs     <- dg$MnIs
@@ -145,7 +142,7 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
     if (length(fcheckrank(X = cbind(endo, X), tol = tol)) != (Kendo + Kx)) stop("The design matrix is not full rank.")
   }
   
-
+  
   if (structural) {
     ins      <- cbind(X[, idX2 + 1], ins)
     ins0     <- cbind(X0[, idX2 + 1], ins0)
@@ -209,8 +206,8 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   }
   
   out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
-                                      endogenous.variables = endogenous.variables, excluded.instruments = excluded.instruments, 
-                                      estimator = estimator, fixed.effects = fixed.effects, idX1 = idX1 + 1, idX2 = idX2 + 1, HAC = HAC),
+                                       endogenous.variables = endogenous.variables, excluded.instruments = excluded.instruments, 
+                                       estimator = estimator, fixed.effects = fixed.effects, idX1 = idX1 + 1, idX2 = idX2 + 1, HAC = HAC),
                     gmm         = GMMe,
                     data        = list(y = y0, endogenous.variables = endo0, X = X0, instruments = ins0, isolated = Is + 1, 
                                        non.isolated = nIs + 1, degree = dg))

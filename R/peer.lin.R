@@ -1,8 +1,7 @@
 #' @rdname qpeer
 #' @export
 linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV", 
-                    structural = FALSE, isolated = NULL, drop.falseisolated = FALSE, 
-                    fixed.effects = FALSE, HAC = "iid", checkrank = FALSE, 
+                    structural = FALSE, drop = NULL, fixed.effects = FALSE, HAC = "iid", checkrank = FALSE, 
                     compute.cov = TRUE, tol = 1e-10){
   # Estimator
   estimator <- tolower(estimator)
@@ -30,10 +29,7 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   if (!is.list(Glist)) {
     Glist  <- list(Glist)
   }
-  if (is.null(isolated) & drop.falseisolated) {
-    stop("False isolated nodes cannot be dropped if `isolated` is missing.")
-  }
-  dg       <- fnetwork(Glist = Glist, isol = isolated)
+  dg       <- fnetwork(Glist = Glist)
   M        <- dg$M
   MIs      <- dg$MIs
   MnIs     <- dg$MnIs
@@ -73,10 +69,10 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
     ins      <- ins
   }
   
-  # Drop false isolated
-  if (drop.falseisolated) {
-    dg       <- fdropfalseiso(isol = isolated, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
-                              lnIs = lnIs, y = y, X = X, qy = Gy, ins = ins)
+  # drop
+  if (!is.null(drop)) {
+    dg       <- fdrop(drop = drop, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
+                      lnIs = lnIs, y = y, X = X, qy = Gy, ins = ins)
     M        <- dg$M
     MIs      <- dg$MIs
     MnIs     <- dg$MnIs
@@ -138,7 +134,7 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
     if (length(fcheckrank(X = cbind(Gy, X), tol = tol)) != (1 + Kx)) stop("The design matrix is not full rank.")
   }
   
-
+  
   if (structural) {
     ins      <- cbind(X[, idX2 + 1], ins)
     ins0     <- cbind(X0[, idX2 + 1], ins0)

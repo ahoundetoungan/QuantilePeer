@@ -47,6 +47,8 @@ formula.to.data <- function(formula,
 #' @importFrom utils head
 #' @importFrom utils tail
 fnetwork   <- function(Glist, isol = NULL) {
+  # Isol is true isolated than can be removed. But this argument is no longer used. 
+  # See the more general argument which is now drop
   M        <- length(Glist)
   nvec     <- unlist(lapply(Glist, nrow))
   n        <- sum(nvec)
@@ -70,7 +72,7 @@ fnetwork   <- function(Glist, isol = NULL) {
     nIs    <- unlist(lnIs)
   } else {
     if (any(!(isol %in% 0:1) | !is.finite(isol))) {
-      stop("`isolated` must be a binary (0/1) variable and contain only finite values.")
+      stop("`isolated` must be a binary (0/1) variable.")
     }
     if (length(isol) != n) {
       stop("`isolated` must be a vector of length n.")
@@ -88,18 +90,20 @@ fnetwork   <- function(Glist, isol = NULL) {
        lIs = lIs, lnIs = lnIs, MIs = MIs, MnIs = MnIs)
 }
 
-fdropfalseiso <- function(isol, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
+fdrop <- function(drop, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
   n        <- sum(nvec)
-  if(length(isol) != n) stop("`isolated` should be an n-dimensional vector.")
+  if (any(!(drop %in% 0:1) | !is.finite(drop))) {
+    stop("`isolated` must be a binary (0/1) variable.")
+  }
+  if (length(drop) != n) {
+    stop("`isolated` must be a vector of length n.")
+  }
   ncs      <- c(0, cumsum(nvec))
   olIs     <- sapply(1:M, function(m) ldg[[m]] == 0)
   oIs      <- unlist(olIs)
-  if(any(isol[!oIs] == 1)){
-    stop("Agents with nonzero degrees should not be flagged as isolated in the `isolated` argument.")
-  }
-  lkeep    <- lapply(1:M, function(m) !((isol[(ncs[m] + 1):ncs[m + 1]] == 0) & (olIs[[m]] == TRUE)))
+  lkeep    <- lapply(1:M, function(m) drop[(ncs[m] + 1):ncs[m + 1]] != 1)
   keep     <- unlist(lkeep)
-  gkeep    <- sapply(1:M, function(m) sum(lkeep[[m]]) >= 1)
+  gkeep    <- sapply(1:M, function(m) sum(lkeep[[m]]) >= 1) # Groups I keep
   ldg      <- lapply(1:M, function(m) ldg[[m]][lkeep[[m]]])[gkeep]
   dg       <- unlist(ldg)
   M        <- length(ldg)
@@ -107,13 +111,11 @@ fdropfalseiso <- function(isol, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
   n        <- sum(nvec)
   ncs      <- c(0, cumsum(nvec))
   igr      <- cbind(head(ncs, M), tail(ncs, M) - 1)
-  isol     <- isol[keep]
-  lisol    <- lapply(1:M, function(m) isol[(ncs[m] + 1):ncs[m + 1]])
-  MIs      <- sum(sapply(lisol, function(s) any(s == 1)))
-  MnIs     <- sum(sapply(lisol, function(s) any(s != 1)))
-  lIs      <- sapply(1:M, function(m) which(lisol[[m]] == 1) - 1 + ncs[m])
+  MIs      <- sum(sapply(ldg, function(s) any(s == 0)))
+  MnIs     <- sum(sapply(ldg, function(s) any(s != 0)))
+  lIs      <- sapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
   Is       <- unlist(lIs)
-  lnIs     <- sapply(1:M, function(m) which(lisol[[m]] != 1) - 1 + ncs[m])
+  lnIs     <- sapply(1:M, function(m) which(ldg[[m]] != 0) - 1 + ncs[m])
   nIs      <- unlist(lnIs)
   y        <- y[keep]
   X        <- X[keep, , drop = FALSE]
@@ -178,12 +180,12 @@ fdiagnostic  <- function(object, nendo) {
   theta    <- object$gmm$Estimate
   
   ins      <- fdatadiagnostic(y = y, endo = endo, X = X, ins = ins, theta = theta, idX1 = idX1, idX2 = idX2, igroup = igr, 
-                  nIs = nIs, LIs = lIs, LnIs = lnIs, n = n, ngroup = M, ntau = ntau, struc = struc, FE = FE)
+                              nIs = nIs, LIs = lIs, LnIs = lnIs, n = n, ngroup = M, ntau = ntau, struc = struc, FE = FE)
   y        <- ins$y
   endo     <- ins$endo
   X        <- ins$X
   ins      <- ins$ins
-
+  
   if (struc) {
     nvc    <- nvc[nvc > 0]
     M      <- length(nvc)
@@ -216,9 +218,9 @@ fdiagnostic  <- function(object, nendo) {
     tpend  <- fFstat(y = y, X = cbind(tpF$ru, endo, X), index = (0:(ntau - 1)), igroup = igr, ngroup = M, HAC = HACnum)
     
     out    <- cbind(df1        = c(rep(tpF$df1, ntau) , tpend$df1, object$gmm$Jtest["df"]),
-                      df2        = c(rep(tpF$df2, ntau), tpend$df2, NA),
-                      statistic  = c(tpF$F, tpend$F, object$gmm$Jtest["statistic"]),
-                      "p-value"  = object$gmm$Jtest["p-value"])
+                    df2        = c(rep(tpF$df2, ntau), tpend$df2, NA),
+                    statistic  = c(tpF$F, tpend$F, object$gmm$Jtest["statistic"]),
+                    "p-value"  = object$gmm$Jtest["p-value"])
     out[-ntau - 2, 4] <- pf(out[-ntau - 2, 3], out[-ntau - 2, 1], out[-ntau - 2, 2], lower.tail = FALSE)
     rn            <- "Weak instruments"
     if (ntau > 1) {

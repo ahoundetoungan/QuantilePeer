@@ -180,10 +180,9 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 #' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `qpeer` is called.
 #' @param tol A tolerance value used in the QR factorization to identify columns of explanatory variable and instrument matrices that ensure a full-rank matrix (see the \link[base]{qr} function).
-#' @param isolated A binary vector (0/1) of the same length as the sample, 
-#' where 1 indicates that the individual is isolated. 
-#' If missing, isolated individuals will be identified from the network 
-#' as those with a degree of zero.
+#' @param drop A dummy vector of the same length as the sample, indicating whether an observation should be dropped. 
+#' This can be used, for example, to remove false isolates or to estimate the model only on non-isolated agents.
+#' These observations cannot be directly removed from the network by the user because they may still be friends with other agents.
 #' @param structural A logical value indicating whether the reduced-form or structural specification should be estimated (see details).
 #' @param fixed.effects A logical value or string specifying whether the model includes subnet fixed effects. The fixed effects may differ between isolated and non-isolated nodes. Accepted values are `"no"` or `"FALSE"` (indicating no fixed effects), 
 #' `"join"` or `TRUE` (indicating the same fixed effects for isolated and non-isolated nodes within each subnet), and `"separate"` (indicating different fixed effects for isolated and non-isolated nodes within each subnet). Note that `"join"` fixed effects are not applicable for structural models; 
@@ -334,7 +333,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @export
 qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data, 
                   estimator = "IV", structural = FALSE, fixed.effects = FALSE, 
-                  HAC = "iid", checkrank = FALSE, isolated = NULL, drop.falseisolated = FALSE,
+                  HAC = "iid", checkrank = FALSE, drop = NULL,
                   compute.cov = TRUE, tol = 1e-10){
   # Quantiles
   stopifnot(all((tau >= 0) & (tau <= 1)))
@@ -367,10 +366,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   if (!is.list(Glist)) {
     Glist  <- list(Glist)
   }
-  if (is.null(isolated) & drop.falseisolated) {
-    stop("False isolated nodes cannot be dropped if `isolated` is missing.")
-  }
-  dg       <- fnetwork(Glist = Glist, isol = isolated)
+  dg       <- fnetwork(Glist = Glist)
   M        <- dg$M
   MIs      <- dg$MIs
   MnIs     <- dg$MnIs
@@ -410,10 +406,10 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
     ins      <- ins
   }
   
-  # Drop false isolated
-  if (drop.falseisolated) {
-    dg       <- fdropfalseiso(isol = isolated, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
-                              lnIs = lnIs, y = y, X = X, qy = qy, ins = ins)
+  # drop
+  if (!is.null(drop)) {
+    dg       <- fdrop(drop = drop, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
+                           lnIs = lnIs, y = y, X = X, qy = qy, ins = ins)
     M        <- dg$M
     MIs      <- dg$MIs
     MnIs     <- dg$MnIs
