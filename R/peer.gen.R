@@ -66,7 +66,7 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   
   # Instruments
   inst       <- as.formula(excluded.instruments); excluded.instruments <- inst
-  if(length(inst) != 2) stop("The `excluded.instruments` argument must be in the format ~ `z1 + z2 + ....`.")
+  if(length(inst) != 2) stop("The `excluded.instruments` argument must be in the format `~ z1 + z2 + ....`.")
   f.t.data   <- formula.to.data(formula = inst, data = data, fixed.effects = (fixed.effects != "no"), 
                                 simulations = TRUE)
   ins        <- f.t.data$X
@@ -78,7 +78,7 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   }
   
   # Drop false isolated
-  if (drop.falseisolated) {
+  if (!is.null(drop)) {
     dg       <- fdrop(drop = drop, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
                       lnIs = lnIs, y = y, X = X, qy = endo, ins = ins)
     M        <- dg$M
@@ -187,8 +187,8 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
     # Estimation
     GMMe     <- fstruct(y = y, X = X, qy = endo, ins = ins, idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igr = igr, 
                         nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, M = M, Kins = Kins, Kx = Kx, ntau = Kendo, 
-                        Kest = Kest, n = n, HACnum = HACnum, iv = iv, estimator = estimator, compute.cov = compute.cov, 
-                        estname = estname)
+                        Kest1 = Kest1, Kest2 = Kest2, n = n, HACnum = HACnum, iv = iv, estimator = estimator, 
+                        compute.cov = compute.cov, estname = estname)
   } else {
     if (Kins < Kx + Kendo) stop("Insufficient number of instruments: the model is not identified.")
     Kest     <- ifelse(FEnum == 0, Kx + Kendo, ifelse(FEnum == 1, Kx + Kendo + M, Kx + Kendo + MIs + MnIs))
@@ -242,6 +242,8 @@ print.summary.genpeer <- function(x, ...) {
   hete <- x$model.info$HAC
   hete <- ifelse(hete == "iid", "IID", ifelse(hete == "hetero", "Individual", "Cluster"))
   sig  <- x$gmm$sigma
+  sig1 <- x$gmm$sigma1
+  sig2 <- x$gmm$sigma2
   FE   <- x$model.info$fixed.effects
   cat("Formula: ", deparse(x$model.info$formula),
       "\nEndogenous variables: ", deparse(x$model.info$endogenous.variables), 
@@ -264,8 +266,18 @@ print.summary.genpeer <- function(x, ...) {
   }
   cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n\n")
   cat("HAC: ", hete, sep = "")
-  if (!is.null(sig)) {
-    cat(", sigma: ", format(sig, digits = 5), sep = "")
+  if (x$model.info$structural) {
+    if (!is.null(sig1)) {
+      if (!is.null(sig2)) {
+        cat(", sigma (isolated): ", format(sig1, digits = 5), ", (non-isolated): ", format(sig2, digits = 5), sep = "")
+      } else {
+        cat(", sigma (isolated): ", format(sig1, digits = 5), sep = "")
+      }
+    }
+  } else {
+    if (!is.null(sig)) {
+      cat(", sigma: ", format(sig, digits = 5), sep = "")
+    }
   }
   cat("\nR-Squared: ", format(x$gmm$rsquared, digits = 5), 
       ", Adjusted R-squared: ", format(x$gmm$adjusted.rsquared, digits = 5), 

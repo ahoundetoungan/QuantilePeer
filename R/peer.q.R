@@ -395,7 +395,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   
   # Instruments
   inst       <- as.formula(excluded.instruments); excluded.instruments <- inst
-  if(length(inst) != 2) stop("The `excluded.instruments` argument must be in the format ~ `z1 + z2 + ....`.")
+  if(length(inst) != 2) stop("The `excluded.instruments` argument must be in the format `~ z1 + z2 + ....`.")
   f.t.data   <- formula.to.data(formula = inst, data = data, fixed.effects = (fixed.effects != "no"), 
                                 simulations = TRUE)
   ins        <- f.t.data$X
@@ -516,8 +516,8 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
     # Estimation
     GMMe     <- fstruct(y = y, X = X, qy = qy, ins = ins, idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igr = igr, 
                         nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, M = M, Kins = Kins, Kx = Kx, ntau = ntau, 
-                        Kest = Kest, n = n, HACnum = HACnum, iv = iv, estimator = estimator, compute.cov = compute.cov, 
-                        estname = estname)
+                        Kest1 = Kest1, Kest2 = Kest2, n = n, HACnum = HACnum, iv = iv, estimator = estimator, 
+                        compute.cov = compute.cov, estname = estname)
   } else {
     if (Kins < Kx + ntau) stop("Insufficient number of instruments: the model is not identified.")
     Kest     <- ifelse(FEnum == 0, Kx + ntau, ifelse(FEnum == 1, Kx + ntau + M, Kx + ntau + MIs + MnIs))
@@ -550,7 +550,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   out
 }
 
-#' @title Summary for the Estimation of Peer Effects Models
+#' @title Summary for the Estimation of Quantile Peer Effects Models
 #' @param object An object of class \code{\link{qpeer}}.
 #' @param diagnostics,diagnostic Logical. Should diagnostic tests for the instrumental-variable regression be performed? 
 #' These include an F-test of the first-stage regression for weak instruments, a Wu-Hausman test for endogeneity, 
@@ -592,6 +592,8 @@ print.summary.qpeer <- function(x, ...) {
   hete <- x$model.info$HAC
   hete <- ifelse(hete == "iid", "IID", ifelse(hete == "hetero", "Individual", "Cluster"))
   sig  <- x$gmm$sigma
+  sig1 <- x$gmm$sigma1
+  sig2 <- x$gmm$sigma2
   FE   <- x$model.info$fixed.effects
   cat("Formula: ", deparse(x$model.info$formula),
       "\nExcluded instruments: ", deparse(x$model.info$excluded.instruments), 
@@ -617,8 +619,18 @@ print.summary.qpeer <- function(x, ...) {
   }
   cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n\n")
   cat("HAC: ", hete, sep = "")
-  if (!is.null(sig)) {
-    cat(", sigma: ", format(sig, digits = 5), sep = "")
+  if (x$model.info$structural) {
+    if (!is.null(sig1)) {
+      if (!is.null(sig2)) {
+        cat(", sigma (isolated): ", format(sig1, digits = 5), ", (non-isolated): ", format(sig2, digits = 5), sep = "")
+      } else {
+        cat(", sigma (isolated): ", format(sig1, digits = 5), sep = "")
+      }
+    }
+  } else {
+    if (!is.null(sig)) {
+      cat(", sigma: ", format(sig, digits = 5), sep = "")
+    }
   }
   cat("\nR-Squared: ", format(x$gmm$rsquared, digits = 5), 
       ", Adjusted R-squared: ", format(x$gmm$adjusted.rsquared, digits = 5), 

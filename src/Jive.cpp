@@ -66,8 +66,10 @@ Rcpp::List fJIVE_redInd(const Eigen::VectorXd& y,
     }
     Eigen::MatrixXd tp3(hVtehZteh*VtZ.transpose());
     Eigen::MatrixXd Sigma(VtZ*Zteh2*VtZ.transpose() - tp3 - tp3.transpose() + tp0);
-    Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
-    Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    // Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
+    // Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    Eigen::MatrixXd iH(H.inverse()); 
+    Vpa = iH * Sigma * iH.transpose();
   }
   return Rcpp::List::create(_["parms"] = parms, _["Vpa"] = Vpa, // _["Overident"] = stat,
                             _["yhat"] = yhat, _["sigma2"] = s2);
@@ -124,8 +126,10 @@ Rcpp::List fJIVE2_redInd(const Eigen::VectorXd& y,
     }
     Eigen::MatrixXd tp3(hVehZeh*VtZ.transpose());
     Eigen::MatrixXd Sigma(VtZ*Zeh2*VtZ.transpose() - tp3 - tp3.transpose() + tp0);
-    Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
-    Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    // Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
+    // Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    Eigen::MatrixXd iH(H.inverse()); 
+    Vpa = iH * Sigma * iH.transpose();
   }
   return Rcpp::List::create(_["parms"] = parms, _["Vpa"] = Vpa, // _["Overident"] = stat,
                             _["yhat"] = yhat, _["sigma2"] = s2);
@@ -211,8 +215,10 @@ Rcpp::List fJIVE_redClu(const Eigen::VectorXd& y,
     }
     Eigen::MatrixXd tp3(hVtehZteh*VtZ.transpose());
     Eigen::MatrixXd Sigma(VtZ*Zteh2*VtZ.transpose() - tp3 - tp3.transpose() + tp0);
-    Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
-    Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    // Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
+    // Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    Eigen::MatrixXd iH(H.inverse()); 
+    Vpa = iH * Sigma * iH.transpose();
   }
   return Rcpp::List::create(_["parms"] = parms, _["Vpa"] = Vpa, // _["Overident"] = stat,
                             _["yhat"] = yhat, _["sigma2"] = s2);
@@ -292,8 +298,10 @@ Rcpp::List fJIVE2_redClu(const Eigen::VectorXd& y,
     }
     Eigen::MatrixXd tp3(hVehZeh*VtZ.transpose());
     Eigen::MatrixXd Sigma(VtZ*Zeh2*VtZ.transpose() - tp3 - tp3.transpose() + tp0);
-    Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
-    Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    // Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
+    // Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    Eigen::MatrixXd iH(H.inverse()); 
+    Vpa = iH * Sigma * iH.transpose();
   }
   return Rcpp::List::create(_["parms"] = parms, _["Vpa"] = Vpa, // _["Overident"] = stat,
                             _["yhat"] = yhat, _["sigma2"] = s2);
@@ -315,7 +323,7 @@ Rcpp::List fJIVE_strucInd(const Eigen::VectorXd& y,
                              const int& Kins,
                              const int& ntau,
                              const int& n,
-                             const int& Kest, 
+                             const int& Kest1, 
                              const int& HAC  = 0,
                              const bool& COV = true){
   int n_iso(Is.size()), n_niso(n - n_iso), Kv2(1 + ntau + Kx2), Kv(Kx1 + Kv2);
@@ -351,10 +359,10 @@ Rcpp::List fJIVE_strucInd(const Eigen::VectorXd& y,
   Eigen::VectorXd y1hat(Xb1), y2hat(V2*lambda), yhat(n);
   yhat(Is) = y1hat; yhat(nIs) = y2hat;
   Eigen::ArrayXd e1(y1 - y1hat), e2(y2 - y2hat);
-  Eigen::ArrayXd e = y - yhat;
-  double s2(R_NaN);
+  // Eigen::ArrayXd e = y - yhat;
+  double s21(R_NaN), s22(R_NaN);
   if (HAC == 0) {
-    s2 = e.square().sum()/(n - Kest);
+    s21 = e1.square().sum()/(n_iso - Kest1);
   }
   Eigen::MatrixXd Vpa(Eigen::MatrixXd::Zero(Kv, Kv));
   if (COV) {
@@ -363,7 +371,7 @@ Rcpp::List fJIVE_strucInd(const Eigen::VectorXd& y,
     H(Eigen::seqN(Kx1, Kv2), Eigen::all) << lambda(0)*tpH*tX21, H2;
     Eigen::MatrixXd Sigma(Eigen::MatrixXd::Zero(Kv, Kv));
     if (HAC == 0) {
-      Sigma.block(0, 0, Kx1, Kx1) = s2*XX1;
+      Sigma.block(0, 0, Kx1, Kx1) = s21*XX1;
     } else {
       Eigen::MatrixXd Xe1(X1.array().colwise()*e1);
       Sigma.block(0, 0, Kx1, Kx1) = Xe1.transpose()*Xe1;
@@ -385,12 +393,14 @@ Rcpp::List fJIVE_strucInd(const Eigen::VectorXd& y,
     }
     Eigen::MatrixXd tp3(hVtehZteh2*VtZ2.transpose());
     Sigma.block(Kx1, Kx1, Kv2, Kv2) = (VtZ2*Zteh22*VtZ2.transpose() - tp3 - tp3.transpose() + tp0);
-    Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
-    Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    // Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
+    // Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    Eigen::MatrixXd iH(H.inverse()); 
+    Vpa = iH * Sigma * iH.transpose();
   }
   
   return Rcpp::List::create(_["beta"] = b, _["lambda"] = lambda, _["Vpa"] = Vpa,
-                            _["yhat"] = yhat, _["sigma2"] = s2);
+                            _["yhat"] = yhat, _["sigma21"] = s21, _["sigma22"] = s22);
 }
 
 
@@ -409,7 +419,7 @@ Rcpp::List fJIVE2_strucInd(const Eigen::VectorXd& y,
                               const int& Kins,
                               const int& ntau,
                               const int& n,
-                              const int& Kest, 
+                              const int& Kest1, 
                               const int& HAC  = 0,
                               const bool& COV = true){
   int n_iso(Is.size()), n_niso(n - n_iso), Kv2(1 + ntau + Kx2), Kv(Kx1 + Kv2);
@@ -442,10 +452,10 @@ Rcpp::List fJIVE2_strucInd(const Eigen::VectorXd& y,
   Eigen::VectorXd y1hat(Xb1), y2hat(V2*lambda), yhat(n);
   yhat(Is) = y1hat; yhat(nIs) = y2hat;
   Eigen::ArrayXd e1(y1 - y1hat), e2(y2 - y2hat);
-  Eigen::ArrayXd e = y - yhat;
-  double s2(R_NaN);
+  // Eigen::ArrayXd e = y - yhat;
+  double s21(R_NaN), s22(R_NaN);
   if (HAC == 0) {
-    s2 = e.square().sum()/(n - Kest);
+    s21 = e1.square().sum()/(n_iso - Kest1);
   }
   Eigen::MatrixXd Vpa(Eigen::MatrixXd::Zero(Kv, Kv));
   if (COV) {
@@ -454,7 +464,7 @@ Rcpp::List fJIVE2_strucInd(const Eigen::VectorXd& y,
     H.block(0, 0, Kx1, Kx1)   = XX1;
     H(Eigen::seqN(Kx1, Kv2), Eigen::all) << lambda(0)*tpH*X21, H2;
     if (HAC == 0) {
-      Sigma.block(0, 0, Kx1, Kx1) = s2*XX1;
+      Sigma.block(0, 0, Kx1, Kx1) = s21*XX1;
     } else {
       Eigen::MatrixXd Xe1(X1.array().colwise()*e1);
       Sigma.block(0, 0, Kx1, Kx1) = Xe1.transpose()*Xe1;
@@ -475,12 +485,14 @@ Rcpp::List fJIVE2_strucInd(const Eigen::VectorXd& y,
     }
     Eigen::MatrixXd tp3(hVeZe2*VtZ2.transpose());
     Sigma.block(Kx1, Kx1, Kv2, Kv2) = (VtZ2*Ze22*VtZ2.transpose() - tp3 - tp3.transpose() + tp0);
-    Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
-    Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    // Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
+    // Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    Eigen::MatrixXd iH(H.inverse()); 
+    Vpa = iH * Sigma * iH.transpose();
   }
   
   return Rcpp::List::create(_["beta"] = b, _["lambda"] = lambda, _["Vpa"] = Vpa,
-                            _["yhat"] = yhat, _["sigma2"] = s2);
+                            _["yhat"] = yhat, _["sigma21"] = s21, _["sigma22"] = s22);
 }
 
 ////////////// Structural models with clustered errors
@@ -506,7 +518,6 @@ Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y,
                              const int& Kins,
                              const int& ntau,
                              const int& n,
-                             const int& Kest, 
                              const bool& COV = true){
   int Kv2(1 + ntau + Kx2), Kv(Kx1 + Kv2);
   // First stage
@@ -552,7 +563,7 @@ Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y,
   Eigen::VectorXd y1hat(Xb(Is)), y2hat(V(nIs, Eigen::all)*lambda), yhat(n);
   yhat(Is) = y1hat; yhat(nIs) = y2hat;
   Eigen::VectorXd eh = y - yhat;
-  double s2(R_NaN);
+  double s21(R_NaN), s22(R_NaN);
   Eigen::MatrixXd Vpa(Eigen::MatrixXd::Zero(Kv, Kv));
   if (COV) {
     Eigen::MatrixXd H(Eigen::MatrixXd::Zero(Kv, Kv));
@@ -618,12 +629,14 @@ Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y,
     Eigen::MatrixXd Sigma(Kv, Kv);
     Sigma << Sigma1, Sigma12,
              Sigma12.transpose(), Sigma2;
-    Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
-    Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    // Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
+    // Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    Eigen::MatrixXd iH(H.inverse()); 
+    Vpa = iH * Sigma * iH.transpose();
   }
   
   return Rcpp::List::create(_["beta"] = b, _["lambda"] = lambda, _["Vpa"] = Vpa,
-                            _["yhat"] = yhat, _["sigma2"] = s2);
+                            _["yhat"] = yhat, _["sigma21"] = s21, _["sigma22"] = s22);
 }
 
 
@@ -648,7 +661,6 @@ Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y,
                              const int& Kins,
                              const int& ntau,
                              const int& n,
-                             const int& Kest, 
                              const bool& COV = true){
   int Kv2(1 + ntau + Kx2), Kv(Kx1 + Kv2);
   // First stage
@@ -683,7 +695,7 @@ Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y,
   Eigen::VectorXd y1hat(Xb(Is)), y2hat(V(nIs, Eigen::all)*lambda), yhat(n);
   yhat(Is) = y1hat; yhat(nIs) = y2hat;
   Eigen::VectorXd eh = y - yhat;
-  double s2(R_NaN);
+  double s21(R_NaN), s22(R_NaN);
   Eigen::MatrixXd Vpa(Eigen::MatrixXd::Zero(Kv, Kv));
   if (COV) {
     Eigen::MatrixXd H(Eigen::MatrixXd::Zero(Kv, Kv));
@@ -748,10 +760,12 @@ Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y,
     Eigen::MatrixXd Sigma2(VtZ2*Zeh22*VtZ2.transpose() - tp3 - tp3.transpose() + tp0);
     Sigma << Sigma1, Sigma12,
              Sigma12.transpose(), Sigma2;
-    Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
-    Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    // Eigen::MatrixXd tp4(H.colPivHouseholderQr().solve(Sigma)); // inv(H)*Sigma;
+    // Vpa      = H.colPivHouseholderQr().solve(tp4.transpose());// inv(H)*Sigma*inv(H');
+    Eigen::MatrixXd iH(H.inverse()); 
+    Vpa = iH * Sigma * iH.transpose();
   }
   
   return Rcpp::List::create(_["beta"] = b, _["lambda"] = lambda, _["Vpa"] = Vpa,
-                            _["yhat"] = yhat, _["sigma2"] = s2);
+                            _["yhat"] = yhat, _["sigma21"] = s21, _["sigma22"] = s22);
 }

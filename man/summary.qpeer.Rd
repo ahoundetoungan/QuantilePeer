@@ -10,7 +10,7 @@
 \alias{summary.qpeer}
 \alias{print.summary.qpeer}
 \alias{print.qpeer}
-\title{Summary for the Estimation of Peer Effects Models}
+\title{Summary for the Estimation of Quantile Peer Effects Models}
 \usage{
 \method{summary}{genpeer}(object, diagnostic = FALSE, diagnostics = FALSE, ...)
 

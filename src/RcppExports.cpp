@@ -12,6 +12,227 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// fCESdata
+arma::mat fCESdata(const arma::mat& X, const arma::vec& y, const arma::vec& z, const Rcpp::List& G, const Rcpp::List& friendindex, const arma::umat& igroup, const arma::uvec& frzeroy, const arma::uvec& frzeroz, const Rcpp::List& lIs, const Rcpp::List& lnIs, const IntegerVector& nvec, const Eigen::MatrixXd& yFMiMa, const Eigen::MatrixXd& zFMiMa, const int& n, const int& Kx, const int& ngroup, const double& rho, const int& FEnum, const bool& deriv);
+RcppExport SEXP _QtNet_fCESdata(SEXP XSEXP, SEXP ySEXP, SEXP zSEXP, SEXP GSEXP, SEXP friendindexSEXP, SEXP igroupSEXP, SEXP frzeroySEXP, SEXP frzerozSEXP, SEXP lIsSEXP, SEXP lnIsSEXP, SEXP nvecSEXP, SEXP yFMiMaSEXP, SEXP zFMiMaSEXP, SEXP nSEXP, SEXP KxSEXP, SEXP ngroupSEXP, SEXP rhoSEXP, SEXP FEnumSEXP, SEXP derivSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type friendindex(friendindexSEXP);
+    Rcpp::traits::input_parameter< const arma::umat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type frzeroy(frzeroySEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type frzeroz(frzerozSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type lIs(lIsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type lnIs(lnIsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type nvec(nvecSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type yFMiMa(yFMiMaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type zFMiMa(zFMiMaSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const double& >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< const int& >::type FEnum(FEnumSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type deriv(derivSEXP);
+    rcpp_result_gen = Rcpp::wrap(fCESdata(X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nvec, yFMiMa, zFMiMa, n, Kx, ngroup, rho, FEnum, deriv));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fOLS
+Eigen::VectorXd fOLS(const Eigen::MatrixXd& data, const Eigen::ArrayXi& idX1, const arma::uvec& Is, const int& Kx);
+RcppExport SEXP _QtNet_fOLS(SEXP dataSEXP, SEXP idX1SEXP, SEXP IsSEXP, SEXP KxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX1(idX1SEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type Is(IsSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
+    rcpp_result_gen = Rcpp::wrap(fOLS(data, idX1, Is, Kx));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fCESgmmparms
+Rcpp::List fCESgmmparms(const double& rho, const Eigen::VectorXd& beta1, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const arma::mat& X, const arma::vec& y, const arma::vec& z, const Rcpp::List& G, const Rcpp::List& friendindex, const arma::umat& igroup, const arma::uvec& frzeroy, const arma::uvec& frzeroz, const Rcpp::List& lIs, const Rcpp::List& lnIs, const arma::uvec& nIs, const arma::uvec& Is, const Eigen::ArrayXi sel, const Eigen::MatrixXd& W, const IntegerVector& nvec, const Eigen::MatrixXd& yFMiMa, const Eigen::MatrixXd& zFMiMa, const int& n, const int& nniso, const int& niso, const int& nst, const int& Kx, const int& Kx2, const int& ngroup, const int& FEnum, const int& Kest1, const int& Kest2, const int& Kest, const bool& structural, const int& HAC, const bool& COV);
+RcppExport SEXP _QtNet_fCESgmmparms(SEXP rhoSEXP, SEXP beta1SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP XSEXP, SEXP ySEXP, SEXP zSEXP, SEXP GSEXP, SEXP friendindexSEXP, SEXP igroupSEXP, SEXP frzeroySEXP, SEXP frzerozSEXP, SEXP lIsSEXP, SEXP lnIsSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP selSEXP, SEXP WSEXP, SEXP nvecSEXP, SEXP yFMiMaSEXP, SEXP zFMiMaSEXP, SEXP nSEXP, SEXP nnisoSEXP, SEXP nisoSEXP, SEXP nstSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP ngroupSEXP, SEXP FEnumSEXP, SEXP Kest1SEXP, SEXP Kest2SEXP, SEXP KestSEXP, SEXP structuralSEXP, SEXP HACSEXP, SEXP COVSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double& >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX1(idX1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX2(idX2SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type friendindex(friendindexSEXP);
+    Rcpp::traits::input_parameter< const arma::umat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type frzeroy(frzeroySEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type frzeroz(frzerozSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type lIs(lIsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type lnIs(lnIsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type nIs(nIsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type Is(IsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi >::type sel(selSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type W(WSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type nvec(nvecSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type yFMiMa(yFMiMaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type zFMiMa(zFMiMaSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nniso(nnisoSEXP);
+    Rcpp::traits::input_parameter< const int& >::type niso(nisoSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nst(nstSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx2(Kx2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type FEnum(FEnumSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest1(Kest1SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest2(Kest2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type structural(structuralSEXP);
+    Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type COV(COVSEXP);
+    rcpp_result_gen = Rcpp::wrap(fCESgmmparms(rho, beta1, idX1, idX2, X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nIs, Is, sel, W, nvec, yFMiMa, zFMiMa, n, nniso, niso, nst, Kx, Kx2, ngroup, FEnum, Kest1, Kest2, Kest, structural, HAC, COV));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fCESgmmobj
+double fCESgmmobj(const double& rho, const Eigen::VectorXd& beta1, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const arma::mat& X, const arma::vec& y, const arma::vec& z, const Rcpp::List& G, const Rcpp::List& friendindex, const arma::umat& igroup, const arma::uvec& frzeroy, const arma::uvec& frzeroz, const Rcpp::List& lIs, const Rcpp::List& lnIs, const arma::uvec& nIs, const Eigen::ArrayXi sel, const Eigen::MatrixXd& W, const IntegerVector& nvec, const Eigen::MatrixXd& yFMiMa, const Eigen::MatrixXd& zFMiMa, const int& n, const int& nniso, const int& nst, const int& Kx, const int& Kx2, const int& ngroup, const int& FEnum, const bool& structural);
+RcppExport SEXP _QtNet_fCESgmmobj(SEXP rhoSEXP, SEXP beta1SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP XSEXP, SEXP ySEXP, SEXP zSEXP, SEXP GSEXP, SEXP friendindexSEXP, SEXP igroupSEXP, SEXP frzeroySEXP, SEXP frzerozSEXP, SEXP lIsSEXP, SEXP lnIsSEXP, SEXP nIsSEXP, SEXP selSEXP, SEXP WSEXP, SEXP nvecSEXP, SEXP yFMiMaSEXP, SEXP zFMiMaSEXP, SEXP nSEXP, SEXP nnisoSEXP, SEXP nstSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP ngroupSEXP, SEXP FEnumSEXP, SEXP structuralSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double& >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX1(idX1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX2(idX2SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type friendindex(friendindexSEXP);
+    Rcpp::traits::input_parameter< const arma::umat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type frzeroy(frzeroySEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type frzeroz(frzerozSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type lIs(lIsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type lnIs(lnIsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type nIs(nIsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi >::type sel(selSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type W(WSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type nvec(nvecSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type yFMiMa(yFMiMaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type zFMiMa(zFMiMaSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nniso(nnisoSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nst(nstSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx2(Kx2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type FEnum(FEnumSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type structural(structuralSEXP);
+    rcpp_result_gen = Rcpp::wrap(fCESgmmobj(rho, beta1, idX1, idX2, X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nIs, sel, W, nvec, yFMiMa, zFMiMa, n, nniso, nst, Kx, Kx2, ngroup, FEnum, structural));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fCESWeight
+Eigen::MatrixXd fCESWeight(const Eigen::VectorXd& theta, const Eigen::ArrayXXd& data, const Eigen::ArrayXi& sel, const arma::uvec& nIs, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const bool& structural, const int& Kx, const int& Kx2, const int& nniso, const int& nst);
+RcppExport SEXP _QtNet_fCESWeight(SEXP thetaSEXP, SEXP dataSEXP, SEXP selSEXP, SEXP nIsSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP structuralSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP nnisoSEXP, SEXP nstSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type sel(selSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type nIs(nIsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX1(idX1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX2(idX2SEXP);
+    Rcpp::traits::input_parameter< const bool& >::type structural(structuralSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx2(Kx2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type nniso(nnisoSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nst(nstSEXP);
+    rcpp_result_gen = Rcpp::wrap(fCESWeight(theta, data, sel, nIs, idX1, idX2, structural, Kx, Kx2, nniso, nst));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fCESgmmrhoparms
+Rcpp::List fCESgmmrhoparms(const double& rho, const Eigen::VectorXd& beta1, const Eigen::MatrixXd& data, const Eigen::ArrayXi sel, const arma::uvec& nIs, const arma::uvec& Is, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const Eigen::MatrixXi& igroup, const int& ngroup, const int& Kx, const int& Kx2, const int& nniso, const int& niso, const int& n, const int& nst, const int& Kest1, const int& Kest2, const int& Kest, const bool& structural, const int& rhoinf, const int& HAC, const bool& COV);
+RcppExport SEXP _QtNet_fCESgmmrhoparms(SEXP rhoSEXP, SEXP beta1SEXP, SEXP dataSEXP, SEXP selSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP nnisoSEXP, SEXP nisoSEXP, SEXP nSEXP, SEXP nstSEXP, SEXP Kest1SEXP, SEXP Kest2SEXP, SEXP KestSEXP, SEXP structuralSEXP, SEXP rhoinfSEXP, SEXP HACSEXP, SEXP COVSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double& >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi >::type sel(selSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type nIs(nIsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type Is(IsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX1(idX1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX2(idX2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXi& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx2(Kx2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type nniso(nnisoSEXP);
+    Rcpp::traits::input_parameter< const int& >::type niso(nisoSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nst(nstSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest1(Kest1SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest2(Kest2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type structural(structuralSEXP);
+    Rcpp::traits::input_parameter< const int& >::type rhoinf(rhoinfSEXP);
+    Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type COV(COVSEXP);
+    rcpp_result_gen = Rcpp::wrap(fCESgmmrhoparms(rho, beta1, data, sel, nIs, Is, idX1, idX2, igroup, ngroup, Kx, Kx2, nniso, niso, n, nst, Kest1, Kest2, Kest, structural, rhoinf, HAC, COV));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fCESgmmrhoobj
+double fCESgmmrhoobj(const Eigen::VectorXd& theta, const Eigen::MatrixXd& data, const Eigen::ArrayXi sel, const arma::uvec& nIs, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const int& Kx, const int& Kx2, const int& nniso, const int& nst, const bool& structural, const int& rhoinf);
+RcppExport SEXP _QtNet_fCESgmmrhoobj(SEXP thetaSEXP, SEXP dataSEXP, SEXP selSEXP, SEXP nIsSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP nnisoSEXP, SEXP nstSEXP, SEXP structuralSEXP, SEXP rhoinfSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi >::type sel(selSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type nIs(nIsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX1(idX1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX2(idX2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx2(Kx2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type nniso(nnisoSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nst(nstSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type structural(structuralSEXP);
+    Rcpp::traits::input_parameter< const int& >::type rhoinf(rhoinfSEXP);
+    rcpp_result_gen = Rcpp::wrap(fCESgmmrhoobj(theta, data, sel, nIs, idX1, idX2, Kx, Kx2, nniso, nst, structural, rhoinf));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fCESParam
+Rcpp::List fCESParam(const arma::vec& param, const arma::mat& covp, const arma::uvec& idX1, const arma::uvec& idX2, const int& Kx, const int& Kx2, const int& estimrho, const bool& structural, const bool& COV);
+RcppExport SEXP _QtNet_fCESParam(SEXP paramSEXP, SEXP covpSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP estimrhoSEXP, SEXP structuralSEXP, SEXP COVSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type param(paramSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type covp(covpSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type idX1(idX1SEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type idX2(idX2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx2(Kx2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type estimrho(estimrhoSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type structural(structuralSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type COV(COVSEXP);
+    rcpp_result_gen = Rcpp::wrap(fCESParam(param, covp, idX1, idX2, Kx, Kx2, estimrho, structural, COV));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fgPIyP
 Rcpp::List fgPIyP(const arma::vec& y, Rcpp::List& G, const arma::vec& d, const arma::mat& igroup, const arma::vec& nvec, const int& ngroup, const int& n);
 RcppExport SEXP _QtNet_fgPIyP(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP ngroupSEXP, SEXP nSEXP) {
@@ -277,8 +498,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fJIVE_strucInd
-Rcpp::List fJIVE_strucInd(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE_strucInd(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP COVSEXP) {
+Rcpp::List fJIVE_strucInd(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const int& Kest1, const int& HAC, const bool& COV);
+RcppExport SEXP _QtNet_fJIVE_strucInd(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP Kest1SEXP, SEXP HACSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -295,16 +516,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type Kins(KinsSEXP);
     Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest1(Kest1SEXP);
     Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
     Rcpp::traits::input_parameter< const bool& >::type COV(COVSEXP);
-    rcpp_result_gen = Rcpp::wrap(fJIVE_strucInd(y, X, qy, ins, idX1, idX2, nIs, Is, Kx1, Kx2, Kins, ntau, n, Kest, HAC, COV));
+    rcpp_result_gen = Rcpp::wrap(fJIVE_strucInd(y, X, qy, ins, idX1, idX2, nIs, Is, Kx1, Kx2, Kins, ntau, n, Kest1, HAC, COV));
     return rcpp_result_gen;
 END_RCPP
 }
 // fJIVE2_strucInd
-Rcpp::List fJIVE2_strucInd(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE2_strucInd(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP COVSEXP) {
+Rcpp::List fJIVE2_strucInd(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const int& Kest1, const int& HAC, const bool& COV);
+RcppExport SEXP _QtNet_fJIVE2_strucInd(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP Kest1SEXP, SEXP HACSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -321,16 +542,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type Kins(KinsSEXP);
     Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest1(Kest1SEXP);
     Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
     Rcpp::traits::input_parameter< const bool& >::type COV(COVSEXP);
-    rcpp_result_gen = Rcpp::wrap(fJIVE2_strucInd(y, X, qy, ins, idX1, idX2, nIs, Is, Kx1, Kx2, Kins, ntau, n, Kest, HAC, COV));
+    rcpp_result_gen = Rcpp::wrap(fJIVE2_strucInd(y, X, qy, ins, idX1, idX2, nIs, Is, Kx1, Kx2, Kins, ntau, n, Kest1, HAC, COV));
     return rcpp_result_gen;
 END_RCPP
 }
 // fJIVE_strucClu
-Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, Rcpp::List LnIs, Rcpp::List LIs, const Eigen::MatrixXi& igroup, const Eigen::VectorXi& nvecnIs, const Eigen::VectorXi& hasnIs, const Eigen::VectorXi& hasIs, const int& ngroup, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const int& Kest, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE_strucClu(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP LnIsSEXP, SEXP LIsSEXP, SEXP igroupSEXP, SEXP nvecnIsSEXP, SEXP hasnIsSEXP, SEXP hasIsSEXP, SEXP ngroupSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP COVSEXP) {
+Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, Rcpp::List LnIs, Rcpp::List LIs, const Eigen::MatrixXi& igroup, const Eigen::VectorXi& nvecnIs, const Eigen::VectorXi& hasnIs, const Eigen::VectorXi& hasIs, const int& ngroup, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const bool& COV);
+RcppExport SEXP _QtNet_fJIVE_strucClu(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP LnIsSEXP, SEXP LIsSEXP, SEXP igroupSEXP, SEXP nvecnIsSEXP, SEXP hasnIsSEXP, SEXP hasIsSEXP, SEXP ngroupSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -354,15 +575,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type Kins(KinsSEXP);
     Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
     Rcpp::traits::input_parameter< const bool& >::type COV(COVSEXP);
-    rcpp_result_gen = Rcpp::wrap(fJIVE_strucClu(y, X, qy, ins, idX1, idX2, nIs, Is, LnIs, LIs, igroup, nvecnIs, hasnIs, hasIs, ngroup, Kx1, Kx2, Kins, ntau, n, Kest, COV));
+    rcpp_result_gen = Rcpp::wrap(fJIVE_strucClu(y, X, qy, ins, idX1, idX2, nIs, Is, LnIs, LIs, igroup, nvecnIs, hasnIs, hasIs, ngroup, Kx1, Kx2, Kins, ntau, n, COV));
     return rcpp_result_gen;
 END_RCPP
 }
 // fJIVE2_strucClu
-Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, Rcpp::List LnIs, Rcpp::List LIs, const Eigen::MatrixXi& igroup, const Eigen::VectorXi& hasnIs, const Eigen::VectorXi& hasIs, const int& ngroup, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const int& Kest, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE2_strucClu(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP LnIsSEXP, SEXP LIsSEXP, SEXP igroupSEXP, SEXP hasnIsSEXP, SEXP hasIsSEXP, SEXP ngroupSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP COVSEXP) {
+Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, Rcpp::List LnIs, Rcpp::List LIs, const Eigen::MatrixXi& igroup, const Eigen::VectorXi& hasnIs, const Eigen::VectorXi& hasIs, const int& ngroup, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const bool& COV);
+RcppExport SEXP _QtNet_fJIVE2_strucClu(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP LnIsSEXP, SEXP LIsSEXP, SEXP igroupSEXP, SEXP hasnIsSEXP, SEXP hasIsSEXP, SEXP ngroupSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -385,9 +605,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type Kins(KinsSEXP);
     Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
     Rcpp::traits::input_parameter< const bool& >::type COV(COVSEXP);
-    rcpp_result_gen = Rcpp::wrap(fJIVE2_strucClu(y, X, qy, ins, idX1, idX2, nIs, Is, LnIs, LIs, igroup, hasnIs, hasIs, ngroup, Kx1, Kx2, Kins, ntau, n, Kest, COV));
+    rcpp_result_gen = Rcpp::wrap(fJIVE2_strucClu(y, X, qy, ins, idX1, idX2, nIs, Is, LnIs, LIs, igroup, hasnIs, hasIs, ngroup, Kx1, Kx2, Kins, ntau, n, COV));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -481,32 +700,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fgmm_redARMA
-Rcpp::List fgmm_redARMA(const arma::vec& y, const arma::mat& V, const arma::mat& ins, arma::mat& W, const arma::mat& igroup, const int& ngroup, const int& Kx, const int& Kins, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& iv);
-RcppExport SEXP _QtNet_fgmm_redARMA(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP WSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP ivSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type V(VSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type ins(insSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type W(WSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
-    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kins(KinsSEXP);
-    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
-    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
-    Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
-    Rcpp::traits::input_parameter< const bool& >::type iv(ivSEXP);
-    rcpp_result_gen = Rcpp::wrap(fgmm_redARMA(y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, Kest, HAC, iv));
-    return rcpp_result_gen;
-END_RCPP
-}
 // fgmm_struc
-Rcpp::List fgmm_struc(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, Eigen::MatrixXd& W1, Eigen::MatrixXd& W2, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const int& Kx1, const int& Kx2, const Eigen::MatrixXi& igroup, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, const int& ngroup, const int& Kins, const int& Kx, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& iv);
-RcppExport SEXP _QtNet_fgmm_struc(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP W1SEXP, SEXP W2SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP igroupSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP ngroupSEXP, SEXP KinsSEXP, SEXP KxSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP ivSEXP) {
+Rcpp::List fgmm_struc(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, Eigen::MatrixXd& W1, Eigen::MatrixXd& W2, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const int& Kx1, const int& Kx2, const Eigen::MatrixXi& igroup, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, const int& ngroup, const int& Kins, const int& Kx, const int& ntau, const int& n, const int& Kest1, const int& Kest2, const int& HAC, const bool& iv);
+RcppExport SEXP _QtNet_fgmm_struc(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP W1SEXP, SEXP W2SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP igroupSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP ngroupSEXP, SEXP KinsSEXP, SEXP KxSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP Kest1SEXP, SEXP Kest2SEXP, SEXP HACSEXP, SEXP ivSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -528,41 +724,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
     Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest1(Kest1SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest2(Kest2SEXP);
     Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
     Rcpp::traits::input_parameter< const bool& >::type iv(ivSEXP);
-    rcpp_result_gen = Rcpp::wrap(fgmm_struc(y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, Kest, HAC, iv));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fgmm_strucARMA
-Rcpp::List fgmm_strucARMA(const arma::vec& y, const arma::mat& X, const arma::mat& qy, const arma::mat& ins, arma::mat& W1, arma::mat& W2, const arma::uvec& idX1, const arma::uvec& idX2, const int& Kx1, const int& Kx2, const arma::mat& igroup, const arma::uvec& nIs, const arma::uvec& Is, const int& ngroup, const int& Kins, const int& Kx, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& iv);
-RcppExport SEXP _QtNet_fgmm_strucARMA(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP W1SEXP, SEXP W2SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP igroupSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP ngroupSEXP, SEXP KinsSEXP, SEXP KxSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP ivSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type qy(qySEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type ins(insSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type W1(W1SEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type W2(W2SEXP);
-    Rcpp::traits::input_parameter< const arma::uvec& >::type idX1(idX1SEXP);
-    Rcpp::traits::input_parameter< const arma::uvec& >::type idX2(idX2SEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kx1(Kx1SEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kx2(Kx2SEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
-    Rcpp::traits::input_parameter< const arma::uvec& >::type nIs(nIsSEXP);
-    Rcpp::traits::input_parameter< const arma::uvec& >::type Is(IsSEXP);
-    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kins(KinsSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
-    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
-    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< const int& >::type Kest(KestSEXP);
-    Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
-    Rcpp::traits::input_parameter< const bool& >::type iv(ivSEXP);
-    rcpp_result_gen = Rcpp::wrap(fgmm_strucARMA(y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, Kest, HAC, iv));
+    rcpp_result_gen = Rcpp::wrap(fgmm_struc(y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, Kest1, Kest2, HAC, iv));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -645,6 +811,14 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_QtNet_fCESdata", (DL_FUNC) &_QtNet_fCESdata, 19},
+    {"_QtNet_fOLS", (DL_FUNC) &_QtNet_fOLS, 4},
+    {"_QtNet_fCESgmmparms", (DL_FUNC) &_QtNet_fCESgmmparms, 35},
+    {"_QtNet_fCESgmmobj", (DL_FUNC) &_QtNet_fCESgmmobj, 28},
+    {"_QtNet_fCESWeight", (DL_FUNC) &_QtNet_fCESWeight, 11},
+    {"_QtNet_fCESgmmrhoparms", (DL_FUNC) &_QtNet_fCESgmmrhoparms, 23},
+    {"_QtNet_fCESgmmrhoobj", (DL_FUNC) &_QtNet_fCESgmmrhoobj, 12},
+    {"_QtNet_fCESParam", (DL_FUNC) &_QtNet_fCESParam, 9},
     {"_QtNet_fgPIyP", (DL_FUNC) &_QtNet_fgPIyP, 7},
     {"_QtNet_fQtauy", (DL_FUNC) &_QtNet_fQtauy, 10},
     {"_QtNet_fQtauyWithIndex", (DL_FUNC) &_QtNet_fQtauyWithIndex, 10},
@@ -660,16 +834,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_QtNet_fJIVE2_redClu", (DL_FUNC) &_QtNet_fJIVE2_redClu, 12},
     {"_QtNet_fJIVE_strucInd", (DL_FUNC) &_QtNet_fJIVE_strucInd, 16},
     {"_QtNet_fJIVE2_strucInd", (DL_FUNC) &_QtNet_fJIVE2_strucInd, 16},
-    {"_QtNet_fJIVE_strucClu", (DL_FUNC) &_QtNet_fJIVE_strucClu, 22},
-    {"_QtNet_fJIVE2_strucClu", (DL_FUNC) &_QtNet_fJIVE2_strucClu, 21},
+    {"_QtNet_fJIVE_strucClu", (DL_FUNC) &_QtNet_fJIVE_strucClu, 21},
+    {"_QtNet_fJIVE2_strucClu", (DL_FUNC) &_QtNet_fJIVE2_strucClu, 20},
     {"_QtNet_fcheckrankEigen", (DL_FUNC) &_QtNet_fcheckrankEigen, 2},
     {"_QtNet_demean", (DL_FUNC) &_QtNet_demean, 3},
     {"_QtNet_demean_separate", (DL_FUNC) &_QtNet_demean_separate, 6},
     {"_QtNet_fdatadiagnostic", (DL_FUNC) &_QtNet_fdatadiagnostic, 16},
     {"_QtNet_fgmm_red", (DL_FUNC) &_QtNet_fgmm_red, 13},
-    {"_QtNet_fgmm_redARMA", (DL_FUNC) &_QtNet_fgmm_redARMA, 13},
-    {"_QtNet_fgmm_struc", (DL_FUNC) &_QtNet_fgmm_struc, 21},
-    {"_QtNet_fgmm_strucARMA", (DL_FUNC) &_QtNet_fgmm_strucARMA, 21},
+    {"_QtNet_fgmm_struc", (DL_FUNC) &_QtNet_fgmm_struc, 22},
     {"_QtNet_fStructParam", (DL_FUNC) &_QtNet_fStructParam, 9},
     {"_QtNet_fFstathomo", (DL_FUNC) &_QtNet_fFstathomo, 3},
     {"_QtNet_fFstathomoARMA", (DL_FUNC) &_QtNet_fFstathomoARMA, 3},

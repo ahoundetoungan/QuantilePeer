@@ -56,8 +56,11 @@ Rcpp::List fgmm_red(const Eigen::VectorXd& y,
       VZe += tp*tp.transpose();
     }
   }
-  Eigen::MatrixXd tp(VZWZV.colPivHouseholderQr().solve(VZW*VZe)); // inv(V'ZWZ'V)*V'ZW*Var(Ze)
-  Eigen::MatrixXd Vpa(VZWZV.colPivHouseholderQr().solve(VZW*tp.transpose()));//inv(V'ZWZ'V)*V'ZW*Var(Ze)*WZ'V*inv(V'ZWZ'V)
+  // Eigen::MatrixXd tp(VZWZV.colPivHouseholderQr().solve(VZW*VZe)); // inv(V'ZWZ'V)*V'ZW*Var(Ze)
+  // Eigen::MatrixXd Vpa(VZWZV.colPivHouseholderQr().solve(VZW*tp.transpose()));//inv(V'ZWZ'V)*V'ZW*Var(Ze)*WZ'V*inv(V'ZWZ'V)
+  Eigen::MatrixXd iHdF((VZWZV).inverse()); 
+  Eigen::MatrixXd HVFH(VZW*VZe*VZW.transpose());
+  Eigen::MatrixXd Vpa(iHdF * HVFH * iHdF.transpose());
   
   // overidentification
   Eigen::VectorXd Ze(ins.transpose()*e.matrix());
@@ -66,7 +69,6 @@ Rcpp::List fgmm_red(const Eigen::VectorXd& y,
                             _["df"] = Kins - Kx - ntau, _["yhat"] = yhat, _["sigma2"] = s2);
 }
 
-//[[Rcpp::export]]
 Rcpp::List fgmm_redARMA(const arma::vec& y,
                     const arma::mat& V,
                     const arma::mat& ins,
@@ -138,7 +140,8 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
                       const int& Kx,
                       const int& ntau,
                       const int& n,
-                      const int& Kest,
+                      const int& Kest1,
+                      const int& Kest2,
                       const int& HAC = 0,
                       const bool& iv = true){
   int n_iso(Is.size()), n_niso(n - n_iso);
@@ -174,7 +177,7 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   Eigen::VectorXd y1hat(Xb1), y2hat(V2*lambda), yhat(n);
   yhat(Is) = y1hat; yhat(nIs) = y2hat;
   Eigen::ArrayXd e1(y1 - y1hat), e2(y2 - y2hat);
-  Eigen::ArrayXd e = y - yhat;
+  // Eigen::ArrayXd e = y - yhat;
   Eigen::MatrixXd H(Eigen::MatrixXd::Zero(Kx + ntau + 1, Kx1 + Kins + 1));
   H.block(0, 0, Kx1, Kx1)  = XXW1;
   H.block(Kx1, Kx1, Kx2 + ntau + 1, Kins + 1) = VZW2;
@@ -184,11 +187,12 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   dF(Eigen::seqN(Kx1, Kins + 1), Eigen::all) << (Z2.transpose()*X21*lambda(0)), ZV2;
   
   Eigen::MatrixXd VF(Eigen::MatrixXd::Zero(Kx1 + Kins + 1, Kx1 + Kins + 1));
-  double s2(R_NaN);
+  double s21(R_NaN), s22(R_NaN);
   if (HAC == 0) {
-    s2     = e.square().sum()/(n - Kest);
-    VF.block(0, 0, Kx1, Kx1) = s2*XX1;
-    VF.block(Kx1, Kx1, Kins + 1, Kins + 1) = s2*ZZ2;
+    s21   = e1.square().sum()/(n_iso - Kest1);
+    s22   = (e2/lambda(0)).square().sum()/(n_niso - Kest2);
+    VF.block(0, 0, Kx1, Kx1) = s21*XX1;
+    VF.block(Kx1, Kx1, Kins, Kins) = s22*ZZ2*pow(lambda(0), 2);
   }
   if (HAC == 1) {
     Eigen::MatrixXd Xe1(X1.array().colwise()*e1);
@@ -213,9 +217,13 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
       VF += tp2*tp2.transpose();
     }
   }
-  Eigen::MatrixXd HdF(H*dF);//H * dF
-  Eigen::MatrixXd tp(HdF.colPivHouseholderQr().solve(H*VF*H.transpose())); // inv(H * dF) * H * Var(F) * H'
-  Eigen::MatrixXd Vpa(HdF.colPivHouseholderQr().solve(tp.transpose()));//inv(H * dF) * H * Var(F) * H' * inv(H * dF)'
+  // Eigen::MatrixXd HdF(H*dF);//H * dF
+  // Eigen::MatrixXd tp(HdF.colPivHouseholderQr().solve(H*VF*H.transpose())); // inv(H * dF) * H * Var(F) * H'
+  // Eigen::MatrixXd Vpa(HdF.colPivHouseholderQr().solve(tp.transpose()));//inv(H * dF) * H * Var(F) * H' * inv(H * dF)'
+  Eigen::MatrixXd iHdF((H*dF).inverse()); 
+  Eigen::MatrixXd HVFH(H*VF*H.transpose());
+  Eigen::MatrixXd Vpa(iHdF * HVFH * iHdF.transpose());
+  
   // overidentification
   Eigen::VectorXd F2(Z2.transpose()*e2.matrix());
   Eigen::MatrixXd VF1(VF.block(0, 0, Kx1, Kx1)), VF2(VF.block(Kx1, Kx1, Kins + 1, Kins + 1));
@@ -223,11 +231,11 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   
   return Rcpp::List::create(_["beta"] = b, _["lambda"] = lambda, _["Vpa"] = Vpa, _["VF1"] = VF1, 
                             _["VF2"] = VF2, _["Overident"] = stat, _["df"] = Kins - ntau - Kx2, 
-                              _["yhat"] = yhat, _["sigma2"] = s2);
+                              _["yhat"] = yhat, _["sigma21"] = s21, _["sigma22"] = s22);
 }
 
 
-//[[Rcpp::export]]
+// Not exported, No longer used.
 Rcpp::List fgmm_strucARMA(const arma::vec& y,
                       const arma::mat& X,
                       const arma::mat& qy,
@@ -343,7 +351,7 @@ Rcpp::List fStructParam(const arma::vec& param,
   idx.head(ntau + 1)          = arma::linspace<arma::uvec>(Kx1, Kx1 + ntau, ntau + 1);
   idx.elem(ntau + 1 + idX1)   = arma::linspace<arma::uvec>(0, Kx1 - 1, Kx1);
   if (Kx2 > 0) {
-    idx.elem(ntau + 1 + idX2) = arma::linspace<arma::uvec>(Kx1 + ntau + 1, Kx, Kx2);
+    idx.elem(ntau + 1 + idX2) = arma::linspace<arma::uvec>(Kx1 + ntau + 1, Kx + ntau, Kx2);
   }
   
   // Theta

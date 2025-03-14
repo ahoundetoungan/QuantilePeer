@@ -93,10 +93,10 @@ fnetwork   <- function(Glist, isol = NULL) {
 fdrop <- function(drop, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
   n        <- sum(nvec)
   if (any(!(drop %in% 0:1) | !is.finite(drop))) {
-    stop("`isolated` must be a binary (0/1) variable.")
+    stop("`drop` must be a binary (0/1) variable.")
   }
   if (length(drop) != n) {
-    stop("`isolated` must be a vector of length n.")
+    stop("`drop` must be a vector of length n.")
   }
   ncs      <- c(0, cumsum(nvec))
   olIs     <- sapply(1:M, function(m) ldg[[m]] == 0)
@@ -113,9 +113,9 @@ fdrop <- function(drop, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
   igr      <- cbind(head(ncs, M), tail(ncs, M) - 1)
   MIs      <- sum(sapply(ldg, function(s) any(s == 0)))
   MnIs     <- sum(sapply(ldg, function(s) any(s != 0)))
-  lIs      <- sapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
+  lIs      <- lapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
   Is       <- unlist(lIs)
-  lnIs     <- sapply(1:M, function(m) which(ldg[[m]] != 0) - 1 + ncs[m])
+  lnIs     <- lapply(1:M, function(m) which(ldg[[m]] != 0) - 1 + ncs[m])
   nIs      <- unlist(lnIs)
   y        <- y[keep]
   X        <- X[keep, , drop = FALSE]
@@ -143,7 +143,8 @@ fprintcoeft <- function(coef) {
   refprob   <- c(0.001, 0.01, 0.05, 0.1)
   refstr    <- c("***",  "**", "*", ".", "")
   str       <- sapply(pval, function(s) ifelse(is.na(s), "", refstr[1 + sum(s > refprob)]))
-  out       <- data.frame(coef[,-ncol(coef)], "P" = pval_pt, "S" = str); colnames(out) <- c(colnames(coef), "")
+  out       <- data.frame(coef[,-ncol(coef), drop = FALSE], "P" = pval_pt, "S" = str); 
+  colnames(out) <- c(colnames(coef), "")
   print(out)
 }
 
@@ -230,4 +231,72 @@ fdiagnostic  <- function(object, nendo) {
     rownames(out) <- rn
   }
   out
+}
+
+## Create data to start optimization
+fCESdatainit  <- function (y, z, G, nvec, M, ldg, lIs, lnIs, drop) {
+  n           <- sum(nvec)
+  if (length(drop) == 0) {
+    drop      <- rep(0, n)
+  }
+  if (any(!(drop %in% 0:1) | !is.finite(drop))) {
+    stop("`drop` must be a binary (0/1) variable.")
+  }
+  if (length(drop) != n) {
+    stop("`drop` must be a vector of length n.")
+  }
+  ncs         <- c(0, cumsum(nvec))
+  friendindex <- lapply(1:M, function(m) {
+    lapply(1:nvec[m], function(s) {
+      which(G[[m]][s,] > 0) - 1
+    })})
+  frzeroy     <- as.integer(unlist(lapply(1:M, function(m){
+    lapply(1:nvec[m], function(s){
+      any(y[friendindex[[m]][[s]] + ncs[m] + 1] <= 0)
+    })})))
+  frzeroz     <- as.integer(unlist(lapply(1:M, function(m){
+    lapply(1:nvec[m], function(s){
+      any(z[friendindex[[m]][[s]] + ncs[m] + 1] <= 0)
+    })})))
+  lsel        <- lapply(1:M, function(m) drop[(ncs[m] + 1):ncs[m + 1]] != 1)
+  
+  # Max and Min of friend y and z
+  yFmax       <- unlist(lapply(1:M, function(m){
+    lapply(1:nvec[m], function(s){
+      ifelse(ldg[[m]][s] > 0, max(y[friendindex[[m]][[s]] + ncs[m] + 1]), NA)
+    })
+  }))
+  yFmin       <- unlist(lapply(1:M, function(m){
+    lapply(1:nvec[m], function(s){
+      ifelse(ldg[[m]][s] > 0, min(y[friendindex[[m]][[s]] + ncs[m] + 1]), NA)
+    })
+  }))
+  zFmax       <- unlist(lapply(1:M, function(m){
+    lapply(1:nvec[m], function(s){
+      ifelse(ldg[[m]][s] > 0, max(z[friendindex[[m]][[s]] + ncs[m] + 1]), NA)
+    })
+  }))
+  zFmin       <- unlist(lapply(1:M, function(m){
+    lapply(1:nvec[m], function(s){
+      ifelse(ldg[[m]][s] > 0, min(z[friendindex[[m]][[s]] + ncs[m] + 1]), NA)
+    })
+  }))
+  
+  # In selection variables
+  ldg         <- lapply(1:M, function(m) ldg[[m]][lsel[[m]]])
+  lIs         <- lapply(1:M, function(m) lIs[[m]][lsel[[m]][lIs[[m]] - ncs[m] + 1]])
+  lnIs        <- lapply(1:M, function(m) lnIs[[m]][lsel[[m]][lnIs[[m]] - ncs[m] + 1]])
+  Is          <- unlist(lIs)
+  nIs         <- unlist(lnIs)
+  
+  # In selection variables if empty groups are removed
+  keepg       <- sapply(1:M, function(m) length(ldg[[m]]) > 0)
+  ldg         <- ldg[keepg]
+  M           <- length(ldg)
+  MIs         <- sum(sapply(lIs, function(s) length(s) > 0))
+  MnIs        <- sum(sapply(lnIs, function(s) length(s) > 0))
+  
+  list(friendindex = friendindex, frzeroy = frzeroy, frzeroz = frzeroz, M = M, MIs = MIs, MnIs = MnIs,
+       ldg = ldg, dg = unlist(ldg), lIs = lIs, Is = Is, lnIs = lnIs, nIs = nIs, hasIso = (length(Is) > 0),
+       yFmax = yFmax, yFmin = yFmin, zFmax = zFmax, zFmin = zFmin)
 }

@@ -1,17 +1,19 @@
 # Structural
 fstruct <- function(y, X, qy, ins, idX1, idX2, Kx1, Kx2, igr, nIs, Is, lnIs, lIs, M, Kins, Kx, 
-                    ntau, Kest, n, HACnum, iv, estimator, compute.cov, estname) {
+                    ntau, Kest1, Kest2,  n, HACnum, iv, estimator, compute.cov, estname) {
+  Kest        <- Kest1 + Kest2
   GMMe        <- NULL
   if (estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
     GMMe      <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = diag(Kx1), W2 = diag(Kins + 1), idX1 = idX1, 
                             idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igroup = igr, nIs = nIs, Is = Is, ngroup = M, 
-                            Kins = Kins, Kx = Kx, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = iv)
+                            Kins = Kins, Kx = Kx, ntau = ntau, Kest1 = Kest1, Kest2 = Kest2, n = n, HAC = HACnum, 
+                            iv = iv)
     
     if (estimator == "GMM.optimal" & HACnum != 0) {
       GMMe    <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = solve(GMMe$VF1), W2 = solve(GMMe$VF2), 
                             idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igroup = igr, nIs = nIs, Is = Is, 
-                            ngroup = M, Kins = Kins, Kx = Kx, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, 
-                            iv = FALSE)
+                            ngroup = M, Kins = Kins, Kx = Kx, ntau = ntau, Kest1 = Kest1, Kest2 = Kest2, n = n, 
+                            HAC = HACnum, iv = FALSE)
     }
   } else if (estimator == "JIVE") {
     if (HACnum == 2) {
@@ -22,10 +24,10 @@ fstruct <- function(y, X, qy, ins, idX1, idX2, Kx1, Kx2, igr, nIs, Is, lnIs, lIs
       GMMe    <- fJIVE_strucClu(y = y, X = X, qy = qy, ins = ins, idX1 = idX1, idX2 = idX2, nIs = nIs, Is = Is, 
                                 LnIs = lnIs, LIs = lIs, igroup = igr, nvecnIs = nvecnIs, hasnIs = hasnIs, 
                                 hasIs = hasIs, ngroup = M, Kx1 = Kx1, Kx2 = Kx2, Kins = Kins, ntau = ntau, n = n, 
-                                Kest = Kest, COV = compute.cov)
+                                COV = compute.cov)
     } else {
       GMMe    <- fJIVE_strucInd(y = y, X = X, qy = qy, ins = ins, idX1 = idX1, idX2 = idX2, nIs = nIs, 
-                                Is = Is, Kx1 = Kx1, Kx2 = Kx2, Kins = Kins, ntau = ntau, n = n, Kest = Kest, 
+                                Is = Is, Kx1 = Kx1, Kx2 = Kx2, Kins = Kins, ntau = ntau, n = n, Kest1 = Kest1, 
                                 HAC = HACnum, COV = compute.cov)
     }
   } else {
@@ -37,10 +39,10 @@ fstruct <- function(y, X, qy, ins, idX1, idX2, Kx1, Kx2, igr, nIs, Is, lnIs, lIs
       GMMe    <- fJIVE2_strucClu(y = y, X = X, qy = qy, ins = ins, idX1 = idX1, idX2 = idX2, nIs = nIs, Is = Is, 
                                  LnIs = lnIs, LIs = lIs, igroup = igr, hasnIs = hasnIs, 
                                  hasIs = hasIs, ngroup = M, Kx1 = Kx1, Kx2 = Kx2, Kins = Kins, ntau = ntau, n = n, 
-                                 Kest = Kest, COV = compute.cov)
+                                 COV = compute.cov)
     } else {
       GMMe    <- fJIVE2_strucInd(y = y, X = X, qy = qy, ins = ins, idX1 = idX1, idX2 = idX2, nIs = nIs, 
-                                 Is = Is, Kx1 = Kx1, Kx2 = Kx2, Kins = Kins, ntau = ntau, n = n, Kest = Kest, 
+                                 Is = Is, Kx1 = Kx1, Kx2 = Kx2, Kins = Kins, ntau = ntau, n = n, Kest1 = Kest1, 
                                  HAC = HACnum, COV = compute.cov)
     }
   }
@@ -56,10 +58,12 @@ fstruct <- function(y, X, qy, ins, idX1, idX2, Kx1, Kx2, igr, nIs, Is, lnIs, lIs
   ###
   fv          <- c(GMMe$yhat)
   res         <- y - fv
+  res[nIs + 1]<- res[nIs + 1]/(1 - GMMe$parms[1])
   rs          <- sum((fv - mean(fv))^2)/sum((y - mean(y))^2)
-  ars         <- 1 - (1 -rs)*(n - 1)/(n - length(c(GMMe$parms)))
-  sigma       <- sqrt(GMMe$sigma2);  if(is.na(sigma)) sigma = NULL
-  GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
+  ars         <- 1 - (1 - rs)*(n - 1)/(n - length(c(GMMe$parms)))
+  sigmaiso    <- sqrt(GMMe$sigma21);  if(is.na(sigmaiso)) sigmaiso = NULL
+  sigmaniso   <- sqrt(GMMe$sigma22);  if(is.na(sigmaniso)) sigmaniso = NULL
+  GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma1 = sigmaiso, sigma2 = sigmaniso, fitted.values = fv, 
                       residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
                       Jtest = c("statistic" = ifelse(is.null(GMMe$Overident), NA, GMMe$Overident), 
                                 "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))))

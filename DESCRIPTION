@@ -2,7 +2,7 @@ Package: QtNet
 Type: Package
 Title: Quantile Peer Effect Models
 Version: 1.0.0
-Date: 2025-01-18
+Date: 2025-04-13
 Authors@R: person(given = "Aristide", family = "Houndetoungan", role = c("cre","aut"), email =  "ahoundetoungan@gmail.com", comment = c(ORCID = "0009-0003-2733-9362"))
 Description: Simulating and estimating quantile peer effect models.
 License: GPL-3
