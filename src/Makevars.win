@@ -11,7 +11,3 @@
 PKG_CXXFLAGS = -O2 -Wall -pipe -std=c++17
 PKG_CPPFLAGS = -DARMA_64BIT_WORD=1
 PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
-PKG_CFLAGS = -O2 -Wall -pipe
-PKG_FCFLAGS = -O2 -Wall -pipe
-PKG_FFLAGS = -O2 -Wall -pipe
