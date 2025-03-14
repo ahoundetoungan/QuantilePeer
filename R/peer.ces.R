@@ -19,11 +19,11 @@
 #' @param compute.cov A logical value indicating whether the covariance matrix of the estimator should be computed.
 #' @param HAC A character string specifying the correlation structure among the idiosyncratic error terms for covariance computation. Options are `"iid"` for independent errors, `"hetero"` for heteroskedastic non-autocorrelated errors, and `"cluster"` for heteroskedastic errors with potential within-subnet correlation.
 #' @param set.rho A fixed value for the CES substitution parameter to estimate a constrained model. Given this value, the other parameters can be estimated.  
-#' @param grid.rho A finite grid of values for the CES substitution parameter \eqn{rho} (see Details).  
+#' @param grid.rho A finite grid of values for the CES substitution parameter \eqn{\rho} (see Details).  
 #' This grid is used to obtain the starting value and define the GMM weight.  
 #' It is recommended to use a finely subdivided grid.  
-#' @param radius The radius of the subset in which the estimate for \eqn{rho} is determined.  
-#' The subset is a segment centered at the optimal \eqn{rho} found using `grid.rho`.  
+#' @param radius The radius of the subset in which the estimate for \eqn{\rho} is determined.  
+#' The subset is a segment centered at the optimal \eqn{\rho} found using `grid.rho`.  
 #' For better numerical optimization performance, use a finely subdivided `grid.rho` and a small `radius`.  
 #' @description
 #' `cespeer` estimates the CES-based peer effects model introduced by Boucher et al. (2024) \doi{10.3982/ECTA21048}. See Details.

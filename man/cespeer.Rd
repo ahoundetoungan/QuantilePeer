@@ -38,12 +38,12 @@ This prediction is used to compute instruments for the CES function of peer outc
 
 \item{set.rho}{A fixed value for the CES substitution parameter to estimate a constrained model. Given this value, the other parameters can be estimated.}
 
-\item{grid.rho}{A finite grid of values for the CES substitution parameter \eqn{rho} (see Details).
+\item{grid.rho}{A finite grid of values for the CES substitution parameter \eqn{\rho} (see Details).
 This grid is used to obtain the starting value and define the GMM weight.
 It is recommended to use a finely subdivided grid.}
 
-\item{radius}{The radius of the subset in which the estimate for \eqn{rho} is determined.
-The subset is a segment centered at the optimal \eqn{rho} found using \code{grid.rho}.
+\item{radius}{The radius of the subset in which the estimate for \eqn{\rho} is determined.
+The subset is a segment centered at the optimal \eqn{\rho} found using \code{grid.rho}.
 For better numerical optimization performance, use a finely subdivided \code{grid.rho} and a small \code{radius}.}
 
 \item{tol}{A tolerance value used in the QR factorization to identify columns of explanatory variable and instrument matrices that ensure a full-rank matrix (see the \link[base]{qr} function).
