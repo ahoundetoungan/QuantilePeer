@@ -50,7 +50,7 @@ arma::mat demean_separate(arma::mat X,
                           const int & ngroup,
                           const int& n) {
   for (int r(0); r < ngroup; ++ r) {
-    arma::uvec Isr(LIs[r]), nIsr(LnIs[r]);
+    arma::uvec Isr = LIs[r], nIsr = LnIs[r];
     // For isolated
     if (Isr.n_elem > 0) {
       arma::mat Xr(X.rows(Isr));

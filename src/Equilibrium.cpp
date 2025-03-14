@@ -122,9 +122,9 @@ void fQWeightIndex(arma::mat& w1,
   if(type == 1){
     for(int i(0); i < n; ++ i){
       if(d(i) == 0) continue;
-      arma::vec gP(lgP[i]);
-      arma::vec cumsumgP(lcumsumgP[i]);
-      arma::uvec IyP(lIyP[i]);
+      arma::vec gP = lgP[i];
+      arma::vec cumsumgP = lcumsumgP[i];
+      arma::uvec IyP = lIyP[i];
       arma::vec w2i(ntau);
       arma::uvec pii1(ntau);
       
@@ -145,9 +145,9 @@ void fQWeightIndex(arma::mat& w1,
   if(type == 2){
     for(int i(0); i < n; ++ i){
       if(d(i) == 0) continue;
-      arma::vec gP(lgP[i]);
-      arma::vec cumsumgP(lcumsumgP[i]);
-      arma::uvec IyP(lIyP[i]);
+      arma::vec gP = lgP[i];
+      arma::vec cumsumgP = lcumsumgP[i];
+      arma::uvec IyP = lIyP[i];
       arma::vec w2i(ntau);
       arma::uvec pii1(ntau);
       
@@ -168,9 +168,9 @@ void fQWeightIndex(arma::mat& w1,
   if(type == 3){
     for(int i(0); i < n; ++ i){
       if(d(i) == 0) continue;
-      arma::vec gP(lgP[i]);
-      arma::vec cumsumgP(lcumsumgP[i]);
-      arma::uvec IyP(lIyP[i]);
+      arma::vec gP = lgP[i];
+      arma::vec cumsumgP = lcumsumgP[i];
+      arma::uvec IyP = lIyP[i];
       arma::vec w2i(ntau);
       arma::uvec pii1(ntau);
       
@@ -195,9 +195,9 @@ void fQWeightIndex(arma::mat& w1,
   if(type == 4){
     for(int i(0); i < n; ++ i){
       if(d(i) == 0) continue;
-      arma::vec gP(lgP[i]);
-      arma::vec cumsumgP(lcumsumgP[i]);
-      arma::uvec IyP(lIyP[i]);
+      arma::vec gP = lgP[i];
+      arma::vec cumsumgP = lcumsumgP[i];
+      arma::uvec IyP = lIyP[i];
       arma::vec w2i(ntau);
       arma::uvec pii1(ntau);
       
@@ -218,9 +218,9 @@ void fQWeightIndex(arma::mat& w1,
   if(type == 5){
     for(int i(0); i < n; ++ i){
       if(d(i) == 0) continue;
-      arma::vec gP(lgP[i]);
-      arma::vec cumsumgP(lcumsumgP[i]);
-      arma::uvec IyP(lIyP[i]);
+      arma::vec gP = lgP[i];
+      arma::vec cumsumgP = lcumsumgP[i];
+      arma::uvec IyP = lIyP[i];
       arma::vec w2i(ntau);
       arma::uvec pii1(ntau);
       
@@ -241,9 +241,9 @@ void fQWeightIndex(arma::mat& w1,
   if(type == 6){
     for(int i(0); i < n; ++ i){
       if(d(i) == 0) continue;
-      arma::vec gP(lgP[i]);
-      arma::vec cumsumgP(lcumsumgP[i]);
-      arma::uvec IyP(lIyP[i]);
+      arma::vec gP = lgP[i];
+      arma::vec cumsumgP = lcumsumgP[i];
+      arma::uvec IyP = lIyP[i];
       arma::vec w2i(ntau);
       arma::uvec pii1(ntau);
       
@@ -270,9 +270,9 @@ void fQWeightIndex(arma::mat& w1,
   if(type == 7){
     for(int i(0); i < n; ++ i){
       if(d(i) == 0) continue;
-      arma::vec gP(lgP[i]);
-      arma::vec cumsumgP(lcumsumgP[i]);
-      arma::uvec IyP(lIyP[i]);
+      arma::vec gP = lgP[i];
+      arma::vec cumsumgP = lcumsumgP[i];
+      arma::uvec IyP = lIyP[i];
       arma::vec w2i(ntau);
       arma::uvec pii1(ntau);
       
@@ -293,9 +293,9 @@ void fQWeightIndex(arma::mat& w1,
   if(type == 8){
     for(int i(0); i < n; ++ i){
       if(d(i) == 0) continue;
-      arma::vec gP(lgP[i]);
-      arma::vec cumsumgP(lcumsumgP[i]);
-      arma::uvec IyP(lIyP[i]);
+      arma::vec gP = lgP[i];
+      arma::vec cumsumgP = lcumsumgP[i];
+      arma::uvec IyP = lIyP[i];
       arma::vec w2i(ntau);
       arma::uvec pii1(ntau);
       
@@ -316,9 +316,9 @@ void fQWeightIndex(arma::mat& w1,
   if(type == 9){
     for(int i(0); i < n; ++ i){
       if(d(i) == 0) continue;
-      arma::vec gP(lgP[i]);
-      arma::vec cumsumgP(lcumsumgP[i]);
-      arma::uvec IyP(lIyP[i]);
+      arma::vec gP = lgP[i];
+      arma::vec cumsumgP = lcumsumgP[i];
+      arma::uvec IyP = lIyP[i];
       arma::vec w2i(ntau);
       arma::uvec pii1(ntau);
       

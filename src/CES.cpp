@@ -47,7 +47,7 @@ arma::mat fCESdata(const arma::mat& X,
     Rcpp::List frindexm(friendindex[r]);
     
     for (int i(0); i < nm; i++) {
-      uvec fri(frindexm[i]);
+      uvec fri = frindexm[i];
       if (!fri.is_empty()) {
         if (rho == R_PosInf) {
           Gy[n1 + i] = max(ym.elem(fri));
@@ -133,7 +133,7 @@ arma::mat fCESdata(const arma::mat& X,
   data.col(Kx + 5)     = ddGz;
   if (FEnum == 1) {
     for (int r(0); r < ngroup; ++ r) {
-      arma::uvec Isr(lIs[r]), nIsr(lnIs[r]);
+      arma::uvec Isr = lIs[r], nIsr = lnIs[r];
       if (!Isr.is_empty() || !nIsr.is_empty()) {
         arma::uvec IsnIsr = arma::join_cols(Isr, nIsr);
         arma::mat tp(data.rows(IsnIsr));
@@ -142,7 +142,7 @@ arma::mat fCESdata(const arma::mat& X,
     }
   } else if (FEnum == 2) {
     for (int r(0); r < ngroup; ++ r) {
-      arma::uvec Isr(lIs[r]), nIsr(lnIs[r]);
+      arma::uvec Isr = lIs[r], nIsr = lnIs[r];
       // For isolated
       if (!Isr.is_empty()) {
         arma::mat tp(data.rows(Isr));
