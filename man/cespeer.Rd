@@ -58,7 +58,7 @@ These observations cannot be directly removed from the network by the user becau
 \item{HAC}{A character string specifying the correlation structure among the idiosyncratic error terms for covariance computation. Options are \code{"iid"} for independent errors, \code{"hetero"} for heteroskedastic non-autocorrelated errors, and \code{"cluster"} for heteroskedastic errors with potential within-subnet correlation.}
 
 \item{data}{An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
-in the model. If not found in \code{data}, the variables are taken from \code{environment(formula)}, typically the environment from which \code{qpeer} is called.}
+in the model. If not found in \code{data}, the variables are taken from \code{environment(formula)}, typically the environment from which \code{cespeer} is called.}
 }
 \value{
 A list containing:

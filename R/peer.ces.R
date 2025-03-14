@@ -6,7 +6,7 @@
 #' This prediction is used to compute instruments for the CES function of peer outcomes.
 #' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
-#' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `qpeer` is called.
+#' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `cespeer` is called.
 #' @param tol A tolerance value used in the QR factorization to identify columns of explanatory variable and instrument matrices that ensure a full-rank matrix (see the \link[base]{qr} function).
 #' The same tolerance is also used in the to minimize the concentrated GMM objective function (see \link[stats]{optimise}).
 #' @param drop A dummy vector of the same length as the sample, indicating whether an observation should be dropped. 
