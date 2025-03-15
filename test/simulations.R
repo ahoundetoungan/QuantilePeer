@@ -165,12 +165,12 @@ Est21      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda2, FALSE)
 Est22      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda2, TRUE), mc.cores = 10))
 
 # Concave lambda
-lambda3    <- c(0.2, 0, 0.35, 0.2, 0)
+lambda3    <- c(0.2, 0, 0.275, 0.275, 0)
 Est31      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda3, FALSE), mc.cores = 10))
 Est32      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda3, TRUE), mc.cores = 10))
 
 # Convex lambda
-lambda4    <- c(0.2, 0.2, 0, 0, 0.35)
+lambda4    <- c(0.2, 0.275, 0, 0, 0.275)
 Est41      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda4, FALSE), mc.cores = 10))
 Est42      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda4, TRUE), mc.cores = 10))
 
