@@ -99,8 +99,7 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
                              excluded.instruments = ~ GGX, 
                              Glist = Gnorm,
                              structural = TRUE,
-                             fixed.effects = fixed.effects), 
-                     diagnostics = TRUE)
+                             fixed.effects = fixed.effects))
   
   # Quantile-based model using Z1 as instruments
   Quant1  <- summary(qpeer(formula = y ~ X + GX, 
@@ -160,7 +159,7 @@ Est11      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda1, FALSE)
 Est12      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda1, TRUE), mc.cores = 10))
 
 # Decreasing lambda
-lambda2    <- c(0.2, 0.35, 0.2, 0.05, 0)
+lambda2    <- c(0.2, 0.3, 0.2, 0.05, 0)
 Est21      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda2, FALSE), mc.cores = 10))
 Est22      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda2, TRUE), mc.cores = 10))
 
@@ -233,7 +232,7 @@ tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\lambda = (", paste0(lambda1[-1], col
                           paste0("DGP C: $\\lambda = (", paste0(lambda3[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda3[1], "$"),
                           paste0("DGP D: $\\lambda = (", paste0(lambda4[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda4[1], "$"),
                           paste0("DGP E: $\\lambda = (", paste0(lambda5[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda5[1], "$"),
-                          paste0("DGP F: $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
+                          paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
 writeData(wb, "FixedEffects", tp, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 
 # Add a new sheet for result without fixed effects
@@ -247,7 +246,7 @@ tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\lambda = (", paste0(lambda1[-1], col
                           paste0("DGP C: $\\lambda = (", paste0(lambda3[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda3[1], "$"),
                           paste0("DGP D: $\\lambda = (", paste0(lambda4[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda4[1], "$"),
                           paste0("DGP E: $\\lambda = (", paste0(lambda5[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda5[1], "$"),
-                          paste0("DGP F: $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
+                          paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
 writeData(wb, "NoFixedEffects", tp, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 
 # Full results
@@ -258,7 +257,7 @@ tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\lambda = (", paste0(lambda1[-1], col
                           paste0("DGP C: $\\lambda = (", paste0(lambda3[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda3[1], "$"),
                           paste0("DGP D: $\\lambda = (", paste0(lambda4[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda4[1], "$"),
                           paste0("DGP E: $\\lambda = (", paste0(lambda5[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda5[1], "$"),
-                          paste0("DGP F: $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
+                          paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
 writeData(wb, "Full", tp, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 
 

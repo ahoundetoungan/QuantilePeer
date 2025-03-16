@@ -124,9 +124,8 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
   }
   
   # Solving the game
-  talpha   <- X %*% b
+  talpha   <- X %*% b + eps
   if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - ltst)
-  talpha   <- talpha + eps
   y        <- rep(0, n)
   t        <- fNashE(y = y, G = Glist, d = dg, talpha, lambdatau = lt, igroup = igr, 
                      nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type, 
