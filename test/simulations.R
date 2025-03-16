@@ -19,7 +19,7 @@ OutResPath  <- "~/Dropbox/Academy/1.Papers/Quantile Peer Effects/Simulations"
 # parameter beta
 beta       <- c(4, -0.5, 1, -0.2, 0.6)
 # parameter sigma
-sigma      <- 0.6
+sigma      <- 0.7
 
 # Sample size:
 ngroup     <- 50  # Number of subnetworks

@@ -68,9 +68,9 @@ Inschool <- Inschool %>%
   # Self esteem
   mutate(across(starts_with("S62"), ~ ifelse(. == 5, 0, ifelse(. == 4, 0.25, ifelse(. == 3, 0.5, ifelse(. == 2, 0.75, .)))))) %>%
   # Model variable creation
-  mutate(age = S1, age2 = age^2, S1 = NULL, 
+  mutate(age = S1, age2 = (age/10)^2, S1 = NULL, 
          male = as.integer(S2 == 1), female = as.integer(S2 == 2), S2 = NULL,
-         grade = ifelse(S3 %in% 6:12, S3, NA), grade2 = grade^2, S3 = NULL,
+         grade = ifelse(S3 %in% 6:12, S3, NA), grade2 = (grade/10)^2, S3 = NULL,
          hispanic = as.integer(S4 == 1), S4 = NULL,
          racewhite = as.integer(S6A == 1), S6A = NULL,
          raceblack = as.integer(S6B == 1), S6B = NULL,

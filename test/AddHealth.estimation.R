@@ -66,7 +66,7 @@ festim  <- function(outcome) {
   Z22     <- qpeer.inst(formula = y ~ X + GX, Glist = G, tau = tau2,
                         max.distance = 1, checkrank = TRUE, type = 7)$instruments
   X       <- cbind(X, nmatch = nmatch, match = match) # Adding additional variables
-  # Exogenous prediction og y for te CES
+  # Exogenous prediction of y for te CES
   Zces    <- fitted(lm(y ~ X + GX + as.factor(data$SCID)))
   Zces[Zces <= 0] <- min(Zces[Zces > 0]) # Because z cannot be <= 0 for the CES-based model
   
@@ -84,7 +84,7 @@ festim  <- function(outcome) {
   # Quantile-based specification using tau1
   # Only Z1 as instruments
   RQ11    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ Z1, 
+                           excluded.instruments = ~ G2X + Z1, 
                            Glist = Gnorm,
                            fixed.effects = "separate",
                            drop = drop,
@@ -94,7 +94,7 @@ festim  <- function(outcome) {
   
   # Only Z1 and Z21 as instruments
   RQ12    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ Z1 + Z21, 
+                           excluded.instruments = ~ G2X + Z1 + Z21, 
                            Glist = Gnorm,
                            fixed.effects = "separate",
                            drop = drop,
@@ -106,7 +106,7 @@ festim  <- function(outcome) {
   # Quantile-based specification using tau2
   # Only Z1 as instruments
   RQ21    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ Z1, 
+                           excluded.instruments = ~ G2X + Z1, 
                            Glist = Gnorm,
                            fixed.effects = "separate",
                            drop = drop,
@@ -116,7 +116,7 @@ festim  <- function(outcome) {
   
   # Only Z1 and Z2 as instruments
   RQ22    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ Z1 + Z22, 
+                           excluded.instruments = ~ G2X + Z1 + Z22, 
                            Glist = Gnorm,
                            fixed.effects = "separate",
                            drop = drop,
@@ -148,7 +148,7 @@ festim  <- function(outcome) {
   # Quantile-based specification using tau1
   # Only Z1 as instruments
   SQ11    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ Z1, 
+                           excluded.instruments = ~ G2X + Z1, 
                            Glist = Gnorm,
                            fixed.effects = "separate",
                            drop = drop,
@@ -159,7 +159,7 @@ festim  <- function(outcome) {
   
   # Only Z1 and Z21 as instruments
   SQ12    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ Z1 + Z21, 
+                           excluded.instruments = ~ G2X + Z1 + Z21, 
                            Glist = Gnorm,
                            fixed.effects = "separate",
                            drop = drop,
@@ -172,7 +172,7 @@ festim  <- function(outcome) {
   # Quantile-based specification using tau2
   # Only Z1 as instruments
   SQ21    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ Z1, 
+                           excluded.instruments = ~ G2X + Z1, 
                            Glist = Gnorm,
                            fixed.effects = "separate",
                            drop = drop,
@@ -183,7 +183,7 @@ festim  <- function(outcome) {
   
   # Only Z1 and Z2 as instruments
   SQ22    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ Z1 + Z22, 
+                           excluded.instruments = ~ G2X + Z1 + Z22, 
                            Glist = Gnorm,
                            fixed.effects = "separate",
                            drop = drop,
