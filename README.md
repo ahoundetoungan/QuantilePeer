@@ -1,10 +1,10 @@
-# QtNet: An R Package for estimating Models with Quantile Peer Effects
+# QuantilePeer: An R Package for estimating Models with Quantile Peer Effects
 
 Aristide Houndetoungan
 
 ## Introduction
 
-The **QtNet** package simulates and estimates quantile peer effect models that were introduced by Houndetoungan (2025). The exact replication codes of the results in the paper are located in the folder [**test**](https://github.com/ahoundetoungan/QuantilePeer/tree/main/test). Below, I also provide detailed examples of how to use the package.
+The **QuantilePeer** package simulates and estimates quantile peer effect models that were introduced by Houndetoungan (2025). The exact replication codes of the results in the paper are located in the folder [**test**](https://github.com/ahoundetoungan/QuantilePeer/tree/main/test). Below, I also provide detailed examples of how to use the package.
 
 ## Installation
 
@@ -12,7 +12,7 @@ Installation is possible from this GitHub repository using the following code:
 
 ``` r
 library(remotes)
-install_github("ahoundetoungan/QtNet")
+install_github("ahoundetoungan/QuantilePeer")
 ```
 
 **Important:** Windows users must first install [**Rtools**](https://cran.r-project.org/bin/windows/Rtools/rtools44/rtools.html) to enable installation from a GitHub repository.
@@ -41,7 +41,7 @@ y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (
 ```
 where $`\lambda^*`$ determines whether preferences exhibit conformity or complementarity/substitution. In general, $`\lambda^* > 0`$ and this means that that preferences are conformist (anti-conformity may be possible in some models when $`\lambda^* < 0`$). In contrast, when $`\lambda^* = 0`$, there is complementarity/substitution between individuals depending on the signs of the $`\lambda_{\tau}`$ parameters. It is obvious that $`\beta`$ and $`\lambda^*`$ can be identified only if the network includes enough isolated individuals.
 
-## How to use the **QtNet** package
+## How to use the **QuantilePeer** package
 
 In this section, I present the main functions of the package and how they can be used through examples. The main functions of the package include:
 - `qpeer.sim`: simulating data from models with quantile peer effects;
@@ -53,7 +53,7 @@ Most of these functions are also classes that have `summary` and `print` methods
 ### Data simulation
 Throughout this section, I use simulated data. To begin, I first create a network matrix `G` and two exogenous variables, `X1` and `X2`. Importantly, I impose some isolated nodes for the identification of the structural model. Otherwise, only the reduced-form parameters can be identified.
 ```R
-library(QtNet)
+library(QuantilePeer)
 ngr  <- 50  # Number of subnets
 nvec <- rep(30, ngr)  # Size of subnets
 n    <- sum(nvec)
@@ -194,7 +194,7 @@ summary(M11, diagnostic = TRUE)
 ```
 The conformity parameter appears consistent, as the estimate is similar to what was obtained from the previous estimations using the quantile model. However, the total effect seems to correspond to the sum of the estimates across different quantiles from the previous estimations.  
 
-In the `qpeer` and `linpeer` functions, the endogenous variables are not defined by the user. For example, in the quantile model, one only needs to set the quantile levels. This feature can limit the estimation of certain specifications. To address this issue, the `QtNet` package provides the generic function `genpeer`, which allows users to define their endogenous variables. This option is useful for estimating the effects of quantiles among girl and boy peers, combining average peer effects with quantile peer effects in the same model, or specifying other social norms.  
+In the `qpeer` and `linpeer` functions, the endogenous variables are not defined by the user. For example, in the quantile model, one only needs to set the quantile levels. This feature can limit the estimation of certain specifications. To address this issue, the `QuantilePeer` package provides the generic function `genpeer`, which allows users to define their endogenous variables. This option is useful for estimating the effects of quantiles among girl and boy peers, combining average peer effects with quantile peer effects in the same model, or specifying other social norms.  
 
 The `endogenous.variables` argument of the function must be defined as a formula where the endogenous variables are specified. Below is an example where average peer effects and quantile peer effects are estimated.  
 ```R
@@ -205,7 +205,7 @@ M12 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + GX + GGX,
                estimator = "gmm.optimal", fixed.effects = "separate", HAC = "hetero")
 summary(M12, diagnostic = TRUE)
 ```
-Thank you for reading this documentation. Please use the [Issues](https://github.com/ahoundetoungan/QtNet/issues) page to report any problems. If you use **QtNet** in your publications, kindly cite it using `citation("QtNet")`.
+Thank you for reading this documentation. Please use the [Issues](https://github.com/ahoundetoungan/QuantilePeer/issues) page to report any problems. If you use **QuantilePeer** in your publications, kindly cite it using `citation("QuantilePeer")`.
 
 ## References
 - Boucher, V., & Fortin, B. (2016). Some challenges in the empirics of the effects of networks. *Handbook on the Economics of Networks*, 45, 48, <[doi:10.1093/oxfordhb/9780199948277.013.22](https://doi.org/10.1093/oxfordhb/9780199948277.013.22)>
