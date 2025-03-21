@@ -28,17 +28,17 @@ where \code{x1} and \code{x2} are control variables, which can include contextua
 
 \item{tau}{The vector of quantile levels.}
 
-\item{parms}{A vector defining the true values of \eqn{(\lambda', \beta')'}, where \eqn{\lambda} is a vector of \eqn{\lambda_{\tau}} for each quantile level \eqn{\tau} (see model specification in the details section of \code{\link{qpeer}}).
+\item{parms}{A vector defining the true values of \eqn{(\lambda', \beta')'}, where \eqn{\lambda} is a vector of \eqn{\lambda_{\tau}} for each quantile level \eqn{\tau}.
 The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately using the arguments \code{lambda} and \code{beta}. For the structural model,
-\eqn{\lambda = (\lambda^{*}, \lambda_{\tau_1}, \lambda_{\tau_2}, \dots)^{\prime}} (see the details section of \code{\link{qpeer}}).}
+\eqn{\lambda = (\lambda^{*}, \lambda_{\tau_1}, \lambda_{\tau_2}, \dots)^{\prime}} (see the Details section of \code{\link{qpeer}}).}
 
 \item{lambda}{The true value of the vector \eqn{\lambda}.}
 
 \item{beta}{The true value of the vector \eqn{\beta}.}
 
-\item{epsilon}{A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in the details section of \code{\link{qpeer}}).}
+\item{epsilon}{A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in the Details section of \code{\link{qpeer}}).}
 
-\item{structural}{A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see the details section of \code{\link{qpeer}}).}
+\item{structural}{A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see the Details section of \code{\link{qpeer}}).}
 
 \item{type}{An integer between 1 and 9 selecting one of the nine quantile algorithms used to compute peer quantiles (see the \link[stats]{quantile} function).}
 
@@ -59,11 +59,13 @@ A list containing:
 \item{epsilon}{The idiosyncratic error.}
 \item{index}{The indices of the two peers whose weighted average gives the quantile.}
 \item{weight}{The weights of the two peers whose weighted average gives the quantile.}
+\item{iteration}{The number of iterations before convergence.}
 }
 \description{
 \code{qpeer.sim} simulates the quantile peer effect models developed by Houndetoungan (2025).
 }
 \examples{
+set.seed(123)
 ngr  <- 50
 nvec <- rep(30, ngr)
 n    <- sum(nvec)

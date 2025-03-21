@@ -66,9 +66,9 @@ fnetwork   <- function(Glist, isol = NULL) {
   if (length(isol) == 0) {
     MIs    <- sum(sapply(ldg, function(s) any(s == 0)))
     MnIs   <- sum(sapply(ldg, function(s) any(s != 0)))
-    lIs    <- sapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
+    lIs    <- lapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
     Is     <- unlist(lIs)
-    lnIs   <- sapply(1:M, function(m) which(ldg[[m]] != 0) - 1 + ncs[m])
+    lnIs   <- lapply(1:M, function(m) which(ldg[[m]] != 0) - 1 + ncs[m])
     nIs    <- unlist(lnIs)
   } else {
     if (any(!(isol %in% 0:1) | !is.finite(isol))) {
@@ -80,9 +80,9 @@ fnetwork   <- function(Glist, isol = NULL) {
     lisol  <- lapply(1:M, function(m) isol[(ncs[m] + 1):ncs[m + 1]])
     MIs    <- sum(sapply(lisol, function(s) any(s == 1)))
     MnIs   <- sum(sapply(lisol, function(s) any(s != 1)))
-    lIs    <- sapply(1:M, function(m) which(lisol[[m]] == 1) - 1 + ncs[m])
+    lIs    <- lapply(1:M, function(m) which(lisol[[m]] == 1) - 1 + ncs[m])
     Is     <- unlist(lIs)
-    lnIs   <- sapply(1:M, function(m) which(lisol[[m]] != 1) - 1 + ncs[m])
+    lnIs   <- lapply(1:M, function(m) which(lisol[[m]] != 1) - 1 + ncs[m])
     nIs    <- unlist(lnIs)
   }
   
@@ -99,7 +99,7 @@ fdrop <- function(drop, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
     stop("`drop` must be a vector of length n.")
   }
   ncs      <- c(0, cumsum(nvec))
-  olIs     <- sapply(1:M, function(m) ldg[[m]] == 0)
+  olIs     <- lapply(1:M, function(m) ldg[[m]] == 0)
   oIs      <- unlist(olIs)
   lkeep    <- lapply(1:M, function(m) drop[(ncs[m] + 1):ncs[m + 1]] != 1)
   keep     <- unlist(lkeep)

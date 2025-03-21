@@ -76,7 +76,7 @@ in the model. If not found in \code{data}, the variables are taken from \code{en
 \code{"JIVE"} for the Jackknife instrumental variable estimator, and
 \code{"JIVE2"} for the Type 2 Jackknife instrumental variable estimator.}
 
-\item{structural}{A logical value indicating whether the reduced-form or structural specification should be estimated (see details).}
+\item{structural}{A logical value indicating whether the reduced-form or structural specification should be estimated (see Details).}
 
 \item{drop}{A dummy vector of the same length as the sample, indicating whether an observation should be dropped.
 This can be used, for example, to remove false isolates or to estimate the model only on non-isolated agents.
@@ -138,6 +138,7 @@ It is obvious that \eqn{\beta} and \eqn{\lambda^*} can be identified only if the
 }
 \examples{
 \donttest{
+set.seed(123)
 ngr  <- 50  # Number of subnets
 nvec <- rep(30, ngr)  # Size of subnets
 n    <- sum(nvec)

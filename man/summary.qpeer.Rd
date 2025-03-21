@@ -12,19 +12,37 @@
 \alias{print.qpeer}
 \title{Summary for the Estimation of Quantile Peer Effects Models}
 \usage{
-\method{summary}{genpeer}(object, diagnostic = FALSE, diagnostics = FALSE, ...)
+\method{summary}{genpeer}(
+  object,
+  fullparameters = TRUE,
+  diagnostic = FALSE,
+  diagnostics = FALSE,
+  ...
+)
 
 \method{print}{summary.genpeer}(x, ...)
 
 \method{print}{genpeer}(x, ...)
 
-\method{summary}{linpeer}(object, diagnostic = FALSE, diagnostics = FALSE, ...)
+\method{summary}{linpeer}(
+  object,
+  fullparameters = TRUE,
+  diagnostic = FALSE,
+  diagnostics = FALSE,
+  ...
+)
 
 \method{print}{summary.linpeer}(x, ...)
 
 \method{print}{linpeer}(x, ...)
 
-\method{summary}{qpeer}(object, diagnostic = FALSE, diagnostics = FALSE, ...)
+\method{summary}{qpeer}(
+  object,
+  fullparameters = TRUE,
+  diagnostic = FALSE,
+  diagnostics = FALSE,
+  ...
+)
 
 \method{print}{summary.qpeer}(x, ...)
 
@@ -32,6 +50,8 @@
 }
 \arguments{
 \item{object}{An object of class \code{\link{qpeer}}.}
+
+\item{fullparameters}{A logical value indicating whether all parameters should be summarized (may be useful for the structural model).}
 
 \item{diagnostics, diagnostic}{Logical. Should diagnostic tests for the instrumental-variable regression be performed?
 These include an F-test of the first-stage regression for weak instruments, a Wu-Hausman test for endogeneity,

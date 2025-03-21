@@ -2,146 +2,158 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 fCESdata <- function(X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nvec, yFMiMa, zFMiMa, n, Kx, ngroup, rho, FEnum, deriv) {
-    .Call(`_QtNet_fCESdata`, X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nvec, yFMiMa, zFMiMa, n, Kx, ngroup, rho, FEnum, deriv)
+    .Call(`_QuantilePeer_fCESdata`, X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nvec, yFMiMa, zFMiMa, n, Kx, ngroup, rho, FEnum, deriv)
 }
 
 fOLS <- function(data, idX1, Is, Kx) {
-    .Call(`_QtNet_fOLS`, data, idX1, Is, Kx)
+    .Call(`_QuantilePeer_fOLS`, data, idX1, Is, Kx)
 }
 
 fCESgmmparms <- function(rho, beta1, idX1, idX2, X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nIs, Is, sel, W, nvec, yFMiMa, zFMiMa, n, nniso, niso, nst, Kx, Kx2, ngroup, FEnum, Kest1, Kest2, Kest, structural, HAC = 0L, COV = TRUE) {
-    .Call(`_QtNet_fCESgmmparms`, rho, beta1, idX1, idX2, X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nIs, Is, sel, W, nvec, yFMiMa, zFMiMa, n, nniso, niso, nst, Kx, Kx2, ngroup, FEnum, Kest1, Kest2, Kest, structural, HAC, COV)
+    .Call(`_QuantilePeer_fCESgmmparms`, rho, beta1, idX1, idX2, X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nIs, Is, sel, W, nvec, yFMiMa, zFMiMa, n, nniso, niso, nst, Kx, Kx2, ngroup, FEnum, Kest1, Kest2, Kest, structural, HAC, COV)
 }
 
 fCESgmmobj <- function(rho, beta1, idX1, idX2, X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nIs, sel, W, nvec, yFMiMa, zFMiMa, n, nniso, nst, Kx, Kx2, ngroup, FEnum, structural) {
-    .Call(`_QtNet_fCESgmmobj`, rho, beta1, idX1, idX2, X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nIs, sel, W, nvec, yFMiMa, zFMiMa, n, nniso, nst, Kx, Kx2, ngroup, FEnum, structural)
+    .Call(`_QuantilePeer_fCESgmmobj`, rho, beta1, idX1, idX2, X, y, z, G, friendindex, igroup, frzeroy, frzeroz, lIs, lnIs, nIs, sel, W, nvec, yFMiMa, zFMiMa, n, nniso, nst, Kx, Kx2, ngroup, FEnum, structural)
 }
 
 fCESWeight <- function(theta, data, sel, nIs, idX1, idX2, structural, Kx, Kx2, nniso, nst) {
-    .Call(`_QtNet_fCESWeight`, theta, data, sel, nIs, idX1, idX2, structural, Kx, Kx2, nniso, nst)
+    .Call(`_QuantilePeer_fCESWeight`, theta, data, sel, nIs, idX1, idX2, structural, Kx, Kx2, nniso, nst)
 }
 
 fCESgmmrhoparms <- function(rho, beta1, data, sel, nIs, Is, idX1, idX2, igroup, ngroup, Kx, Kx2, nniso, niso, n, nst, Kest1, Kest2, Kest, structural, rhoinf = 0L, HAC = 0L, COV = TRUE) {
-    .Call(`_QtNet_fCESgmmrhoparms`, rho, beta1, data, sel, nIs, Is, idX1, idX2, igroup, ngroup, Kx, Kx2, nniso, niso, n, nst, Kest1, Kest2, Kest, structural, rhoinf, HAC, COV)
+    .Call(`_QuantilePeer_fCESgmmrhoparms`, rho, beta1, data, sel, nIs, Is, idX1, idX2, igroup, ngroup, Kx, Kx2, nniso, niso, n, nst, Kest1, Kest2, Kest, structural, rhoinf, HAC, COV)
 }
 
 fCESgmmrhoobj <- function(theta, data, sel, nIs, idX1, idX2, Kx, Kx2, nniso, nst, structural, rhoinf = 0L) {
-    .Call(`_QtNet_fCESgmmrhoobj`, theta, data, sel, nIs, idX1, idX2, Kx, Kx2, nniso, nst, structural, rhoinf)
+    .Call(`_QuantilePeer_fCESgmmrhoobj`, theta, data, sel, nIs, idX1, idX2, Kx, Kx2, nniso, nst, structural, rhoinf)
 }
 
 fCESParam <- function(param, covp, idX1, idX2, Kx, Kx2, estimrho, structural, COV = TRUE) {
-    .Call(`_QtNet_fCESParam`, param, covp, idX1, idX2, Kx, Kx2, estimrho, structural, COV)
+    .Call(`_QuantilePeer_fCESParam`, param, covp, idX1, idX2, Kx, Kx2, estimrho, structural, COV)
+}
+
+fNashECES <- function(y, G, talpha, lambda, rho, friendindex, igroup, frzeroy, nvec, yFMiMa, ngroup, n, tol = 1e-10, maxit = 500L) {
+    .Call(`_QuantilePeer_fNashECES`, y, G, talpha, lambda, rho, friendindex, igroup, frzeroy, nvec, yFMiMa, ngroup, n, tol, maxit)
 }
 
 fgPIyP <- function(y, G, d, igroup, nvec, ngroup, n) {
-    .Call(`_QtNet_fgPIyP`, y, G, d, igroup, nvec, ngroup, n)
+    .Call(`_QuantilePeer_fgPIyP`, y, G, d, igroup, nvec, ngroup, n)
 }
 
 fQtauy <- function(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type) {
-    .Call(`_QtNet_fQtauy`, y, G, d, igroup, nvec, stau, ngroup, n, ntau, type)
+    .Call(`_QuantilePeer_fQtauy`, y, G, d, igroup, nvec, stau, ngroup, n, ntau, type)
 }
 
 fQtauyWithIndex <- function(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type) {
-    .Call(`_QtNet_fQtauyWithIndex`, y, G, d, igroup, nvec, stau, ngroup, n, ntau, type)
+    .Call(`_QuantilePeer_fQtauyWithIndex`, y, G, d, igroup, nvec, stau, ngroup, n, ntau, type)
 }
 
 fQtauyIndex <- function(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type) {
-    .Call(`_QtNet_fQtauyIndex`, y, G, d, igroup, nvec, stau, ngroup, n, ntau, type)
+    .Call(`_QuantilePeer_fQtauyIndex`, y, G, d, igroup, nvec, stau, ngroup, n, ntau, type)
 }
 
 fIndexMat <- function(pi1, pi2, w1, w2, n) {
-    .Call(`_QtNet_fIndexMat`, pi1, pi2, w1, w2, n)
+    .Call(`_QuantilePeer_fIndexMat`, pi1, pi2, w1, w2, n)
 }
 
 fProdWVI <- function(W, V, distance = 1L) {
-    .Call(`_QtNet_fProdWVI`, W, V, distance)
+    .Call(`_QuantilePeer_fProdWVI`, W, V, distance)
 }
 
 fNashE <- function(y, G, d, talpha, lambdatau, igroup, nvec, stau, ngroup, n, ntau, type = 7L, tol = 1e-10, maxit = 500L) {
-    .Call(`_QtNet_fNashE`, y, G, d, talpha, lambdatau, igroup, nvec, stau, ngroup, n, ntau, type, tol, maxit)
+    .Call(`_QuantilePeer_fNashE`, y, G, d, talpha, lambdatau, igroup, nvec, stau, ngroup, n, ntau, type, tol, maxit)
 }
 
 optins_red <- function(beta, y, G, X, d, igroup, nvec, stau, ngroup, n, ntau, type, Kx, tol, maxit) {
-    .Call(`_QtNet_optins_red`, beta, y, G, X, d, igroup, nvec, stau, ngroup, n, ntau, type, Kx, tol, maxit)
+    .Call(`_QuantilePeer_optins_red`, beta, y, G, X, d, igroup, nvec, stau, ngroup, n, ntau, type, Kx, tol, maxit)
 }
 
 optins_struc <- function(beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, ntau, type, Kx, tol, maxit) {
-    .Call(`_QtNet_optins_struc`, beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, ntau, type, Kx, tol, maxit)
+    .Call(`_QuantilePeer_optins_struc`, beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, ntau, type, Kx, tol, maxit)
 }
 
 fJIVE_redInd <- function(y, V, ins, Kx, Kins, ntau, n, Kest, HAC = 0L, COV = TRUE) {
-    .Call(`_QtNet_fJIVE_redInd`, y, V, ins, Kx, Kins, ntau, n, Kest, HAC, COV)
+    .Call(`_QuantilePeer_fJIVE_redInd`, y, V, ins, Kx, Kins, ntau, n, Kest, HAC, COV)
 }
 
 fJIVE2_redInd <- function(y, V, ins, Kx, Kins, ntau, n, Kest, HAC = 0L, COV = TRUE) {
-    .Call(`_QtNet_fJIVE2_redInd`, y, V, ins, Kx, Kins, ntau, n, Kest, HAC, COV)
+    .Call(`_QuantilePeer_fJIVE2_redInd`, y, V, ins, Kx, Kins, ntau, n, Kest, HAC, COV)
 }
 
 fJIVE_redClu <- function(y, V, ins, igroup, nvec, ngroup, Kx, Kins, ntau, n, Kest, COV) {
-    .Call(`_QtNet_fJIVE_redClu`, y, V, ins, igroup, nvec, ngroup, Kx, Kins, ntau, n, Kest, COV)
+    .Call(`_QuantilePeer_fJIVE_redClu`, y, V, ins, igroup, nvec, ngroup, Kx, Kins, ntau, n, Kest, COV)
 }
 
 fJIVE2_redClu <- function(y, V, ins, igroup, nvec, ngroup, Kx, Kins, ntau, n, Kest, COV) {
-    .Call(`_QtNet_fJIVE2_redClu`, y, V, ins, igroup, nvec, ngroup, Kx, Kins, ntau, n, Kest, COV)
+    .Call(`_QuantilePeer_fJIVE2_redClu`, y, V, ins, igroup, nvec, ngroup, Kx, Kins, ntau, n, Kest, COV)
 }
 
 fJIVE_strucInd <- function(y, X, qy, ins, idX1, idX2, nIs, Is, Kx1, Kx2, Kins, ntau, n, Kest1, HAC = 0L, COV = TRUE) {
-    .Call(`_QtNet_fJIVE_strucInd`, y, X, qy, ins, idX1, idX2, nIs, Is, Kx1, Kx2, Kins, ntau, n, Kest1, HAC, COV)
+    .Call(`_QuantilePeer_fJIVE_strucInd`, y, X, qy, ins, idX1, idX2, nIs, Is, Kx1, Kx2, Kins, ntau, n, Kest1, HAC, COV)
 }
 
 fJIVE2_strucInd <- function(y, X, qy, ins, idX1, idX2, nIs, Is, Kx1, Kx2, Kins, ntau, n, Kest1, HAC = 0L, COV = TRUE) {
-    .Call(`_QtNet_fJIVE2_strucInd`, y, X, qy, ins, idX1, idX2, nIs, Is, Kx1, Kx2, Kins, ntau, n, Kest1, HAC, COV)
+    .Call(`_QuantilePeer_fJIVE2_strucInd`, y, X, qy, ins, idX1, idX2, nIs, Is, Kx1, Kx2, Kins, ntau, n, Kest1, HAC, COV)
 }
 
 fJIVE_strucClu <- function(y, X, qy, ins, idX1, idX2, nIs, Is, LnIs, LIs, igroup, nvecnIs, hasnIs, hasIs, ngroup, Kx1, Kx2, Kins, ntau, n, COV = TRUE) {
-    .Call(`_QtNet_fJIVE_strucClu`, y, X, qy, ins, idX1, idX2, nIs, Is, LnIs, LIs, igroup, nvecnIs, hasnIs, hasIs, ngroup, Kx1, Kx2, Kins, ntau, n, COV)
+    .Call(`_QuantilePeer_fJIVE_strucClu`, y, X, qy, ins, idX1, idX2, nIs, Is, LnIs, LIs, igroup, nvecnIs, hasnIs, hasIs, ngroup, Kx1, Kx2, Kins, ntau, n, COV)
 }
 
 fJIVE2_strucClu <- function(y, X, qy, ins, idX1, idX2, nIs, Is, LnIs, LIs, igroup, hasnIs, hasIs, ngroup, Kx1, Kx2, Kins, ntau, n, COV = TRUE) {
-    .Call(`_QtNet_fJIVE2_strucClu`, y, X, qy, ins, idX1, idX2, nIs, Is, LnIs, LIs, igroup, hasnIs, hasIs, ngroup, Kx1, Kx2, Kins, ntau, n, COV)
+    .Call(`_QuantilePeer_fJIVE2_strucClu`, y, X, qy, ins, idX1, idX2, nIs, Is, LnIs, LIs, igroup, hasnIs, hasIs, ngroup, Kx1, Kx2, Kins, ntau, n, COV)
 }
 
 fcheckrankEigen <- function(X, tol = 1e-10) {
-    .Call(`_QtNet_fcheckrankEigen`, X, tol)
+    .Call(`_QuantilePeer_fcheckrankEigen`, X, tol)
 }
 
 demean <- function(X, igroup, ngroup) {
-    .Call(`_QtNet_demean`, X, igroup, ngroup)
+    .Call(`_QuantilePeer_demean`, X, igroup, ngroup)
 }
 
 demean_separate <- function(X, igroup, LIs, LnIs, ngroup, n) {
-    .Call(`_QtNet_demean_separate`, X, igroup, LIs, LnIs, ngroup, n)
+    .Call(`_QuantilePeer_demean_separate`, X, igroup, LIs, LnIs, ngroup, n)
 }
 
 fdatadiagnostic <- function(y, endo, X, ins, theta, idX1, idX2, igroup, nIs, LIs, LnIs, n, ngroup, ntau, struc, FE) {
-    .Call(`_QtNet_fdatadiagnostic`, y, endo, X, ins, theta, idX1, idX2, igroup, nIs, LIs, LnIs, n, ngroup, ntau, struc, FE)
+    .Call(`_QuantilePeer_fdatadiagnostic`, y, endo, X, ins, theta, idX1, idX2, igroup, nIs, LIs, LnIs, n, ngroup, ntau, struc, FE)
 }
 
 fgmm_red <- function(y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, Kest, HAC = 0L, iv = TRUE) {
-    .Call(`_QtNet_fgmm_red`, y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, Kest, HAC, iv)
+    .Call(`_QuantilePeer_fgmm_red`, y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, Kest, HAC, iv)
 }
 
 fgmm_struc <- function(y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, Kest1, Kest2, HAC = 0L, iv = TRUE) {
-    .Call(`_QtNet_fgmm_struc`, y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, Kest1, Kest2, HAC, iv)
+    .Call(`_QuantilePeer_fgmm_struc`, y, X, qy, ins, W1, W2, idX1, idX2, Kx1, Kx2, igroup, nIs, Is, ngroup, Kins, Kx, ntau, n, Kest1, Kest2, HAC, iv)
 }
 
 fStructParam <- function(param, covp, idX1, idX2, ntau, Kx, Kx1, Kx2, COV = TRUE) {
-    .Call(`_QtNet_fStructParam`, param, covp, idX1, idX2, ntau, Kx, Kx1, Kx2, COV)
+    .Call(`_QuantilePeer_fStructParam`, param, covp, idX1, idX2, ntau, Kx, Kx1, Kx2, COV)
 }
 
 fFstathomo <- function(y, Xc, Xu) {
-    .Call(`_QtNet_fFstathomo`, y, Xc, Xu)
+    .Call(`_QuantilePeer_fFstathomo`, y, Xc, Xu)
 }
 
 fFstathomoARMA <- function(y, Xc, Xu) {
-    .Call(`_QtNet_fFstathomoARMA`, y, Xc, Xu)
+    .Call(`_QuantilePeer_fFstathomoARMA`, y, Xc, Xu)
 }
 
 fFstat <- function(y, X, index, igroup, ngroup, HAC = 0L) {
-    .Call(`_QtNet_fFstat`, y, X, index, igroup, ngroup, HAC)
+    .Call(`_QuantilePeer_fFstat`, y, X, index, igroup, ngroup, HAC)
 }
 
 fFstatARMA <- function(y, X, index, igroup, ngroup, HAC = 0L) {
-    .Call(`_QtNet_fFstatARMA`, y, X, index, igroup, ngroup, HAC)
+    .Call(`_QuantilePeer_fFstatARMA`, y, X, index, igroup, ngroup, HAC)
+}
+
+fStructParamFull <- function(param, covp, ntau, Kx1, Kx2, quantile, ces = FALSE) {
+    .Call(`_QuantilePeer_fStructParamFull`, param, covp, ntau, Kx1, Kx2, quantile, ces)
+}
+
+fParamFull <- function(param, covp, ntau, Kx1, Kx2) {
+    .Call(`_QuantilePeer_fParamFull`, param, covp, ntau, Kx1, Kx2)
 }
 

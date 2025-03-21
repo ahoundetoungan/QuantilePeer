@@ -6,7 +6,7 @@
 \alias{print.cespeer}
 \title{Summary for the Estimation of CES-based Peer Effects Models}
 \usage{
-\method{summary}{cespeer}(object, ...)
+\method{summary}{cespeer}(object, fullparameters = TRUE, ...)
 
 \method{print}{summary.cespeer}(x, ...)
 
@@ -14,6 +14,8 @@
 }
 \arguments{
 \item{object}{An object of class \code{\link{cespeer}}.}
+
+\item{fullparameters}{A logical value indicating whether all parameters should be summarized (may be useful for the structural model).}
 
 \item{...}{Further arguments passed to or from other methods.}
 

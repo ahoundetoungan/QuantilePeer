@@ -631,6 +631,7 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
     Eigen::VectorXd y(data(nIs, Kx));
     Eigen::MatrixXd ZZ(Z.transpose()*Z);
     Eigen::MatrixXd W((ZZ/nniso).inverse());
+    // W.setIdentity();
     
     Eigen::MatrixXd ZV(Z.transpose()*V);
     Eigen::MatrixXd VZW(ZV.transpose()*W), VZWZV(VZW*ZV);
@@ -704,6 +705,7 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
     Eigen::MatrixXd ZZ(Z.transpose()*Z);
     Eigen::VectorXd y(data(sel, Kx));
     Eigen::MatrixXd W((ZZ/nst).inverse());
+    // W.setIdentity();
     
     Eigen::MatrixXd ZV(Z.transpose()*V);
     Eigen::MatrixXd VZW(ZV.transpose()*W), VZWZV(VZW*ZV);
@@ -788,6 +790,7 @@ double fCESgmmrhoobj(const Eigen::VectorXd& theta,
       }
     }
     W = (Z.transpose()*Z/nniso).inverse();
+    // W.setIdentity();
   } else {
     Eigen::MatrixXd Z(nst, Kx + 2 - rhoinf);
     if (rhoinf == 0) {
@@ -796,6 +799,7 @@ double fCESgmmrhoobj(const Eigen::VectorXd& theta,
       Z << data(sel, Kx + 2), Xmat(sel, Eigen::all);
     }
     W = (Z.transpose()*Z/nst).inverse();
+    // W.setIdentity();
   }
   return fCESgmm(fCESmoments(theta, data, sel, nIs, idX1, idX2, structural, Kx, Kx2, nniso, nst), W);
 }
@@ -871,4 +875,84 @@ Rcpp::List fCESParam(const arma::vec& param,
       return Rcpp::List::create(_["theta"] = theta, _["Vpa"] = covp);
     }
   }
+}
+
+// Best response function for the CES
+// talpha is alpha tilde
+arma::vec BRCES(const arma::vec& y, 
+                const Rcpp::List& G,
+                const Rcpp::List& friendindex,
+                const arma::umat& igroup,
+                const arma::uvec& frzeroy, 
+                const IntegerVector& nvec, 
+                const Eigen::MatrixXd& yFMiMa,
+                const int& n,
+                const int& ngroup,
+                const arma::vec& talpha,
+                const double& lambda,
+                const double& rho) {
+  vec Gy(n, fill::zeros);
+  for (int r(0); r < ngroup; r++) {
+    // Extract data for group r
+    int nm(nvec(r)), n1(igroup(r, 0)), n2(igroup(r, 1));
+    arma::mat Gr = G[r];
+    arma::vec ym(y.subvec(n1, n2));
+    Rcpp::List frindexm(friendindex[r]);
+    
+    for (int i(0); i < nm; i++) {
+      uvec fri = frindexm[i];
+      if (!fri.is_empty()) {
+        if (rho == R_PosInf) {
+          Gy[n1 + i] = max(ym.elem(fri));
+        } else if (rho == R_NegInf) {
+          Gy[n1 + i] = min(ym.elem(fri));
+        } else if (rho < 0) {
+          arma::vec Gri(Gr.row(i).t());
+          if (frzeroy[n1 + i] == 0) {
+            arma::vec ymf(ym.elem(fri)/yFMiMa(n1 + i, 0)); // y of friends but scaled
+            arma::vec tpy(Gri.elem(fri) % pow(ymf, rho));
+            double stpy(sum(tpy));
+            Gy(n1 + i)  = yFMiMa(n1 + i, 0)*pow(stpy, 1.0 / rho);
+          }
+        } else {
+          arma::vec Gri(Gr.row(i).t());
+          arma::vec ymf(ym.elem(fri)/yFMiMa(n1 + i, 1)); // y of friends but scaled
+          arma::vec tpy(Gri.elem(fri) % pow(ymf, rho));
+          double stpy(sum(tpy));
+          Gy(n1 + i)  = yFMiMa(n1 + i, 1)*pow(stpy, 1.0 / rho);
+        }
+      }
+    }
+  }
+  return talpha + lambda*Gy;
+}
+
+
+// Nash Equilibrium for the CES case
+// y is initial solution
+//[[Rcpp::export]]
+int fNashECES(arma::vec& y,
+              Rcpp::List& G,
+              const arma::vec& talpha,
+              const double& lambda,
+              const double& rho,
+              const Rcpp::List& friendindex,
+              const arma::umat& igroup,
+              const arma::uvec& frzeroy, 
+              const IntegerVector& nvec,
+              const Eigen::MatrixXd& yFMiMa,
+              const int& ngroup,
+              const int& n,
+              const double& tol = 1e-10,
+              const int& maxit  = 500){
+  int t(0);
+  computeBR: ++t;
+  // New y
+  arma::vec yst(BRCES(y, G, friendindex, igroup, frzeroy, nvec, yFMiMa, n, ngroup, talpha, lambda, rho));
+  
+  // check convergence
+  double dist     = max(arma::abs((yst - y)/(y + 1e-50)));
+  y               = yst;
+  if (dist > tol && t < maxit) goto computeBR;
+  return t; 
 }

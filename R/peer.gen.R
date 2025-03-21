@@ -207,7 +207,8 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   
   out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
                                        endogenous.variables = endogenous.variables, excluded.instruments = excluded.instruments, 
-                                       estimator = estimator, fixed.effects = fixed.effects, idX1 = idX1 + 1, idX2 = idX2 + 1, HAC = HAC),
+                                       estimator = estimator, fixed.effects = fixed.effects, idX1 = idX1 + 1, idX2 = idX2 + 1, HAC = HAC,
+                                       yname = yname, xnames = xname, znames = zename, endonames = enname),
                     gmm         = GMMe,
                     data        = list(y = y0, endogenous.variables = endo0, X = X0, instruments = ins0, isolated = Is + 1, 
                                        non.isolated = nIs + 1, degree = dg))
@@ -217,12 +218,16 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
 
 #' @rdname summary.qpeer
 #' @export
-summary.genpeer <- function(object, diagnostic = FALSE, diagnostics = FALSE, ...) {
+summary.genpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, diagnostics = FALSE, ...) {
   stopifnot(inherits(object, "genpeer"))
+  if (is.null(object$gmm$cov)) {
+    stop("The covariance matrix is not estimated.")
+  }
   diagn          <- NULL
   if (diagnostic || diagnostics) {
     diagn        <- fdiagnostic(object, nendo = "endogenous.variables")
   }
+  
   coef           <- fcoef(Estimate = object$gmm$Estimate, cov = object$gmm$cov)
   out            <- c(object["model.info"], 
                       list(coefficients = coef, diagnostics = diagn),

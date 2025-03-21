@@ -95,10 +95,10 @@ where \eqn{\lambda^*} determines whether preferences exhibit conformity or compl
 Identification of \eqn{\beta} and \eqn{\lambda^*} requires the network to include a sufficient number of isolated individuals.
 }
 \examples{
-library(QtNet)
-set.seed(14)
-ngr  <- 100  # Number of subnets
-nvec <- rep(50, ngr)  # Size of subnets
+\donttest{
+set.seed(123)
+ngr  <- 50  # Number of subnets
+nvec <- rep(30, ngr)  # Size of subnets
 n    <- sum(nvec)
 
 ### Simulating Data
@@ -111,39 +111,42 @@ G <- lapply(1:ngr, function(z) {
   if (niso > 0) {
     Gz[sample(1:nvec[z], niso), ] <- 0
   }
-  Gz
+  # Row-normalization
+  rs   <- rowSums(Gz); rs[rs == 0] <- 1
+  Gz/rs
 })
 
-tau <- seq(0, 1, 1/3)
 X   <- cbind(rnorm(n), rpois(n, 2))
-l   <- c(0.05, 0.15, 0.15, 0.25)
+l   <- 0.55
 b   <- c(2, -0.5, 1)
+rho <- -2
 eps <- rnorm(n, 0, 0.4)
 
 ## Generating `y`
-y <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l,
-               beta = b, epsilon = eps)$y
-
-# Row-normalized network to compute instruments
-Gnorm <- lapply(G, function(g) {
-  d <- rowSums(g)
-  d[d == 0] <- 1
-  g / d
-})
+y <- cespeer.sim(formula = ~ X, Glist = G, rho = rho, lambda = l,
+                 beta = b, epsilon = eps)$y
 
 ### Estimation
 ## Computing instruments
 z <- fitted.values(lm(y ~ X))
 
 ## Reduced-form model
-rest <- cespeer(formula = y ~ X, instrument = ~ z, Glist = Gnorm, fixed.effects = "yes", 
-                radius = 5)
+rest <- cespeer(formula = y ~ X, instrument = ~ z, Glist = G, fixed.effects = "yes",
+                radius = 5, grid.rho = seq(-10, 10, 1))
 summary(rest)
 
 ## Structural model
-sest <- cespeer(formula = y ~ X, instrument = ~ z, Glist = Gnorm, fixed.effects = "yes", 
-                radius = 5, structural = TRUE)
+sest <- cespeer(formula = y ~ X, instrument = ~ z, Glist = G, fixed.effects = "yes",
+                radius = 5, structural = TRUE, grid.rho = seq(-10, 10, 1))
 summary(sest)
+
+## Quantile model
+z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), max.distance = 2, 
+                   checkrank = TRUE)$instruments
+qest <- qpeer(formula = y ~ X, excluded.instruments  = ~ z, Glist = G, 
+              fixed.effects = "yes", tau = seq(0, 1, 1/3), structural = TRUE)
+summary(qest)
+}
 }
 \references{
 Boucher, V., Rendall, M., Ushchev, P., & Zenou, Y. (2024). Toward a general theory of peer effects. Econometrica, 92(2), 543-565, \doi{10.3982/ECTA21048}.

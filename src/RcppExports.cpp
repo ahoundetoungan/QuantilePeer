@@ -14,7 +14,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // fCESdata
 arma::mat fCESdata(const arma::mat& X, const arma::vec& y, const arma::vec& z, const Rcpp::List& G, const Rcpp::List& friendindex, const arma::umat& igroup, const arma::uvec& frzeroy, const arma::uvec& frzeroz, const Rcpp::List& lIs, const Rcpp::List& lnIs, const IntegerVector& nvec, const Eigen::MatrixXd& yFMiMa, const Eigen::MatrixXd& zFMiMa, const int& n, const int& Kx, const int& ngroup, const double& rho, const int& FEnum, const bool& deriv);
-RcppExport SEXP _QtNet_fCESdata(SEXP XSEXP, SEXP ySEXP, SEXP zSEXP, SEXP GSEXP, SEXP friendindexSEXP, SEXP igroupSEXP, SEXP frzeroySEXP, SEXP frzerozSEXP, SEXP lIsSEXP, SEXP lnIsSEXP, SEXP nvecSEXP, SEXP yFMiMaSEXP, SEXP zFMiMaSEXP, SEXP nSEXP, SEXP KxSEXP, SEXP ngroupSEXP, SEXP rhoSEXP, SEXP FEnumSEXP, SEXP derivSEXP) {
+RcppExport SEXP _QuantilePeer_fCESdata(SEXP XSEXP, SEXP ySEXP, SEXP zSEXP, SEXP GSEXP, SEXP friendindexSEXP, SEXP igroupSEXP, SEXP frzeroySEXP, SEXP frzerozSEXP, SEXP lIsSEXP, SEXP lnIsSEXP, SEXP nvecSEXP, SEXP yFMiMaSEXP, SEXP zFMiMaSEXP, SEXP nSEXP, SEXP KxSEXP, SEXP ngroupSEXP, SEXP rhoSEXP, SEXP FEnumSEXP, SEXP derivSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -43,7 +43,7 @@ END_RCPP
 }
 // fOLS
 Eigen::VectorXd fOLS(const Eigen::MatrixXd& data, const Eigen::ArrayXi& idX1, const arma::uvec& Is, const int& Kx);
-RcppExport SEXP _QtNet_fOLS(SEXP dataSEXP, SEXP idX1SEXP, SEXP IsSEXP, SEXP KxSEXP) {
+RcppExport SEXP _QuantilePeer_fOLS(SEXP dataSEXP, SEXP idX1SEXP, SEXP IsSEXP, SEXP KxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -57,7 +57,7 @@ END_RCPP
 }
 // fCESgmmparms
 Rcpp::List fCESgmmparms(const double& rho, const Eigen::VectorXd& beta1, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const arma::mat& X, const arma::vec& y, const arma::vec& z, const Rcpp::List& G, const Rcpp::List& friendindex, const arma::umat& igroup, const arma::uvec& frzeroy, const arma::uvec& frzeroz, const Rcpp::List& lIs, const Rcpp::List& lnIs, const arma::uvec& nIs, const arma::uvec& Is, const Eigen::ArrayXi sel, const Eigen::MatrixXd& W, const IntegerVector& nvec, const Eigen::MatrixXd& yFMiMa, const Eigen::MatrixXd& zFMiMa, const int& n, const int& nniso, const int& niso, const int& nst, const int& Kx, const int& Kx2, const int& ngroup, const int& FEnum, const int& Kest1, const int& Kest2, const int& Kest, const bool& structural, const int& HAC, const bool& COV);
-RcppExport SEXP _QtNet_fCESgmmparms(SEXP rhoSEXP, SEXP beta1SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP XSEXP, SEXP ySEXP, SEXP zSEXP, SEXP GSEXP, SEXP friendindexSEXP, SEXP igroupSEXP, SEXP frzeroySEXP, SEXP frzerozSEXP, SEXP lIsSEXP, SEXP lnIsSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP selSEXP, SEXP WSEXP, SEXP nvecSEXP, SEXP yFMiMaSEXP, SEXP zFMiMaSEXP, SEXP nSEXP, SEXP nnisoSEXP, SEXP nisoSEXP, SEXP nstSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP ngroupSEXP, SEXP FEnumSEXP, SEXP Kest1SEXP, SEXP Kest2SEXP, SEXP KestSEXP, SEXP structuralSEXP, SEXP HACSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fCESgmmparms(SEXP rhoSEXP, SEXP beta1SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP XSEXP, SEXP ySEXP, SEXP zSEXP, SEXP GSEXP, SEXP friendindexSEXP, SEXP igroupSEXP, SEXP frzeroySEXP, SEXP frzerozSEXP, SEXP lIsSEXP, SEXP lnIsSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP selSEXP, SEXP WSEXP, SEXP nvecSEXP, SEXP yFMiMaSEXP, SEXP zFMiMaSEXP, SEXP nSEXP, SEXP nnisoSEXP, SEXP nisoSEXP, SEXP nstSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP ngroupSEXP, SEXP FEnumSEXP, SEXP Kest1SEXP, SEXP Kest2SEXP, SEXP KestSEXP, SEXP structuralSEXP, SEXP HACSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -102,7 +102,7 @@ END_RCPP
 }
 // fCESgmmobj
 double fCESgmmobj(const double& rho, const Eigen::VectorXd& beta1, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const arma::mat& X, const arma::vec& y, const arma::vec& z, const Rcpp::List& G, const Rcpp::List& friendindex, const arma::umat& igroup, const arma::uvec& frzeroy, const arma::uvec& frzeroz, const Rcpp::List& lIs, const Rcpp::List& lnIs, const arma::uvec& nIs, const Eigen::ArrayXi sel, const Eigen::MatrixXd& W, const IntegerVector& nvec, const Eigen::MatrixXd& yFMiMa, const Eigen::MatrixXd& zFMiMa, const int& n, const int& nniso, const int& nst, const int& Kx, const int& Kx2, const int& ngroup, const int& FEnum, const bool& structural);
-RcppExport SEXP _QtNet_fCESgmmobj(SEXP rhoSEXP, SEXP beta1SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP XSEXP, SEXP ySEXP, SEXP zSEXP, SEXP GSEXP, SEXP friendindexSEXP, SEXP igroupSEXP, SEXP frzeroySEXP, SEXP frzerozSEXP, SEXP lIsSEXP, SEXP lnIsSEXP, SEXP nIsSEXP, SEXP selSEXP, SEXP WSEXP, SEXP nvecSEXP, SEXP yFMiMaSEXP, SEXP zFMiMaSEXP, SEXP nSEXP, SEXP nnisoSEXP, SEXP nstSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP ngroupSEXP, SEXP FEnumSEXP, SEXP structuralSEXP) {
+RcppExport SEXP _QuantilePeer_fCESgmmobj(SEXP rhoSEXP, SEXP beta1SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP XSEXP, SEXP ySEXP, SEXP zSEXP, SEXP GSEXP, SEXP friendindexSEXP, SEXP igroupSEXP, SEXP frzeroySEXP, SEXP frzerozSEXP, SEXP lIsSEXP, SEXP lnIsSEXP, SEXP nIsSEXP, SEXP selSEXP, SEXP WSEXP, SEXP nvecSEXP, SEXP yFMiMaSEXP, SEXP zFMiMaSEXP, SEXP nSEXP, SEXP nnisoSEXP, SEXP nstSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP ngroupSEXP, SEXP FEnumSEXP, SEXP structuralSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -140,7 +140,7 @@ END_RCPP
 }
 // fCESWeight
 Eigen::MatrixXd fCESWeight(const Eigen::VectorXd& theta, const Eigen::ArrayXXd& data, const Eigen::ArrayXi& sel, const arma::uvec& nIs, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const bool& structural, const int& Kx, const int& Kx2, const int& nniso, const int& nst);
-RcppExport SEXP _QtNet_fCESWeight(SEXP thetaSEXP, SEXP dataSEXP, SEXP selSEXP, SEXP nIsSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP structuralSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP nnisoSEXP, SEXP nstSEXP) {
+RcppExport SEXP _QuantilePeer_fCESWeight(SEXP thetaSEXP, SEXP dataSEXP, SEXP selSEXP, SEXP nIsSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP structuralSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP nnisoSEXP, SEXP nstSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -161,7 +161,7 @@ END_RCPP
 }
 // fCESgmmrhoparms
 Rcpp::List fCESgmmrhoparms(const double& rho, const Eigen::VectorXd& beta1, const Eigen::MatrixXd& data, const Eigen::ArrayXi sel, const arma::uvec& nIs, const arma::uvec& Is, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const Eigen::MatrixXi& igroup, const int& ngroup, const int& Kx, const int& Kx2, const int& nniso, const int& niso, const int& n, const int& nst, const int& Kest1, const int& Kest2, const int& Kest, const bool& structural, const int& rhoinf, const int& HAC, const bool& COV);
-RcppExport SEXP _QtNet_fCESgmmrhoparms(SEXP rhoSEXP, SEXP beta1SEXP, SEXP dataSEXP, SEXP selSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP nnisoSEXP, SEXP nisoSEXP, SEXP nSEXP, SEXP nstSEXP, SEXP Kest1SEXP, SEXP Kest2SEXP, SEXP KestSEXP, SEXP structuralSEXP, SEXP rhoinfSEXP, SEXP HACSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fCESgmmrhoparms(SEXP rhoSEXP, SEXP beta1SEXP, SEXP dataSEXP, SEXP selSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP nnisoSEXP, SEXP nisoSEXP, SEXP nSEXP, SEXP nstSEXP, SEXP Kest1SEXP, SEXP Kest2SEXP, SEXP KestSEXP, SEXP structuralSEXP, SEXP rhoinfSEXP, SEXP HACSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -194,7 +194,7 @@ END_RCPP
 }
 // fCESgmmrhoobj
 double fCESgmmrhoobj(const Eigen::VectorXd& theta, const Eigen::MatrixXd& data, const Eigen::ArrayXi sel, const arma::uvec& nIs, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const int& Kx, const int& Kx2, const int& nniso, const int& nst, const bool& structural, const int& rhoinf);
-RcppExport SEXP _QtNet_fCESgmmrhoobj(SEXP thetaSEXP, SEXP dataSEXP, SEXP selSEXP, SEXP nIsSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP nnisoSEXP, SEXP nstSEXP, SEXP structuralSEXP, SEXP rhoinfSEXP) {
+RcppExport SEXP _QuantilePeer_fCESgmmrhoobj(SEXP thetaSEXP, SEXP dataSEXP, SEXP selSEXP, SEXP nIsSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP nnisoSEXP, SEXP nstSEXP, SEXP structuralSEXP, SEXP rhoinfSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -216,7 +216,7 @@ END_RCPP
 }
 // fCESParam
 Rcpp::List fCESParam(const arma::vec& param, const arma::mat& covp, const arma::uvec& idX1, const arma::uvec& idX2, const int& Kx, const int& Kx2, const int& estimrho, const bool& structural, const bool& COV);
-RcppExport SEXP _QtNet_fCESParam(SEXP paramSEXP, SEXP covpSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP estimrhoSEXP, SEXP structuralSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fCESParam(SEXP paramSEXP, SEXP covpSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP KxSEXP, SEXP Kx2SEXP, SEXP estimrhoSEXP, SEXP structuralSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -233,9 +233,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fNashECES
+int fNashECES(arma::vec& y, Rcpp::List& G, const arma::vec& talpha, const double& lambda, const double& rho, const Rcpp::List& friendindex, const arma::umat& igroup, const arma::uvec& frzeroy, const IntegerVector& nvec, const Eigen::MatrixXd& yFMiMa, const int& ngroup, const int& n, const double& tol, const int& maxit);
+RcppExport SEXP _QuantilePeer_fNashECES(SEXP ySEXP, SEXP GSEXP, SEXP talphaSEXP, SEXP lambdaSEXP, SEXP rhoSEXP, SEXP friendindexSEXP, SEXP igroupSEXP, SEXP frzeroySEXP, SEXP nvecSEXP, SEXP yFMiMaSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Rcpp::List& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type talpha(talphaSEXP);
+    Rcpp::traits::input_parameter< const double& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const double& >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type friendindex(friendindexSEXP);
+    Rcpp::traits::input_parameter< const arma::umat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type frzeroy(frzeroySEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type nvec(nvecSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type yFMiMa(yFMiMaSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const double& >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< const int& >::type maxit(maxitSEXP);
+    rcpp_result_gen = Rcpp::wrap(fNashECES(y, G, talpha, lambda, rho, friendindex, igroup, frzeroy, nvec, yFMiMa, ngroup, n, tol, maxit));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fgPIyP
 Rcpp::List fgPIyP(const arma::vec& y, Rcpp::List& G, const arma::vec& d, const arma::mat& igroup, const arma::vec& nvec, const int& ngroup, const int& n);
-RcppExport SEXP _QtNet_fgPIyP(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP ngroupSEXP, SEXP nSEXP) {
+RcppExport SEXP _QuantilePeer_fgPIyP(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP ngroupSEXP, SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -252,7 +276,7 @@ END_RCPP
 }
 // fQtauy
 arma::mat fQtauy(const arma::vec& y, Rcpp::List& G, const arma::vec& d, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const int& ngroup, const int& n, const int& ntau, const int& type);
-RcppExport SEXP _QtNet_fQtauy(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP) {
+RcppExport SEXP _QuantilePeer_fQtauy(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -272,7 +296,7 @@ END_RCPP
 }
 // fQtauyWithIndex
 Rcpp::List fQtauyWithIndex(const arma::vec& y, Rcpp::List& G, const arma::vec& d, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const int& ngroup, const int& n, const int& ntau, const int& type);
-RcppExport SEXP _QtNet_fQtauyWithIndex(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP) {
+RcppExport SEXP _QuantilePeer_fQtauyWithIndex(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -292,7 +316,7 @@ END_RCPP
 }
 // fQtauyIndex
 Rcpp::List fQtauyIndex(const arma::vec& y, Rcpp::List& G, const arma::vec& d, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const int& ngroup, const int& n, const int& ntau, const int& type);
-RcppExport SEXP _QtNet_fQtauyIndex(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP) {
+RcppExport SEXP _QuantilePeer_fQtauyIndex(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -312,7 +336,7 @@ END_RCPP
 }
 // fIndexMat
 arma::sp_mat fIndexMat(const arma::uvec& pi1, const arma::uvec& pi2, const arma::vec& w1, const arma::vec& w2, const int& n);
-RcppExport SEXP _QtNet_fIndexMat(SEXP pi1SEXP, SEXP pi2SEXP, SEXP w1SEXP, SEXP w2SEXP, SEXP nSEXP) {
+RcppExport SEXP _QuantilePeer_fIndexMat(SEXP pi1SEXP, SEXP pi2SEXP, SEXP w1SEXP, SEXP w2SEXP, SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -327,7 +351,7 @@ END_RCPP
 }
 // fProdWVI
 arma::mat fProdWVI(const arma::sp_mat& W, const arma::mat& V, const int& distance);
-RcppExport SEXP _QtNet_fProdWVI(SEXP WSEXP, SEXP VSEXP, SEXP distanceSEXP) {
+RcppExport SEXP _QuantilePeer_fProdWVI(SEXP WSEXP, SEXP VSEXP, SEXP distanceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -340,7 +364,7 @@ END_RCPP
 }
 // fNashE
 int fNashE(arma::vec& y, Rcpp::List& G, const arma::vec& d, const arma::vec& talpha, const arma::vec& lambdatau, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const int& ngroup, const int& n, const int& ntau, const int& type, const double& tol, const int& maxit);
-RcppExport SEXP _QtNet_fNashE(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP talphaSEXP, SEXP lambdatauSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
+RcppExport SEXP _QuantilePeer_fNashE(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP talphaSEXP, SEXP lambdatauSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -364,7 +388,7 @@ END_RCPP
 }
 // optins_red
 arma::mat optins_red(const arma::vec& beta, const arma::vec& y, Rcpp::List& G, const arma::mat& X, const arma::vec& d, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const int& ngroup, const int& n, const int& ntau, const int& type, const int& Kx, const double& tol, const int& maxit);
-RcppExport SEXP _QtNet_optins_red(SEXP betaSEXP, SEXP ySEXP, SEXP GSEXP, SEXP XSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP, SEXP KxSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
+RcppExport SEXP _QuantilePeer_optins_red(SEXP betaSEXP, SEXP ySEXP, SEXP GSEXP, SEXP XSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP, SEXP KxSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -389,7 +413,7 @@ END_RCPP
 }
 // optins_struc
 arma::mat optins_struc(const arma::vec& beta, const arma::vec& y, Rcpp::List& G, const arma::mat& X, const arma::vec& d, const arma::mat& igroup, const arma::vec& nvec, const arma::vec& stau, const arma::uvec& nIs, const int& ngroup, const int& n, const int& ntau, const int& type, const int& Kx, const double& tol, const int& maxit);
-RcppExport SEXP _QtNet_optins_struc(SEXP betaSEXP, SEXP ySEXP, SEXP GSEXP, SEXP XSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP nIsSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP, SEXP KxSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
+RcppExport SEXP _QuantilePeer_optins_struc(SEXP betaSEXP, SEXP ySEXP, SEXP GSEXP, SEXP XSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP nIsSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP, SEXP KxSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -415,7 +439,7 @@ END_RCPP
 }
 // fJIVE_redInd
 Rcpp::List fJIVE_redInd(const Eigen::VectorXd& y, const Eigen::MatrixXd& V, const Eigen::MatrixXd& ins, const int& Kx, const int& Kins, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE_redInd(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fJIVE_redInd(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -435,7 +459,7 @@ END_RCPP
 }
 // fJIVE2_redInd
 Rcpp::List fJIVE2_redInd(const Eigen::VectorXd& y, const Eigen::MatrixXd& V, const Eigen::MatrixXd& ins, const int& Kx, const int& Kins, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE2_redInd(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fJIVE2_redInd(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -455,7 +479,7 @@ END_RCPP
 }
 // fJIVE_redClu
 Rcpp::List fJIVE_redClu(const Eigen::VectorXd& y, const Eigen::MatrixXd& V, const Eigen::MatrixXd& ins, const Eigen::MatrixXi& igroup, const Eigen::VectorXi& nvec, const int& ngroup, const int& Kx, const int& Kins, const int& ntau, const int& n, const int& Kest, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE_redClu(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fJIVE_redClu(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -477,7 +501,7 @@ END_RCPP
 }
 // fJIVE2_redClu
 Rcpp::List fJIVE2_redClu(const Eigen::VectorXd& y, const Eigen::MatrixXd& V, const Eigen::MatrixXd& ins, const Eigen::MatrixXd& igroup, const Eigen::VectorXi& nvec, const int& ngroup, const int& Kx, const int& Kins, const int& ntau, const int& n, const int& Kest, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE2_redClu(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fJIVE2_redClu(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP igroupSEXP, SEXP nvecSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -499,7 +523,7 @@ END_RCPP
 }
 // fJIVE_strucInd
 Rcpp::List fJIVE_strucInd(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const int& Kest1, const int& HAC, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE_strucInd(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP Kest1SEXP, SEXP HACSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fJIVE_strucInd(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP Kest1SEXP, SEXP HACSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -525,7 +549,7 @@ END_RCPP
 }
 // fJIVE2_strucInd
 Rcpp::List fJIVE2_strucInd(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const int& Kest1, const int& HAC, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE2_strucInd(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP Kest1SEXP, SEXP HACSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fJIVE2_strucInd(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP Kest1SEXP, SEXP HACSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -551,7 +575,7 @@ END_RCPP
 }
 // fJIVE_strucClu
 Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, Rcpp::List LnIs, Rcpp::List LIs, const Eigen::MatrixXi& igroup, const Eigen::VectorXi& nvecnIs, const Eigen::VectorXi& hasnIs, const Eigen::VectorXi& hasIs, const int& ngroup, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE_strucClu(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP LnIsSEXP, SEXP LIsSEXP, SEXP igroupSEXP, SEXP nvecnIsSEXP, SEXP hasnIsSEXP, SEXP hasIsSEXP, SEXP ngroupSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fJIVE_strucClu(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP LnIsSEXP, SEXP LIsSEXP, SEXP igroupSEXP, SEXP nvecnIsSEXP, SEXP hasnIsSEXP, SEXP hasIsSEXP, SEXP ngroupSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -582,7 +606,7 @@ END_RCPP
 }
 // fJIVE2_strucClu
 Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, Rcpp::List LnIs, Rcpp::List LIs, const Eigen::MatrixXi& igroup, const Eigen::VectorXi& hasnIs, const Eigen::VectorXi& hasIs, const int& ngroup, const int& Kx1, const int& Kx2, const int& Kins, const int& ntau, const int& n, const bool& COV);
-RcppExport SEXP _QtNet_fJIVE2_strucClu(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP LnIsSEXP, SEXP LIsSEXP, SEXP igroupSEXP, SEXP hasnIsSEXP, SEXP hasIsSEXP, SEXP ngroupSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fJIVE2_strucClu(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP LnIsSEXP, SEXP LIsSEXP, SEXP igroupSEXP, SEXP hasnIsSEXP, SEXP hasIsSEXP, SEXP ngroupSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -612,7 +636,7 @@ END_RCPP
 }
 // fcheckrankEigen
 Eigen::Array<bool, Eigen::Dynamic, 1> fcheckrankEigen(const Eigen::MatrixXd& X, const double& tol);
-RcppExport SEXP _QtNet_fcheckrankEigen(SEXP XSEXP, SEXP tolSEXP) {
+RcppExport SEXP _QuantilePeer_fcheckrankEigen(SEXP XSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -624,7 +648,7 @@ END_RCPP
 }
 // demean
 arma::mat demean(arma::mat X, const arma::mat& igroup, const int& ngroup);
-RcppExport SEXP _QtNet_demean(SEXP XSEXP, SEXP igroupSEXP, SEXP ngroupSEXP) {
+RcppExport SEXP _QuantilePeer_demean(SEXP XSEXP, SEXP igroupSEXP, SEXP ngroupSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -637,7 +661,7 @@ END_RCPP
 }
 // demean_separate
 arma::mat demean_separate(arma::mat X, const arma::mat& igroup, const Rcpp::List& LIs, const Rcpp::List& LnIs, const int& ngroup, const int& n);
-RcppExport SEXP _QtNet_demean_separate(SEXP XSEXP, SEXP igroupSEXP, SEXP LIsSEXP, SEXP LnIsSEXP, SEXP ngroupSEXP, SEXP nSEXP) {
+RcppExport SEXP _QuantilePeer_demean_separate(SEXP XSEXP, SEXP igroupSEXP, SEXP LIsSEXP, SEXP LnIsSEXP, SEXP ngroupSEXP, SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -653,7 +677,7 @@ END_RCPP
 }
 // fdatadiagnostic
 Rcpp::List fdatadiagnostic(arma::vec& y, arma::mat& endo, arma::mat& X, arma::mat& ins, const arma::vec& theta, const arma::uvec& idX1, const arma::uvec& idX2, const arma::mat& igroup, const arma::uvec& nIs, const Rcpp::List& LIs, const Rcpp::List& LnIs, const int& n, const int& ngroup, const int& ntau, const bool& struc, const std::string& FE);
-RcppExport SEXP _QtNet_fdatadiagnostic(SEXP ySEXP, SEXP endoSEXP, SEXP XSEXP, SEXP insSEXP, SEXP thetaSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP igroupSEXP, SEXP nIsSEXP, SEXP LIsSEXP, SEXP LnIsSEXP, SEXP nSEXP, SEXP ngroupSEXP, SEXP ntauSEXP, SEXP strucSEXP, SEXP FESEXP) {
+RcppExport SEXP _QuantilePeer_fdatadiagnostic(SEXP ySEXP, SEXP endoSEXP, SEXP XSEXP, SEXP insSEXP, SEXP thetaSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP igroupSEXP, SEXP nIsSEXP, SEXP LIsSEXP, SEXP LnIsSEXP, SEXP nSEXP, SEXP ngroupSEXP, SEXP ntauSEXP, SEXP strucSEXP, SEXP FESEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -679,7 +703,7 @@ END_RCPP
 }
 // fgmm_red
 Rcpp::List fgmm_red(const Eigen::VectorXd& y, const Eigen::MatrixXd& V, const Eigen::MatrixXd& ins, Eigen::MatrixXd& W, const Eigen::MatrixXd& igroup, const int& ngroup, const int& Kx, const int& Kins, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& iv);
-RcppExport SEXP _QtNet_fgmm_red(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP WSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP ivSEXP) {
+RcppExport SEXP _QuantilePeer_fgmm_red(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP WSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP ivSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -702,7 +726,7 @@ END_RCPP
 }
 // fgmm_struc
 Rcpp::List fgmm_struc(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& qy, const Eigen::MatrixXd& ins, Eigen::MatrixXd& W1, Eigen::MatrixXd& W2, const Eigen::VectorXi& idX1, const Eigen::VectorXi& idX2, const int& Kx1, const int& Kx2, const Eigen::MatrixXi& igroup, const Eigen::VectorXi& nIs, const Eigen::VectorXi& Is, const int& ngroup, const int& Kins, const int& Kx, const int& ntau, const int& n, const int& Kest1, const int& Kest2, const int& HAC, const bool& iv);
-RcppExport SEXP _QtNet_fgmm_struc(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP W1SEXP, SEXP W2SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP igroupSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP ngroupSEXP, SEXP KinsSEXP, SEXP KxSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP Kest1SEXP, SEXP Kest2SEXP, SEXP HACSEXP, SEXP ivSEXP) {
+RcppExport SEXP _QuantilePeer_fgmm_struc(SEXP ySEXP, SEXP XSEXP, SEXP qySEXP, SEXP insSEXP, SEXP W1SEXP, SEXP W2SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP igroupSEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP ngroupSEXP, SEXP KinsSEXP, SEXP KxSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP Kest1SEXP, SEXP Kest2SEXP, SEXP HACSEXP, SEXP ivSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -734,7 +758,7 @@ END_RCPP
 }
 // fStructParam
 Rcpp::List fStructParam(const arma::vec& param, const arma::mat& covp, const arma::uvec& idX1, const arma::uvec& idX2, const int& ntau, const int& Kx, const int& Kx1, const int& Kx2, const bool& COV);
-RcppExport SEXP _QtNet_fStructParam(SEXP paramSEXP, SEXP covpSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP ntauSEXP, SEXP KxSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP COVSEXP) {
+RcppExport SEXP _QuantilePeer_fStructParam(SEXP paramSEXP, SEXP covpSEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP ntauSEXP, SEXP KxSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP COVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -753,7 +777,7 @@ END_RCPP
 }
 // fFstathomo
 Rcpp::List fFstathomo(const Eigen::MatrixXd& y, const Eigen::MatrixXd& Xc, const Eigen::MatrixXd& Xu);
-RcppExport SEXP _QtNet_fFstathomo(SEXP ySEXP, SEXP XcSEXP, SEXP XuSEXP) {
+RcppExport SEXP _QuantilePeer_fFstathomo(SEXP ySEXP, SEXP XcSEXP, SEXP XuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -766,7 +790,7 @@ END_RCPP
 }
 // fFstathomoARMA
 Rcpp::List fFstathomoARMA(const arma::mat& y, const arma::mat& Xc, const arma::mat& Xu);
-RcppExport SEXP _QtNet_fFstathomoARMA(SEXP ySEXP, SEXP XcSEXP, SEXP XuSEXP) {
+RcppExport SEXP _QuantilePeer_fFstathomoARMA(SEXP ySEXP, SEXP XcSEXP, SEXP XuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -779,7 +803,7 @@ END_RCPP
 }
 // fFstat
 Rcpp::List fFstat(const Eigen::MatrixXd& y, const Eigen::MatrixXd& X, const Eigen::VectorXi& index, const Eigen::MatrixXd& igroup, const int& ngroup, const int& HAC);
-RcppExport SEXP _QtNet_fFstat(SEXP ySEXP, SEXP XSEXP, SEXP indexSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP HACSEXP) {
+RcppExport SEXP _QuantilePeer_fFstat(SEXP ySEXP, SEXP XSEXP, SEXP indexSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP HACSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -795,7 +819,7 @@ END_RCPP
 }
 // fFstatARMA
 Rcpp::List fFstatARMA(const arma::mat& y, const arma::mat& X, const arma::uvec& index, const arma::mat& igroup, const int& ngroup, const int& HAC);
-RcppExport SEXP _QtNet_fFstatARMA(SEXP ySEXP, SEXP XSEXP, SEXP indexSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP HACSEXP) {
+RcppExport SEXP _QuantilePeer_fFstatARMA(SEXP ySEXP, SEXP XSEXP, SEXP indexSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP HACSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -809,48 +833,83 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fStructParamFull
+Rcpp::List fStructParamFull(const arma::vec& param, const arma::mat& covp, const int& ntau, const int& Kx1, const int& Kx2, const int& quantile, const int& ces);
+RcppExport SEXP _QuantilePeer_fStructParamFull(SEXP paramSEXP, SEXP covpSEXP, SEXP ntauSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP quantileSEXP, SEXP cesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type param(paramSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type covp(covpSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx1(Kx1SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx2(Kx2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type quantile(quantileSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ces(cesSEXP);
+    rcpp_result_gen = Rcpp::wrap(fStructParamFull(param, covp, ntau, Kx1, Kx2, quantile, ces));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fParamFull
+Rcpp::List fParamFull(const arma::vec& param, const arma::mat& covp, const int& ntau, const int& Kx1, const int& Kx2);
+RcppExport SEXP _QuantilePeer_fParamFull(SEXP paramSEXP, SEXP covpSEXP, SEXP ntauSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type param(paramSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type covp(covpSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ntau(ntauSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx1(Kx1SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kx2(Kx2SEXP);
+    rcpp_result_gen = Rcpp::wrap(fParamFull(param, covp, ntau, Kx1, Kx2));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_QtNet_fCESdata", (DL_FUNC) &_QtNet_fCESdata, 19},
-    {"_QtNet_fOLS", (DL_FUNC) &_QtNet_fOLS, 4},
-    {"_QtNet_fCESgmmparms", (DL_FUNC) &_QtNet_fCESgmmparms, 35},
-    {"_QtNet_fCESgmmobj", (DL_FUNC) &_QtNet_fCESgmmobj, 28},
-    {"_QtNet_fCESWeight", (DL_FUNC) &_QtNet_fCESWeight, 11},
-    {"_QtNet_fCESgmmrhoparms", (DL_FUNC) &_QtNet_fCESgmmrhoparms, 23},
-    {"_QtNet_fCESgmmrhoobj", (DL_FUNC) &_QtNet_fCESgmmrhoobj, 12},
-    {"_QtNet_fCESParam", (DL_FUNC) &_QtNet_fCESParam, 9},
-    {"_QtNet_fgPIyP", (DL_FUNC) &_QtNet_fgPIyP, 7},
-    {"_QtNet_fQtauy", (DL_FUNC) &_QtNet_fQtauy, 10},
-    {"_QtNet_fQtauyWithIndex", (DL_FUNC) &_QtNet_fQtauyWithIndex, 10},
-    {"_QtNet_fQtauyIndex", (DL_FUNC) &_QtNet_fQtauyIndex, 10},
-    {"_QtNet_fIndexMat", (DL_FUNC) &_QtNet_fIndexMat, 5},
-    {"_QtNet_fProdWVI", (DL_FUNC) &_QtNet_fProdWVI, 3},
-    {"_QtNet_fNashE", (DL_FUNC) &_QtNet_fNashE, 14},
-    {"_QtNet_optins_red", (DL_FUNC) &_QtNet_optins_red, 15},
-    {"_QtNet_optins_struc", (DL_FUNC) &_QtNet_optins_struc, 16},
-    {"_QtNet_fJIVE_redInd", (DL_FUNC) &_QtNet_fJIVE_redInd, 10},
-    {"_QtNet_fJIVE2_redInd", (DL_FUNC) &_QtNet_fJIVE2_redInd, 10},
-    {"_QtNet_fJIVE_redClu", (DL_FUNC) &_QtNet_fJIVE_redClu, 12},
-    {"_QtNet_fJIVE2_redClu", (DL_FUNC) &_QtNet_fJIVE2_redClu, 12},
-    {"_QtNet_fJIVE_strucInd", (DL_FUNC) &_QtNet_fJIVE_strucInd, 16},
-    {"_QtNet_fJIVE2_strucInd", (DL_FUNC) &_QtNet_fJIVE2_strucInd, 16},
-    {"_QtNet_fJIVE_strucClu", (DL_FUNC) &_QtNet_fJIVE_strucClu, 21},
-    {"_QtNet_fJIVE2_strucClu", (DL_FUNC) &_QtNet_fJIVE2_strucClu, 20},
-    {"_QtNet_fcheckrankEigen", (DL_FUNC) &_QtNet_fcheckrankEigen, 2},
-    {"_QtNet_demean", (DL_FUNC) &_QtNet_demean, 3},
-    {"_QtNet_demean_separate", (DL_FUNC) &_QtNet_demean_separate, 6},
-    {"_QtNet_fdatadiagnostic", (DL_FUNC) &_QtNet_fdatadiagnostic, 16},
-    {"_QtNet_fgmm_red", (DL_FUNC) &_QtNet_fgmm_red, 13},
-    {"_QtNet_fgmm_struc", (DL_FUNC) &_QtNet_fgmm_struc, 22},
-    {"_QtNet_fStructParam", (DL_FUNC) &_QtNet_fStructParam, 9},
-    {"_QtNet_fFstathomo", (DL_FUNC) &_QtNet_fFstathomo, 3},
-    {"_QtNet_fFstathomoARMA", (DL_FUNC) &_QtNet_fFstathomoARMA, 3},
-    {"_QtNet_fFstat", (DL_FUNC) &_QtNet_fFstat, 6},
-    {"_QtNet_fFstatARMA", (DL_FUNC) &_QtNet_fFstatARMA, 6},
+    {"_QuantilePeer_fCESdata", (DL_FUNC) &_QuantilePeer_fCESdata, 19},
+    {"_QuantilePeer_fOLS", (DL_FUNC) &_QuantilePeer_fOLS, 4},
+    {"_QuantilePeer_fCESgmmparms", (DL_FUNC) &_QuantilePeer_fCESgmmparms, 35},
+    {"_QuantilePeer_fCESgmmobj", (DL_FUNC) &_QuantilePeer_fCESgmmobj, 28},
+    {"_QuantilePeer_fCESWeight", (DL_FUNC) &_QuantilePeer_fCESWeight, 11},
+    {"_QuantilePeer_fCESgmmrhoparms", (DL_FUNC) &_QuantilePeer_fCESgmmrhoparms, 23},
+    {"_QuantilePeer_fCESgmmrhoobj", (DL_FUNC) &_QuantilePeer_fCESgmmrhoobj, 12},
+    {"_QuantilePeer_fCESParam", (DL_FUNC) &_QuantilePeer_fCESParam, 9},
+    {"_QuantilePeer_fNashECES", (DL_FUNC) &_QuantilePeer_fNashECES, 14},
+    {"_QuantilePeer_fgPIyP", (DL_FUNC) &_QuantilePeer_fgPIyP, 7},
+    {"_QuantilePeer_fQtauy", (DL_FUNC) &_QuantilePeer_fQtauy, 10},
+    {"_QuantilePeer_fQtauyWithIndex", (DL_FUNC) &_QuantilePeer_fQtauyWithIndex, 10},
+    {"_QuantilePeer_fQtauyIndex", (DL_FUNC) &_QuantilePeer_fQtauyIndex, 10},
+    {"_QuantilePeer_fIndexMat", (DL_FUNC) &_QuantilePeer_fIndexMat, 5},
+    {"_QuantilePeer_fProdWVI", (DL_FUNC) &_QuantilePeer_fProdWVI, 3},
+    {"_QuantilePeer_fNashE", (DL_FUNC) &_QuantilePeer_fNashE, 14},
+    {"_QuantilePeer_optins_red", (DL_FUNC) &_QuantilePeer_optins_red, 15},
+    {"_QuantilePeer_optins_struc", (DL_FUNC) &_QuantilePeer_optins_struc, 16},
+    {"_QuantilePeer_fJIVE_redInd", (DL_FUNC) &_QuantilePeer_fJIVE_redInd, 10},
+    {"_QuantilePeer_fJIVE2_redInd", (DL_FUNC) &_QuantilePeer_fJIVE2_redInd, 10},
+    {"_QuantilePeer_fJIVE_redClu", (DL_FUNC) &_QuantilePeer_fJIVE_redClu, 12},
+    {"_QuantilePeer_fJIVE2_redClu", (DL_FUNC) &_QuantilePeer_fJIVE2_redClu, 12},
+    {"_QuantilePeer_fJIVE_strucInd", (DL_FUNC) &_QuantilePeer_fJIVE_strucInd, 16},
+    {"_QuantilePeer_fJIVE2_strucInd", (DL_FUNC) &_QuantilePeer_fJIVE2_strucInd, 16},
+    {"_QuantilePeer_fJIVE_strucClu", (DL_FUNC) &_QuantilePeer_fJIVE_strucClu, 21},
+    {"_QuantilePeer_fJIVE2_strucClu", (DL_FUNC) &_QuantilePeer_fJIVE2_strucClu, 20},
+    {"_QuantilePeer_fcheckrankEigen", (DL_FUNC) &_QuantilePeer_fcheckrankEigen, 2},
+    {"_QuantilePeer_demean", (DL_FUNC) &_QuantilePeer_demean, 3},
+    {"_QuantilePeer_demean_separate", (DL_FUNC) &_QuantilePeer_demean_separate, 6},
+    {"_QuantilePeer_fdatadiagnostic", (DL_FUNC) &_QuantilePeer_fdatadiagnostic, 16},
+    {"_QuantilePeer_fgmm_red", (DL_FUNC) &_QuantilePeer_fgmm_red, 13},
+    {"_QuantilePeer_fgmm_struc", (DL_FUNC) &_QuantilePeer_fgmm_struc, 22},
+    {"_QuantilePeer_fStructParam", (DL_FUNC) &_QuantilePeer_fStructParam, 9},
+    {"_QuantilePeer_fFstathomo", (DL_FUNC) &_QuantilePeer_fFstathomo, 3},
+    {"_QuantilePeer_fFstathomoARMA", (DL_FUNC) &_QuantilePeer_fFstathomoARMA, 3},
+    {"_QuantilePeer_fFstat", (DL_FUNC) &_QuantilePeer_fFstat, 6},
+    {"_QuantilePeer_fFstatARMA", (DL_FUNC) &_QuantilePeer_fFstatARMA, 6},
+    {"_QuantilePeer_fStructParamFull", (DL_FUNC) &_QuantilePeer_fStructParamFull, 7},
+    {"_QuantilePeer_fParamFull", (DL_FUNC) &_QuantilePeer_fParamFull, 5},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_QtNet(DllInfo *dll) {
+RcppExport void R_init_QuantilePeer(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

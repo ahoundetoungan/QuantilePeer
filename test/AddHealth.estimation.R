@@ -13,7 +13,7 @@
 
 rm(list = ls()) 
 library(dplyr)
-library(QtNet)
+library(QuantilePeer)
 library(PartialNetwork)
 library(openxlsx)
 
@@ -215,7 +215,7 @@ festim  <- function(outcome) {
 }
 
 # Estimation
-sapply(depvar, festim) 
+# sapply(depvar, festim) 
 
 # create an Excel workbook
 wb        <- createWorkbook()
@@ -280,7 +280,7 @@ fres <- function(k, pval = TRUE) {
   
   # Put result together
   out    <- cbind(Id = NA, Id = NA, Se1, Id = NA, Se2, Id = NA, Se3, Id = NA, Se4, Id = NA, Se5, Id = NA, Se6, Id = NA, 
-                  Re1, Id = NA, Re2, Id = NA, Re3, Id = NA, Re4, Id = NA, Re5, Re4, Id = NA, Re6)
+                  Re1, Id = NA, Re2, Id = NA, Re3, Id = NA, Re4, Id = NA, Re5, Id = NA, Re4, Id = NA, Re6)
   
   # Formatting
   tp        <- matrix(NA, 1, ncol(out))

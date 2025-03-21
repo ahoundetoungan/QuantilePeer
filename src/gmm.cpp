@@ -70,18 +70,18 @@ Rcpp::List fgmm_red(const Eigen::VectorXd& y,
 }
 
 Rcpp::List fgmm_redARMA(const arma::vec& y,
-                    const arma::mat& V,
-                    const arma::mat& ins,
-                    arma::mat& W,
-                    const arma::mat& igroup,
-                    const int& ngroup,
-                    const int& Kx,
-                    const int& Kins, 
-                    const int& ntau,
-                    const int& n,
-                    const int& Kest, 
-                    const int& HAC = 0,
-                    const bool& iv = true){
+                        const arma::mat& V,
+                        const arma::mat& ins,
+                        arma::mat& W,
+                        const arma::mat& igroup,
+                        const int& ngroup,
+                        const int& Kx,
+                        const int& Kins, 
+                        const int& ntau,
+                        const int& n,
+                        const int& Kest, 
+                        const int& HAC = 0,
+                        const bool& iv = true){
   arma::mat ZV(ins.t()*V), Zy(ins.t()*y);
   if (iv) {
     W = arma::inv(ins.t()*ins/n);
@@ -237,26 +237,26 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
 
 // Not exported, No longer used.
 Rcpp::List fgmm_strucARMA(const arma::vec& y,
-                      const arma::mat& X,
-                      const arma::mat& qy,
-                      const arma::mat& ins,
-                      arma::mat& W1,
-                      arma::mat& W2,
-                      const arma::uvec& idX1,
-                      const arma::uvec& idX2,
-                      const int& Kx1,
-                      const int& Kx2,
-                      const arma::mat& igroup,
-                      const arma::uvec& nIs,
-                      const arma::uvec& Is,
-                      const int& ngroup,
-                      const int& Kins,
-                      const int& Kx,
-                      const int& ntau,
-                      const int& n,
-                      const int& Kest,
-                      const int& HAC = 0,
-                      const bool& iv = true){
+                          const arma::mat& X,
+                          const arma::mat& qy,
+                          const arma::mat& ins,
+                          arma::mat& W1,
+                          arma::mat& W2,
+                          const arma::uvec& idX1,
+                          const arma::uvec& idX2,
+                          const int& Kx1,
+                          const int& Kx2,
+                          const arma::mat& igroup,
+                          const arma::uvec& nIs,
+                          const arma::uvec& Is,
+                          const int& ngroup,
+                          const int& Kins,
+                          const int& Kx,
+                          const int& ntau,
+                          const int& n,
+                          const int& Kest,
+                          const int& HAC = 0,
+                          const bool& iv = true){
   int n_iso(Is.n_elem), n_niso(n - n_iso);
   // First stage
   arma::vec y1(y.elem(Is));
@@ -394,8 +394,8 @@ Rcpp::List fStructParam(const arma::vec& param,
 // This assumes homoskedasticity
 //[[Rcpp::export]]
 Rcpp::List fFstathomo(const Eigen::MatrixXd& y,
-                  const Eigen::MatrixXd& Xc,
-                  const Eigen::MatrixXd& Xu) {
+                      const Eigen::MatrixXd& Xc,
+                      const Eigen::MatrixXd& Xu) {
   int n(y.rows()), ku(Xu.cols()), kc(Xc.cols()), df1(ku - kc), df2(n - ku);
   
   // constrained models
@@ -414,8 +414,8 @@ Rcpp::List fFstathomo(const Eigen::MatrixXd& y,
 
 //[[Rcpp::export]]
 Rcpp::List fFstathomoARMA(const arma::mat& y,
-                      const arma::mat& Xc,
-                      const arma::mat& Xu) {
+                          const arma::mat& Xc,
+                          const arma::mat& Xu) {
   int n(y.n_rows), ku(Xu.n_cols), kc(Xc.n_cols), df1(ku - kc), df2(n - ku);
   
   // constrained models
@@ -472,11 +472,11 @@ Rcpp::List fFstat(const Eigen::MatrixXd& y,
 
 //[[Rcpp::export]]
 Rcpp::List fFstatARMA(const arma::mat& y,
-                  const arma::mat& X,
-                  const arma::uvec& index,
-                  const arma::mat& igroup,
-                  const int& ngroup,
-                  const int& HAC = 0) {
+                      const arma::mat& X,
+                      const arma::uvec& index,
+                      const arma::mat& igroup,
+                      const int& ngroup,
+                      const int& HAC = 0) {
   int n(y.n_rows), K(X.n_cols), df1(index.n_elem), df2(n - K), S(y.n_cols);
   
   arma::mat XX(X.t()*X), iXX(arma::inv(XX));
@@ -503,4 +503,74 @@ Rcpp::List fFstatARMA(const arma::mat& y,
     F(s) = arma::sum(bs % arma::solve(V, bs))/df1;
   }
   return Rcpp::List::create(_["F"] = F, _["df1"] = df1, _["df2"] = df2, _["ru"] = e);
+}
+
+// This function add spillover effects to fStructParam which only have total effects and conformity
+//[[Rcpp::export]]
+Rcpp::List fStructParamFull(const arma::vec& param,
+                            const arma::mat& covp,
+                            const int& ntau,
+                            const int& Kx1,
+                            const int& Kx2,
+                            const int& quantile,
+                            const int& ces = false) {
+  int Kx(Kx1 + Kx2);
+  arma::vec theta;
+  arma::mat covt;
+  
+  if (ces) {
+    arma::mat R(arma::zeros<arma::mat>(4 + Kx, 3 + Kx));
+    R.submat(4, 3, 3 + Kx, 2 + Kx).eye();
+    // rho
+    R(0, 0) =  1;
+    // Spillover : index 2 - index 1
+    R(1, 1) = -1;
+    R(1, 2) =  1;
+    // Conformity index 1
+    R(2, 1) =  1; 
+    // total index 2
+    R(3, 2) =  1; 
+    
+    // theta
+    theta = R*param;
+    covt  = R*covp*R.t();
+  } else{
+    arma::mat R(arma::zeros<arma::mat>(2 + quantile + ntau + Kx, 1 + ntau + Kx));
+    R.submat(2 + quantile, 1, 1 + quantile + ntau + Kx, ntau + Kx).eye();
+    // Spillover sum(index 1:ntau) - index 0
+    R(0, 0)                 = -1;
+    R.submat(0, 1, 0, ntau).ones();
+    // Conformity index 0
+    R(1, 0)                 =  1; 
+    // total if quantile sum(index 1:ntau)
+    if (quantile == 1) {
+      R.submat(2, 1, 2, ntau).ones();
+    }
+    
+    // theta
+    theta = R*param;
+    covt  = R*covp*R.t();
+  }
+  
+  return Rcpp::List::create(_["theta"] = theta, _["Vpa"] = covt);
+}
+
+// This function add total effects 
+//[[Rcpp::export]]
+Rcpp::List fParamFull(const arma::vec& param,
+                      const arma::mat& covp,
+                      const int& ntau,
+                      const int& Kx1,
+                      const int& Kx2) {
+  int Kx(Kx1 + Kx2);
+  arma::mat R(arma::zeros<arma::mat>(1 + ntau + Kx, ntau + Kx));
+  
+  // total if quantile sum(index 0:(ntau - 1))
+  R.submat(0, 0, 0, ntau - 1).ones();
+  R.submat(1, 0, ntau + Kx, ntau + Kx - 1).eye();
+  
+  // theta
+  arma::vec theta(R*param);
+  arma::mat covt(R*covp*R.t());
+  return Rcpp::List::create(_["theta"] = theta, _["Vpa"] = covt);
 }

@@ -1,171 +1,3 @@
-#' @title Simulating Linear Models with Quantile Peer Effects
-#' @param formula An object of class \link[stats]{formula}: a symbolic description of the model. `formula` should be specified as, for example, \code{~ x1 + x2}, 
-#' where `x1` and `x2` are control variables, which can include contextual variables such as averages or quantiles among peers.
-#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
-#' @param parms A vector defining the true values of \eqn{(\lambda', \beta')'}, where \eqn{\lambda} is a vector of \eqn{\lambda_{\tau}} for each quantile level \eqn{\tau} (see model specification in the details section of \code{\link{qpeer}}). 
-#' The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately using the arguments `lambda` and `beta`. For the structural model, 
-#' \eqn{\lambda = (\lambda^{*}, \lambda_{\tau_1}, \lambda_{\tau_2}, \dots)^{\prime}} (see the details section of \code{\link{qpeer}}).
-#' @param lambda The true value of the vector \eqn{\lambda}.
-#' @param beta The true value of the vector \eqn{\beta}.
-#' @param tau The vector of quantile levels.
-#' @param type An integer between 1 and 9 selecting one of the nine quantile algorithms used to compute peer quantiles (see the \link[stats]{quantile} function).
-#' @param epsilon A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in the details section of \code{\link{qpeer}}). 
-#' @param maxit The maximum number of iterations for the Fixed Point Iteration Method.
-#' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
-#' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `sim.qpeer` is called.
-#' @param tol The tolerance value used in the Fixed Point Iteration Method to compute the outcome `y`. The process stops if the \eqn{\ell_1}-distance 
-#' between two consecutive values of `y` is less than `tol`.
-#' @param details A logical value indicating whether to save the indices and weights of the two peers whose weighted average determines the quantile.
-#' @param structural A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see the details section of \code{\link{qpeer}}).
-#' @description
-#' `qpeer.sim` simulates the quantile peer effect models developed by Houndetoungan (2025).
-#' @seealso \code{\link{qpeer}}, \code{\link{qpeer.instruments}}
-#' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
-#' @return A list containing:
-#'     \item{y}{The simulated variable.}
-#'     \item{qy}{Quantiles of the simulated variable among peers.}
-#'     \item{epsilon}{The idiosyncratic error.}
-#'     \item{index}{The indices of the two peers whose weighted average gives the quantile.}
-#'     \item{weight}{The weights of the two peers whose weighted average gives the quantile.}
-#' @examples 
-#' ngr  <- 50
-#' nvec <- rep(30, ngr)
-#' n    <- sum(nvec)
-#' G    <- lapply(1:ngr, function(z){
-#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
-#'   diag(Gz) <- 0
-#'   Gz
-#' }) 
-#' tau  <- seq(0, 1, 0.25)
-#' X    <- cbind(rnorm(n), rpois(n, 2))
-#' l    <- c(0.2, 0.1, 0.05, 0.1, 0.2)
-#' b    <- c(2, -0.5, 1)
-#' 
-#' out  <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, beta = b)
-#' summary(out$y)
-#' out$iteration
-#' @importFrom stats rnorm
-#' @importFrom utils head
-#' @importFrom utils tail
-#' @export
-qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structural = FALSE, 
-                      type = 7, tol = 1e-10, maxit = 500, details = TRUE, data){
-  stopifnot(all((tau >= 0) & (tau <= 1)))
-  stopifnot(type %in% 1:9)
-  # Network
-  
-  dg       <- fnetwork(Glist = Glist)
-  M        <- dg$M
-  nvec     <- dg$nvec
-  n        <- dg$n
-  igr      <- dg$igr
-  Is       <- dg$Is
-  nIs      <- dg$nIs
-  dg       <- dg$dg
-  if (length(Is) <= 1 & structural) warning("The structural model requires isolated nodes.")
-  
-  # Data
-  f.t.data <- formula.to.data(formula = formula, data = data, simulations = TRUE, fixed.effects = FALSE)
-  formula  <- f.t.data$formula
-  X        <- f.t.data$X
-  if (nrow(X) != n) stop("The number of observations does not match the number of nodes in the network.")
-  Kx       <- ncol(X)
-  eps      <- NULL
-  if(missing(epsilon)){
-    eps    <- rnorm(n)
-  } else{
-    eps    <- c(epsilon)
-    if (!(length(eps) %in% c(1, n))) stop("`epsilon` must be either a scalar or an n-dimensional vector.")
-    if (length(eps) == 1) eps <- rep(eps, n)
-  }
-  
-  # parameters
-  ntau     <- length(tau)
-  ltst     <- NULL
-  lt       <- NULL
-  b        <- NULL
-  if (missing(parms)) {
-    if (missing(lambda) | missing(beta)) {
-      stop("Define either `parms` or both `lambda` and `beta`.")
-    }
-    if (structural) {
-      if (length(lambda) != (ntau + 1)){
-        stop("length(lambda) is different from length(tau) + 1. See details on the structural model.")
-      }
-      ltst <- lambda[1]
-      lt   <- tail(lambda, ntau)
-    } else {
-      if (length(lambda) != ntau){
-        stop("length(lambda) is different from length(tau).")
-      }
-      lt   <- lambda
-    }
-    if (length(beta) != Kx) stop("length(beta) is different from ncol(X).")
-    b      <- beta
-  } else{
-    if (!missing(lambda) | !missing(beta)) {
-      stop("Define either `parms` or both `lambda` and `beta`.")
-    }
-    if (structural) {
-      if (length(parms) != (ntau + Kx + 1)) stop("length(parms) is different from length(tau) + ncol(X) + 1. See details on the structural model.")
-      ltst <- parms[1]
-      lt   <- parms[2:(ntau + 1)]
-    } else {
-      if (length(parms) != (ntau + Kx)) stop("length(parms) is different from length(tau) + ncol(X).")
-      lt   <- head(parms, ntau)
-    }
-    b      <- tail(parms, Kx)
-  }
-  if (sum(abs(lt)) >= 1) warning("The sum of the absolute values of lambda_tau is greater than or equal to one, the Nash Equilibrium may not be stable.")
-  if (structural) {
-    if (abs(ltst) >= 1) {
-      stop("The absolute value of lambda[1] (the parameter that captures whether preferences indicate complementarity/substitution or conformism) must be less than 1.")
-    }
-  }
-  
-  # Solving the game
-  talpha   <- X %*% b + eps
-  if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - ltst)
-  y        <- rep(0, n)
-  t        <- fNashE(y = y, G = Glist, d = dg, talpha, lambdatau = lt, igroup = igr, 
-                     nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type, 
-                     tol = tol, maxit = maxit)
-  # Quantile
-  qy       <- NULL
-  if (details) {
-    qy     <- fQtauyWithIndex(y = y, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
-                              ngroup = M, n = n, ntau = ntau, type = type)
-  } else {
-    qy     <- fQtauy(y = y, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
-                     ngroup = M, n = n, ntau = ntau, type = type)
-  }
-  
-  W        <- list()
-  if (details) {
-    W      <- lapply(1:ntau, function(s) fIndexMat(pi1 = qy$pi1[,s], pi2 = qy$pi2[,s], w1 = qy$w1[,s], w2 = qy$w2[,s], n = n))
-    qy     <- qy$qy
-  }
-  
-  if (ntau == 1){
-    qy            <- c(qy)
-    if (details) {
-      names(W)    <- "tau"
-    }
-  } else {
-    colnames(qy)  <- paste0("y_q", 1:ntau)
-    if (details) {
-      names(W)    <- paste0("tau_", 1:ntau)
-    }
-  }
-  
-  # Output
-  list("y"         = y,
-       "qy"        = qy, 
-       "epsilon"   = eps,
-       "weight"    = W,
-       "iteration" = t)
-} 
-
 #' @title Estimating Peer Effects Models
 #' @param formula An object of class \link[stats]{formula}: a symbolic description of the model. `formula` should be specified as \code{y ~ x1 + x2}, 
 #' where `y` is the outcome and `x1` and `x2` are control variables, which can include contextual variables such as averages or quantiles among peers.
@@ -182,7 +14,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @param drop A dummy vector of the same length as the sample, indicating whether an observation should be dropped. 
 #' This can be used, for example, to remove false isolates or to estimate the model only on non-isolated agents.
 #' These observations cannot be directly removed from the network by the user because they may still be friends with other agents.
-#' @param structural A logical value indicating whether the reduced-form or structural specification should be estimated (see details).
+#' @param structural A logical value indicating whether the reduced-form or structural specification should be estimated (see Details).
 #' @param fixed.effects A logical value or string specifying whether the model includes subnet fixed effects. The fixed effects may differ between isolated and non-isolated nodes. Accepted values are `"no"` or `"FALSE"` (indicating no fixed effects), 
 #' `"join"` or `TRUE` (indicating the same fixed effects for isolated and non-isolated nodes within each subnet), and `"separate"` (indicating different fixed effects for isolated and non-isolated nodes within each subnet). Note that `"join"` fixed effects are not applicable for structural models; 
 #' `"join"` and `TRUE` are automatically converted to `"separate"`.
@@ -233,6 +65,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #'     \item{data}{A list containing the outcome, outcome quantiles among peers, control variables, and excluded instruments used in the model.}
 #' @examples
 #' \donttest{
+#' set.seed(123)
 #' ngr  <- 50  # Number of subnets
 #' nvec <- rep(30, ngr)  # Size of subnets
 #' n    <- sum(nvec)
@@ -541,7 +374,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
                                        excluded.instruments = excluded.instruments, tau = tau, ntau = ntau, type = type, 
                                        estimator = estimator, fixed.effects = fixed.effects, idX1 = idX1 + 1,  
-                                       idX2 = idX2 + 1, HAC = HAC),
+                                       idX2 = idX2 + 1, HAC = HAC, yname = yname, xnames = xname, znames = zename),
                     gmm         = GMMe,
                     data        = list(y = y0, qy = qy0, X = X0, instruments = ins0, isolated = Is + 1, 
                                        non.isolated = nIs + 1, degree = dg))
@@ -556,6 +389,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
 #' and a Hansen's J-test for overidentifying restrictions (only if there are more instruments than regressors).
 #' @param ... Further arguments passed to or from other methods.
 #' @param x An object of class \code{\link{summary.qpeer}} or \code{\link{qpeer}}.
+#' @param fullparameters A logical value indicating whether all parameters should be summarized (may be useful for the structural model).
 #' @description Summary and print methods for the class \code{\link{qpeer}}.
 #' @return A list containing:
 #'     \item{model.info}{A list with information about the model, such as the number of subnets, number of observations, and other key details.}
@@ -565,12 +399,38 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
 #' @importFrom stats pchisq
 #' @importFrom stats pnorm
 #' @export
-summary.qpeer <- function(object, diagnostic = FALSE, diagnostics = FALSE, ...) {
+summary.qpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, diagnostics = FALSE, ...) {
   stopifnot(inherits(object, "qpeer"))
+  if (is.null(object$gmm$cov)) {
+    stop("The covariance matrix is not estimated.")
+  }
   diagn          <- NULL
   if (diagnostic || diagnostics) {
     diagn        <- fdiagnostic(object, nendo = "qy")
   }
+  if (fullparameters) {
+    yname        <- object$model.info$yname
+    xnames       <- object$model.info$xnames
+    ntau         <- object$model.info$ntau
+    est          <- object$gmm$Estimate
+    covt         <- object$gmm$cov
+    Kx1          <- length(object$model.info$idX1)
+    Kx2          <- length(object$model.info$idX2)
+    if (object$model.info$structural) {
+      tp                  <- fStructParamFull(param = est, covp = covt, ntau = ntau, Kx1 = Kx1, Kx2 = Kx2, quantile = 1) 
+      tp$theta            <- c(tp$theta)
+      names(tp$theta)     <- colnames(tp$Vpa) <- rownames(tp$Vpa) <- c(paste0(yname, paste0("_q", c("(spillover)", "(conformity)", "(total)", 1:ntau))), xnames)
+      object$gmm$Estimate <- tp$theta
+      object$gmm$cov      <- tp$Vpa
+    } else {
+      tp                  <- fParamFull(param = est, covp = covt, ntau = ntau, Kx1 = Kx1, Kx2 = Kx2)
+      tp$theta            <- c(tp$theta)
+      names(tp$theta)     <- colnames(tp$Vpa) <- rownames(tp$Vpa) <- c(paste0(yname, paste0("_q", c("(total)", 1:ntau))), xnames)
+      object$gmm$Estimate <- tp$theta
+      object$gmm$cov      <- tp$Vpa
+    }
+  }
+  
   coef           <- fcoef(Estimate = object$gmm$Estimate, cov = object$gmm$cov)
   out            <- c(object["model.info"], 
                       list(coefficients = coef, diagnostics = diagn),
@@ -643,3 +503,173 @@ print.summary.qpeer <- function(x, ...) {
 print.qpeer <- function(x, ...) {
   print(summary(x))
 }
+
+#' @title Simulating Linear Models with Quantile Peer Effects
+#' @param formula An object of class \link[stats]{formula}: a symbolic description of the model. `formula` should be specified as, for example, \code{~ x1 + x2}, 
+#' where `x1` and `x2` are control variables, which can include contextual variables such as averages or quantiles among peers.
+#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
+#' @param parms A vector defining the true values of \eqn{(\lambda', \beta')'}, where \eqn{\lambda} is a vector of \eqn{\lambda_{\tau}} for each quantile level \eqn{\tau}. 
+#' The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately using the arguments `lambda` and `beta`. For the structural model, 
+#' \eqn{\lambda = (\lambda^{*}, \lambda_{\tau_1}, \lambda_{\tau_2}, \dots)^{\prime}} (see the Details section of \code{\link{qpeer}}).
+#' @param lambda The true value of the vector \eqn{\lambda}.
+#' @param beta The true value of the vector \eqn{\beta}.
+#' @param tau The vector of quantile levels.
+#' @param type An integer between 1 and 9 selecting one of the nine quantile algorithms used to compute peer quantiles (see the \link[stats]{quantile} function).
+#' @param epsilon A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in the Details section of \code{\link{qpeer}}). 
+#' @param maxit The maximum number of iterations for the Fixed Point Iteration Method.
+#' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
+#' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `sim.qpeer` is called.
+#' @param tol The tolerance value used in the Fixed Point Iteration Method to compute the outcome `y`. The process stops if the \eqn{\ell_1}-distance 
+#' between two consecutive values of `y` is less than `tol`.
+#' @param details A logical value indicating whether to save the indices and weights of the two peers whose weighted average determines the quantile.
+#' @param structural A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see the Details section of \code{\link{qpeer}}).
+#' @description
+#' `qpeer.sim` simulates the quantile peer effect models developed by Houndetoungan (2025).
+#' @seealso \code{\link{qpeer}}, \code{\link{qpeer.instruments}}
+#' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
+#' @return A list containing:
+#'     \item{y}{The simulated variable.}
+#'     \item{qy}{Quantiles of the simulated variable among peers.}
+#'     \item{epsilon}{The idiosyncratic error.}
+#'     \item{index}{The indices of the two peers whose weighted average gives the quantile.}
+#'     \item{weight}{The weights of the two peers whose weighted average gives the quantile.}
+#'     \item{iteration}{The number of iterations before convergence.}
+#' @examples 
+#' set.seed(123)
+#' ngr  <- 50
+#' nvec <- rep(30, ngr)
+#' n    <- sum(nvec)
+#' G    <- lapply(1:ngr, function(z){
+#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
+#'   diag(Gz) <- 0
+#'   Gz
+#' }) 
+#' tau  <- seq(0, 1, 0.25)
+#' X    <- cbind(rnorm(n), rpois(n, 2))
+#' l    <- c(0.2, 0.1, 0.05, 0.1, 0.2)
+#' b    <- c(2, -0.5, 1)
+#' 
+#' out  <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, beta = b)
+#' summary(out$y)
+#' out$iteration
+#' @importFrom stats rnorm
+#' @importFrom utils head
+#' @importFrom utils tail
+#' @export
+qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structural = FALSE, 
+                      type = 7, tol = 1e-10, maxit = 500, details = TRUE, data){
+  stopifnot(all((tau >= 0) & (tau <= 1)))
+  stopifnot(type %in% 1:9)
+  # Network
+  
+  dg       <- fnetwork(Glist = Glist)
+  M        <- dg$M
+  nvec     <- dg$nvec
+  n        <- dg$n
+  igr      <- dg$igr
+  Is       <- dg$Is
+  nIs      <- dg$nIs
+  dg       <- dg$dg
+  if (length(Is) <= 1 & structural) warning("The structural model requires isolated nodes.")
+  
+  # Data
+  f.t.data <- formula.to.data(formula = formula, data = data, simulations = TRUE, fixed.effects = FALSE)
+  formula  <- f.t.data$formula
+  X        <- f.t.data$X
+  if (nrow(X) != n) stop("The number of observations does not match the number of nodes in the network.")
+  Kx       <- ncol(X)
+  eps      <- NULL
+  if(missing(epsilon)){
+    eps    <- rnorm(n)
+  } else{
+    eps    <- c(epsilon)
+    if (!(length(eps) %in% c(1, n))) stop("`epsilon` must be either a scalar or an n-dimensional vector.")
+    if (length(eps) == 1) eps <- rep(eps, n)
+  }
+  
+  # parameters
+  ntau     <- length(tau)
+  ltst     <- NULL
+  lt       <- NULL
+  b        <- NULL
+  if (missing(parms)) {
+    if (missing(lambda) | missing(beta)) {
+      stop("Define either `parms` or both `lambda` and `beta`.")
+    }
+    if (structural) {
+      if (length(lambda) != (ntau + 1)){
+        stop("length(lambda) is different from length(tau) + 1. See details on the structural model.")
+      }
+      ltst <- lambda[1]
+      lt   <- tail(lambda, ntau)
+    } else {
+      if (length(lambda) != ntau){
+        stop("length(lambda) is different from length(tau).")
+      }
+      lt   <- lambda
+    }
+    if (length(beta) != Kx) stop("length(beta) is different from ncol(X).")
+    b      <- beta
+  } else{
+    if (!missing(lambda) | !missing(beta)) {
+      stop("Define either `parms` or both `lambda` and `beta`.")
+    }
+    if (structural) {
+      if (length(parms) != (ntau + Kx + 1)) stop("length(parms) is different from length(tau) + ncol(X) + 1. See details on the structural model.")
+      ltst <- parms[1]
+      lt   <- parms[2:(ntau + 1)]
+    } else {
+      if (length(parms) != (ntau + Kx)) stop("length(parms) is different from length(tau) + ncol(X).")
+      lt   <- head(parms, ntau)
+    }
+    b      <- tail(parms, Kx)
+  }
+  if (sum(abs(lt)) >= 1) warning("The sum of the absolute values of lambda_tau is greater than or equal to one, the Nash Equilibrium may not be stable.")
+  if (structural) {
+    if (abs(ltst) >= 1) {
+      stop("The absolute value of lambda[1] (the parameter that captures whether preferences indicate complementarity/substitution or conformism) must be less than 1.")
+    }
+  }
+  
+  # Solving the game
+  talpha   <- X %*% b + eps
+  if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - ltst)
+  y        <- rep(0, n)
+  t        <- fNashE(y = y, G = Glist, d = dg, talpha = talpha, lambdatau = lt, igroup = igr, 
+                     nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type, 
+                     tol = tol, maxit = maxit)
+  # Quantile
+  qy       <- NULL
+  if (details) {
+    qy     <- fQtauyWithIndex(y = y, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
+                              ngroup = M, n = n, ntau = ntau, type = type)
+  } else {
+    qy     <- fQtauy(y = y, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
+                     ngroup = M, n = n, ntau = ntau, type = type)
+  }
+  
+  W        <- list()
+  if (details) {
+    W      <- lapply(1:ntau, function(s) fIndexMat(pi1 = qy$pi1[,s], pi2 = qy$pi2[,s], w1 = qy$w1[,s], w2 = qy$w2[,s], n = n))
+    qy     <- qy$qy
+  }
+  
+  if (ntau == 1){
+    qy            <- c(qy)
+    if (details) {
+      names(W)    <- "tau"
+    }
+  } else {
+    colnames(qy)  <- paste0("y_q", 1:ntau)
+    if (details) {
+      names(W)    <- paste0("tau_", 1:ntau)
+    }
+  }
+  
+  # Output
+  list("y"         = y,
+       "qy"        = qy, 
+       "epsilon"   = eps,
+       "weight"    = W,
+       "iteration" = t)
+} 

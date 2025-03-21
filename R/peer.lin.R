@@ -199,7 +199,8 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   
   out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
                                        excluded.instruments = excluded.instruments, estimator = estimator, 
-                                       fixed.effects = fixed.effects, idX1 = idX1 + 1, idX2 = idX2 + 1, HAC = HAC),
+                                       fixed.effects = fixed.effects, idX1 = idX1 + 1, idX2 = idX2 + 1, HAC = HAC, 
+                                       yname = yname, xnames = xname, znames = zename),
                     gmm         = GMMe,
                     data        = list(y = y0, Gy = c(Gy0), X = X0, instruments = ins0, isolated = Is + 1, 
                                        non.isolated = nIs + 1, degree = dg))
@@ -210,11 +211,28 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
 
 #' @rdname summary.qpeer
 #' @export
-summary.linpeer <- function(object, diagnostic = FALSE, diagnostics = FALSE, ...) {
+summary.linpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, diagnostics = FALSE, ...) {
   stopifnot(inherits(object, "linpeer"))
+  if (is.null(object$gmm$cov)) {
+    stop("The covariance matrix is not estimated.")
+  }
   diagn          <- NULL
   if (diagnostic || diagnostics) {
     diagn        <- fdiagnostic(object, nendo = "Gy")
+  }
+  
+  if (fullparameters & object$model.info$structural) {
+    yname        <- object$model.info$yname
+    xnames       <- object$model.info$xnames
+    est          <- object$gmm$Estimate
+    covt         <- object$gmm$cov
+    Kx1          <- length(object$model.info$idX1)
+    Kx2          <- length(object$model.info$idX2)
+    tp                  <- fStructParamFull(param = est, covp = covt, ntau = 1, Kx1 = Kx1, Kx2 = Kx2, quantile = 0) 
+    tp$theta            <- c(tp$theta)
+    names(tp$theta)     <- colnames(tp$Vpa) <- rownames(tp$Vpa) <- c(paste0(c("G(spillover):", "G(conformity):", "G(total):"), yname), xnames)
+    object$gmm$Estimate <- tp$theta
+    object$gmm$cov      <- tp$Vpa
   }
   coef           <- fcoef(Estimate = object$gmm$Estimate, cov = object$gmm$cov)
   out            <- c(object["model.info"], 

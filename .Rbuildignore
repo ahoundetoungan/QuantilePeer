@@ -1,15 +1,14 @@
-^.*\.Rproj$
-  ^\.Rproj\.user$
-  ^doc$
-  ^Meta$
-  ^test$
-  ^\.travis\.yml$
-  ^\.gitignore$
-  ^\.Rbuildignore$
-  ^\.Rhistory$
-  ^CDatanet\.Rproj$
-  ^CDatanet\.Rproj, README\.md$
-  ^vignettes/\.gitignore$
-  ^scr/*\.so$
-  ^scr/*\.o$
-  ^README\.md$
+^.*\.Rproj$           # Ignore all .Rproj files
+^\.Rproj\.user$       # Ignore RStudio project user files
+^doc$                 # Ignore documentation folder
+^Meta$                # Ignore Meta directory
+^test(/.*)?$          # Ignore test directory
+^\.travis\.yml$       # Ignore Travis CI configuration file
+^\.gitignore$         # Ignore .gitignore file itself
+^\.Rbuildignore$      # Ignore .Rbuildignore file itself
+^\.Rhistory$          # Ignore R history files
+^QuantilePeer\.Rproj$ # Ignore specific R project file
+^README\.md$          # Ignore README file
+^vignettes/\.gitignore$  # Ignore .gitignore in vignettes
+^scr/.*\.so$          # Ignore compiled shared objects in scr/
+^scr/.*\.o$           # Ignore compiled object files in scr/
