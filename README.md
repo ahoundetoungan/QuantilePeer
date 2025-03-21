@@ -4,7 +4,7 @@ Aristide Houndetoungan
 
 ## Introduction
 
-The **QtNet** package simulates and estimates quantile peer effect models that were introduced by Houndetoungan (2025). The exact replication codes of the results in the paper are located in the folder [**test**](https://github.com/ahoundetoungan/QtNet/tree/master/test). Below, I also provide detailed examples of how to use the package.
+The **QtNet** package simulates and estimates quantile peer effect models that were introduced by Houndetoungan (2025). The exact replication codes of the results in the paper are located in the folder [**test**](https://github.com/ahoundetoungan/QuantilePeer/tree/main/test). Below, I also provide detailed examples of how to use the package.
 
 ## Installation
 
