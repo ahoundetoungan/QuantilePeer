@@ -157,3 +157,15 @@ fParamFull <- function(param, covp, ntau, Kx1, Kx2) {
     .Call(`_QuantilePeer_fParamFull`, param, covp, ntau, Kx1, Kx2)
 }
 
+Cov2ThetaRed <- function(V1, Z1, W1, e1, Kest1, V2, Z2, W2, e2, Kest2, ngroup, cumsn, HAC = 0L) {
+    .Call(`_QuantilePeer_Cov2ThetaRed`, V1, Z1, W1, e1, Kest1, V2, Z2, W2, e2, Kest2, ngroup, cumsn, HAC)
+}
+
+Cov2ThetaStruc <- function(X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, Kest12, Kest22, idX1, idX2, nIs, Is, ngroup, cumsn, HAC = 0L) {
+    .Call(`_QuantilePeer_Cov2ThetaStruc`, X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, Kest12, Kest22, idX1, idX2, nIs, Is, ngroup, cumsn, HAC)
+}
+
+fTestMonotone <- function(thetahat, Sigma, a, thetasimu, Boot = 1e4L, maxit = 1e6L, eps_f = 1e-9, eps_g = 1e-9) {
+    .Call(`_QuantilePeer_fTestMonotone`, thetahat, Sigma, a, thetasimu, Boot, maxit, eps_f, eps_g)
+}
+

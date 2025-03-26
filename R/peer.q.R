@@ -188,7 +188,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   if (fixed.effects == FALSE) fixed.effects <- "no"
   if (fixed.effects == TRUE | fixed.effects == "yes") fixed.effects <- "join"
   if (structural & fixed.effects != "no") fixed.effects <- "separate"
-  FEnum = (0:2)[fixed.effects == c("no", "join", "separate")]
+  FEnum <- (0:2)[fixed.effects == c("no", "join", "separate")]
   if ((HACnum == 1) & (FEnum != 0)) {
     HACnum   <- 2
     HAC      <- "cluster"
@@ -373,8 +373,8 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   
   out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
                                        excluded.instruments = excluded.instruments, tau = tau, ntau = ntau, type = type, 
-                                       estimator = estimator, fixed.effects = fixed.effects, idX1 = idX1 + 1,  
-                                       idX2 = idX2 + 1, HAC = HAC, yname = yname, xnames = xname, znames = zename),
+                                       estimator = estimator, fixed.effects = fixed.effects, idXiso = idX1 + 1,  
+                                       idXniso = idX2 + 1, HAC = HAC, yname = yname, xnames = xname, znames = zename),
                     gmm         = GMMe,
                     data        = list(y = y0, qy = qy0, X = X0, instruments = ins0, isolated = Is + 1, 
                                        non.isolated = nIs + 1, degree = dg))
@@ -414,8 +414,8 @@ summary.qpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, dia
     ntau         <- object$model.info$ntau
     est          <- object$gmm$Estimate
     covt         <- object$gmm$cov
-    Kx1          <- length(object$model.info$idX1)
-    Kx2          <- length(object$model.info$idX2)
+    Kx1          <- length(object$model.info$idXiso)
+    Kx2          <- length(object$model.info$idXniso)
     if (object$model.info$structural) {
       tp                  <- fStructParamFull(param = est, covp = covt, ntau = ntau, Kx1 = Kx1, Kx2 = Kx2, quantile = 1) 
       tp$theta            <- c(tp$theta)
@@ -673,3 +673,205 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
        "weight"    = W,
        "iteration" = t)
 } 
+
+#' @export
+qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "uniform", "wald-exogeneity", "j-exogeneity"), 
+                       boot = 1e4, maxit = 1e6, eps_f = 1e-9, eps_g = 1e-9) {
+  which     <- tolower(which[1])
+  stopifnot(which %in% c("increasing", "decreasing", "uniform", "wald-exogeneity", "j-exogeneity"))
+  stat      <- NULL
+  pval      <- NULL
+  op        <- NULL
+  df        <- NULL
+  if (which %in% c("increasing", "decreasing", "uniform")) {
+    stopifnot(class(model1) == "qpeer")
+    
+    if (!missing(model2)) {
+      stop('Testing whether peer effects are "increasing", "decreasing", or "uniform" is only possible on `model1`.')
+    }
+    
+    ntau <- model1$model.info$ntau
+    if (ntau == 1) {
+      stop("There is only one peer effect parameter.")
+    }
+    
+    struc <- model1$model.info$structural
+    The <- model1$gmm$Estimate[(struc + 1):(struc + ntau)]
+    
+    if (is.null(model1$gmm$cov)) {
+      stop("The covariance matrix has not been estimated.")
+    }
+    
+    CThe   <- model1$gmm$cov[(struc + 1):(struc + ntau), (struc + 1):(struc + ntau)]
+    if (which == "uniform") {
+      R    <- t(diag(1, ntau, ntau - 1))
+      R    <- R - cbind(0, R[, 1:(ntau - 1)])
+      stat <- c(t(R %*% The) %*% solve(R %*% CThe %*% t(R), R %*% The))
+      df   <- ntau - 1
+      pval <- 1 - pchisq(stat, df)
+    } else if (which == "increasing") {
+      tp   <- NULL
+      ts   <- t(chol(CThe)) %*% matrix(rnorm(ntau * boot), ntau, boot) + The
+      suppressWarnings(
+        tp <- fTestMonotone(thetahat = The, Sigma = CThe, a = rep(1, ntau - 1), thetasimu = ts, Boot = B, maxit = maxit,
+                            eps_f = eps_f, eps_g = eps_g)
+      )
+      stat <- tp$optim$minimum
+      op   <- tp$optim
+      Pi   <- sapply(0:(ntau - 1), function(s) mean(tp$count == s))
+      pval <- uniroot(function(p) mean(qchisq(p, df = (ntau - 1):0, lower.tail = FALSE)*Pi) - stat, interval = c(0, 1), tol = eps_f)$root
+    } else {
+      tp   <- NULL
+      ts   <- t(chol(CThe)) %*% matrix(rnorm(ntau * boot), ntau, boot) + The
+      suppressWarnings(
+        tp <- fTestMonotone(thetahat = The, Sigma = CThe, a = rep(-1, ntau - 1), thetasimu = ts, Boot = B, maxit = maxit,
+                            eps_f = eps_f, eps_g = eps_g)
+      )
+      stat <- tp$optim$minimum
+      op   <- tp$optim
+      Pi   <- sapply(0:(ntau - 1), function(s) mean(tp$count == s))
+      pval <- uniroot(function(p) mean(qchisq(p, df = (ntau - 1):0, lower.tail = FALSE)*Pi) - stat, interval = c(0, 1), tol = eps_f)$root
+    }
+    
+  } else if (which == "wald-exogeneity") {
+    if (is.null(model1$gmm$cov) | is.null(model2$gmm$cov)) {
+      stop("The covariance matrix has not been estimated.")
+    }
+    
+    if (!(tolower(model1$model.info$estimator) %in% c("iv", "gmm.optimal", "gmm.identity") &&
+          tolower(model2$model.info$estimator) %in% c("iv", "gmm.optimal", "gmm.identity"))) {
+      stop("This test is only valid for IV and GMM estimators.")
+    }
+    
+    struc1 <- model1$model.info$structural
+    struc2 <- model2$model.info$structural
+    qy1    <- as.matrix(model1$data$qy)
+    qy2    <- as.matrix(model2$data$qy)
+    X1     <- as.matrix(model1$data$X)
+    X2     <- as.matrix(model2$data$X)
+    Z1     <- as.matrix(model1$data$instruments)
+    Z2     <- as.matrix(model2$data$instruments)
+    W11    <- model1$gmm$Wiso
+    W21    <- model1$gmm$Wniso
+    W1     <- model1$gmm$W
+    W12    <- model2$gmm$Wiso
+    W22    <- model2$gmm$Wniso
+    W2     <- model2$gmm$W
+    e1     <- model1$gmm$residuals
+    e2     <- model2$gmm$residuals
+    theta1 <- model1$gmm$Estimate
+    theta2 <- model2$gmm$Estimate
+    HAC1   <- (0:2)[model1$model.info$HAC == c("iid", "hetero", "cluster")]
+    HAC2   <- (0:2)[model2$model.info$HAC == c("iid", "hetero", "cluster")]  
+    idX11  <- model1$model.info$idXiso - 1
+    idX21  <- model2$model.info$idXniso - 1
+    idX12  <- model1$model.info$idXiso - 1
+    idX22  <- model2$model.info$idXniso - 1
+    nIs1   <- model1$data$non.isolated - 1
+    Is1    <- model1$data$isolated - 1
+    nIs2   <- model2$data$non.isolated - 1
+    Is2    <- model2$data$isolated - 1
+    ngr1   <- model1$model.info$ngroup
+    ngr2   <- model2$model.info$ngroup
+    FE1    <- model1$model.info$fixed.effects
+    FE2    <- model2$model.info$fixed.effects
+    nvec1  <- model1$model.info$nvec
+    nvec2  <- model2$model.info$nvec
+    n1     <- model1$model.info$n
+    n2     <- model2$model.info$n
+    tau1   <- model1$model.info$tau
+    tau2   <- model2$model.info$tau
+    
+    tp     <- (struc1 == struc2) &&
+      (length(qy1) == length(qy2)) &&
+      (length(X1) == length(X2)) &&
+      # (length(Z1) == length(Z2)) &&
+      (length(W11) == length(W12)) &&
+      # (length(W21) == length(W22)) &&
+      # (length(W1) == length(W2)) &&
+      (length(e1) == length(e2)) &&
+      (length(theta1) == length(theta2)) &&
+      (HAC1 == HAC2) &&
+      (length(idX11) == length(idX12)) &&
+      (length(idX21) == length(idX22)) &&
+      all(nIs1 == nIs2) &&
+      all(Is1 == Is2) &&
+      (ngr1 == ngr2) &&
+      (FE1 == FE2) &&
+      all(nvec1 == nvec2) &&
+      all(colnames(qy1) == colnames(qy2)) &&
+      all(colnames(X1) == colnames(X2)) &&
+      (n1 == n2) &&
+      all(tau1 == tau2)
+    
+    if (!tp) {
+      stop("`model1` and `model2` differ in data or model specification.")
+    }
+    igr     <- matrix(c(cumsum(c(0, nvec1[-ngr1])), cumsum(nvec1) - 1), ncol = 2)
+    ncs     <- c(0, cumsum(nvec1))
+    LIs     <- lapply(1:ngr1, function(m) {
+      Is1[Is1 %in% ncs[m]:(ncs[m + 1] - 1)]
+    })
+    LnIs    <- lapply(1:ngr1, function(m) {
+      nIs1[nIs1 %in% ncs[m]:(ncs[m + 1] - 1)]
+    })
+    FEnum   <- (0:2)[FE1 == c("no", "join", "separate")]
+    
+    if (FE1 == "join") {
+      qy1  <- demean(qy1, igr, ngr1)
+      qy2  <- demean(qy2, igr, ngr1)
+      X1   <- demean(X1, igr, ngr1)
+      X2   <- demean(X2, igr, ngr1)
+      Z1   <- demean(Z1, igr, ngr1)
+      Z2   <- demean(Z2, igr, ngr1)
+    } else if(FE1 == "separate") {
+      qy1  <- demean_separate(qy1, igr, LIs, LnIs, ngr1, n)
+      qy2  <- demean_separate(qy2, igr, LIs, LnIs, ngr1, n)
+      X1   <- demean_separate(X1, igr, LIs, LnIs, ngr1, n)
+      X2   <- demean_separate(X2, igr, LIs, LnIs, ngr1, n)
+      Z1   <- demean_separate(Z1, igr, LIs, LnIs, ngr1, n)
+      Z2   <- demean_separate(Z2, igr, LIs, LnIs, ngr1, n)
+    }
+    
+    CTT    <- NULL
+    MIs    <- sum(sapply(LIs, function(s) length(s) > 0))
+    MnIs   <- sum(sapply(LnIs, function(s) length(s) > 0))
+    if (struc1) {
+      K1   <- length(idX11)
+      K2   <- length(idX21)
+      Kest1 <- ifelse(FEnum == 0, K1, Kx1 + MIs)
+      Kest2 <- ifelse(FEnum == 0, K2 + ntau + 1, Kx2 + ntau + MnIs)
+      CTT   <- Cov2ThetaStruc(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1, 
+                              Kest11 = Kest1, Kest21 = Kest2, X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22,
+                              e2 = e2, theta2 = theta2, Kest12 = Kest1, Kest22 = Kest2, idX1 = idX11, idX2 = idX21, 
+                              nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1)
+    } else {
+      K     <- length(theta1)
+      Kest  <- ifelse(FEnum == 0, K, ifelse(FEnum == 1, K + ngr1, K + MIs + MnIs))
+      CTT   <- Cov2ThetaRed(V1 = cbind(qy1, X1), Z1 = Z1, W1 = W1, e1 = e1, Kest1 = Kest,
+                            V2 = cbind(qy2, X2), Z2 = Z2, W2 = W2, e2 = e2, Kest2 = Kest, 
+                            ngroup = ngr1, cumsn = ncs, HAC = HAC1)
+    }
+    THe     <- c(theta1, theta2)
+    K       <- length(theta1)
+    ntau    <- length(tau1)
+    R       <- cbind(diag(K), -diag(K))[1:(ntau + struc1), ]
+    stat    <- c(t(R %*% the) %*% MASS::ginv(R %*% CTT %*% t(R)) %*% R %*% the)
+    df      <- nrow(R)
+    pval    <- pchisq(stat, df, lower.tail = FALSE)
+    
+  } else {
+    if (!(tolower(model1$model.info$estimator) %in% c("iv", "gmm.optimal", "gmm.identity") &&
+          tolower(model2$model.info$estimator) %in% c("iv", "gmm.optimal", "gmm.identity"))) {
+      stop("This test is only valid for IV and GMM estimators.")
+    }
+    df     <- model2$gmm$Jtest[2] - model1$gmm$Jtest[2]
+    if (df < 0) {
+      stop("j-exogeneity test required instruments in model2 to neast instruments in model1")
+    }
+    stat   <- model2$gmm$Jtest[1] - model1$gmm$Jtest[1]
+    pval   <- pchisq(stat, df, lower.tail = FALSE)
+  }
+  names(stat) <- names(pval) <- names(df) <- NULL
+  list("statistic" = stat, "pvalue" = pval, df = df, which = which, boot = boot)
+}

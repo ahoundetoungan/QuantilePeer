@@ -66,10 +66,8 @@ fstruct <- function(y, X, qy, ins, idX1, idX2, Kx1, Kx2, igr, nIs, Is, lnIs, lIs
   GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma1 = sigmaiso, sigma2 = sigmaniso, fitted.values = fv, 
                       residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
                       Jtest = c("statistic" = ifelse(is.null(GMMe$Overident), NA, GMMe$Overident), 
-                                "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))))
-  names(GMMe$Estimate)  <- estname
-  colnames(GMMe$cov)    <- estname
-  rownames(GMMe$cov)    <- estname
+                                "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))), Wiso = GMMe$W1, Wniso = GMMe$W2)
+  names(GMMe$Estimate)  <- colnames(GMMe$cov) <- rownames(GMMe$cov)    <- estname
   GMMe$Jtest["p-value"] <- ifelse(GMMe$Jtest["df"] > 0, 1 - pchisq(GMMe$Jtest["statistic"], GMMe$Jtest["df"]), NA)
   GMMe
 }
@@ -116,10 +114,8 @@ freduce <- function(y, V, ins, igr, nvec, M, Kins, Kx, ntau, Kest, n, HACnum, iv
   GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
                       residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
                       Jtest = c("statistic" = ifelse(is.null(GMMe$Overident), NA, GMMe$Overident), 
-                                "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))))
-  names(GMMe$Estimate)  <- estname
-  colnames(GMMe$cov)    <- estname
-  rownames(GMMe$cov)    <- estname
+                                "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))), W = GMMe$W)
+  names(GMMe$Estimate)  <- colnames(GMMe$cov) <- rownames(GMMe$cov)    <- estname
   GMMe$Jtest["p-value"] <- ifelse(GMMe$Jtest["df"] > 0, 1 - pchisq(GMMe$Jtest["statistic"], GMMe$Jtest["df"]), NA)
   GMMe
 }

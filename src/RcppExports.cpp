@@ -865,6 +865,82 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// Cov2ThetaRed
+Eigen::MatrixXd Cov2ThetaRed(const Eigen::MatrixXd& V1, const Eigen::MatrixXd& Z1, const Eigen::MatrixXd& W1, const Eigen::ArrayXd& e1, const int& Kest1, const Eigen::MatrixXd& V2, const Eigen::MatrixXd& Z2, const Eigen::MatrixXd& W2, const Eigen::ArrayXd& e2, const int& Kest2, const int& ngroup, const Eigen::ArrayXi& cumsn, const int& HAC);
+RcppExport SEXP _QuantilePeer_Cov2ThetaRed(SEXP V1SEXP, SEXP Z1SEXP, SEXP W1SEXP, SEXP e1SEXP, SEXP Kest1SEXP, SEXP V2SEXP, SEXP Z2SEXP, SEXP W2SEXP, SEXP e2SEXP, SEXP Kest2SEXP, SEXP ngroupSEXP, SEXP cumsnSEXP, SEXP HACSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type V1(V1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Z1(Z1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type W1(W1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXd& >::type e1(e1SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest1(Kest1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type V2(V2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Z2(Z2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type W2(W2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXd& >::type e2(e2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest2(Kest2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type cumsn(cumsnSEXP);
+    Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
+    rcpp_result_gen = Rcpp::wrap(Cov2ThetaRed(V1, Z1, W1, e1, Kest1, V2, Z2, W2, e2, Kest2, ngroup, cumsn, HAC));
+    return rcpp_result_gen;
+END_RCPP
+}
+// Cov2ThetaStruc
+Eigen::MatrixXd Cov2ThetaStruc(const Eigen::MatrixXd& X1, const Eigen::MatrixXd& qy1, const Eigen::MatrixXd& Z1, const Eigen::MatrixXd& W11, const Eigen::MatrixXd& W21, const Eigen::ArrayXd& e1, const Eigen::VectorXd theta1, const int& Kest11, const int& Kest21, const Eigen::MatrixXd& X2, const Eigen::MatrixXd& qy2, const Eigen::MatrixXd& Z2, const Eigen::MatrixXd& W12, const Eigen::MatrixXd& W22, const Eigen::ArrayXd& e2, const Eigen::VectorXd theta2, const int& Kest12, const int& Kest22, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& idX2, const Eigen::ArrayXi& nIs, const Eigen::ArrayXi& Is, const int& ngroup, const Eigen::ArrayXi& cumsn, const int& HAC);
+RcppExport SEXP _QuantilePeer_Cov2ThetaStruc(SEXP X1SEXP, SEXP qy1SEXP, SEXP Z1SEXP, SEXP W11SEXP, SEXP W21SEXP, SEXP e1SEXP, SEXP theta1SEXP, SEXP Kest11SEXP, SEXP Kest21SEXP, SEXP X2SEXP, SEXP qy2SEXP, SEXP Z2SEXP, SEXP W12SEXP, SEXP W22SEXP, SEXP e2SEXP, SEXP theta2SEXP, SEXP Kest12SEXP, SEXP Kest22SEXP, SEXP idX1SEXP, SEXP idX2SEXP, SEXP nIsSEXP, SEXP IsSEXP, SEXP ngroupSEXP, SEXP cumsnSEXP, SEXP HACSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X1(X1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type qy1(qy1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Z1(Z1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type W11(W11SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type W21(W21SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXd& >::type e1(e1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd >::type theta1(theta1SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest11(Kest11SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest21(Kest21SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X2(X2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type qy2(qy2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Z2(Z2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type W12(W12SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type W22(W22SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXd& >::type e2(e2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd >::type theta2(theta2SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest12(Kest12SEXP);
+    Rcpp::traits::input_parameter< const int& >::type Kest22(Kest22SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX1(idX1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX2(idX2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type nIs(nIsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type Is(IsSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type cumsn(cumsnSEXP);
+    Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
+    rcpp_result_gen = Rcpp::wrap(Cov2ThetaStruc(X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, Kest12, Kest22, idX1, idX2, nIs, Is, ngroup, cumsn, HAC));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fTestMonotone
+Rcpp::List fTestMonotone(const Eigen::VectorXd& thetahat, const Eigen::MatrixXd& Sigma, const Eigen::VectorXd& a, const Eigen::MatrixXd& thetasimu, const int& Boot, const int& maxit, const double& eps_f, const double& eps_g);
+RcppExport SEXP _QuantilePeer_fTestMonotone(SEXP thetahatSEXP, SEXP SigmaSEXP, SEXP aSEXP, SEXP thetasimuSEXP, SEXP BootSEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type thetahat(thetahatSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type a(aSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type thetasimu(thetasimuSEXP);
+    Rcpp::traits::input_parameter< const int& >::type Boot(BootSEXP);
+    Rcpp::traits::input_parameter< const int& >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< const double& >::type eps_f(eps_fSEXP);
+    Rcpp::traits::input_parameter< const double& >::type eps_g(eps_gSEXP);
+    rcpp_result_gen = Rcpp::wrap(fTestMonotone(thetahat, Sigma, a, thetasimu, Boot, maxit, eps_f, eps_g));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_QuantilePeer_fCESdata", (DL_FUNC) &_QuantilePeer_fCESdata, 19},
@@ -906,6 +982,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_QuantilePeer_fFstatARMA", (DL_FUNC) &_QuantilePeer_fFstatARMA, 6},
     {"_QuantilePeer_fStructParamFull", (DL_FUNC) &_QuantilePeer_fStructParamFull, 7},
     {"_QuantilePeer_fParamFull", (DL_FUNC) &_QuantilePeer_fParamFull, 5},
+    {"_QuantilePeer_Cov2ThetaRed", (DL_FUNC) &_QuantilePeer_Cov2ThetaRed, 13},
+    {"_QuantilePeer_Cov2ThetaStruc", (DL_FUNC) &_QuantilePeer_Cov2ThetaStruc, 25},
+    {"_QuantilePeer_fTestMonotone", (DL_FUNC) &_QuantilePeer_fTestMonotone, 8},
     {NULL, NULL, 0}
 };
 

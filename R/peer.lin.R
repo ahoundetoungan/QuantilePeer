@@ -199,7 +199,7 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   
   out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
                                        excluded.instruments = excluded.instruments, estimator = estimator, 
-                                       fixed.effects = fixed.effects, idX1 = idX1 + 1, idX2 = idX2 + 1, HAC = HAC, 
+                                       fixed.effects = fixed.effects, idXiso = idX1 + 1, idXniso = idX2 + 1, HAC = HAC, 
                                        yname = yname, xnames = xname, znames = zename),
                     gmm         = GMMe,
                     data        = list(y = y0, Gy = c(Gy0), X = X0, instruments = ins0, isolated = Is + 1, 
@@ -226,8 +226,8 @@ summary.linpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, d
     xnames       <- object$model.info$xnames
     est          <- object$gmm$Estimate
     covt         <- object$gmm$cov
-    Kx1          <- length(object$model.info$idX1)
-    Kx2          <- length(object$model.info$idX2)
+    Kx1          <- length(object$model.info$idXiso)
+    Kx2          <- length(object$model.info$idXniso)
     tp                  <- fStructParamFull(param = est, covp = covt, ntau = 1, Kx1 = Kx1, Kx2 = Kx2, quantile = 0) 
     tp$theta            <- c(tp$theta)
     names(tp$theta)     <- colnames(tp$Vpa) <- rownames(tp$Vpa) <- c(paste0(c("G(spillover):", "G(conformity):", "G(total):"), yname), xnames)

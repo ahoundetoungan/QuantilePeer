@@ -207,7 +207,7 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   
   out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
                                        endogenous.variables = endogenous.variables, excluded.instruments = excluded.instruments, 
-                                       estimator = estimator, fixed.effects = fixed.effects, idX1 = idX1 + 1, idX2 = idX2 + 1, HAC = HAC,
+                                       estimator = estimator, fixed.effects = fixed.effects, idXiso = idX1 + 1, idXniso = idX2 + 1, HAC = HAC,
                                        yname = yname, xnames = xname, znames = zename, endonames = enname),
                     gmm         = GMMe,
                     data        = list(y = y0, endogenous.variables = endo0, X = X0, instruments = ins0, isolated = Is + 1, 

@@ -66,7 +66,7 @@ Rcpp::List fgmm_red(const Eigen::VectorXd& y,
   Eigen::VectorXd Ze(ins.transpose()*e.matrix());
   double stat = (Ze.array()*(VZe.colPivHouseholderQr().solve(Ze)).array()).sum();
   return Rcpp::List::create(_["parms"] = parms, _["Vpa"] = Vpa, _["VZe"] = VZe, _["Overident"] = stat, 
-                            _["df"] = Kins - Kx - ntau, _["yhat"] = yhat, _["sigma2"] = s2);
+                            _["df"] = Kins - Kx - ntau, _["yhat"] = yhat, _["sigma2"] = s2, _["W"] = W);
 }
 
 Rcpp::List fgmm_redARMA(const arma::vec& y,
@@ -192,7 +192,8 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
     s21   = e1.square().sum()/(n_iso - Kest1);
     s22   = (e2/lambda(0)).square().sum()/(n_niso - Kest2);
     VF.block(0, 0, Kx1, Kx1) = s21*XX1;
-    VF.block(Kx1, Kx1, Kins, Kins) = s22*ZZ2*pow(lambda(0), 2);
+    VF.block(Kx1, Kx1, Kins + 1, Kins + 1) = s22*ZZ2*pow(lambda(0), 2);
+    // cout<<VF<<endl;
   }
   if (HAC == 1) {
     Eigen::MatrixXd Xe1(X1.array().colwise()*e1);
@@ -231,7 +232,8 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   
   return Rcpp::List::create(_["beta"] = b, _["lambda"] = lambda, _["Vpa"] = Vpa, _["VF1"] = VF1, 
                             _["VF2"] = VF2, _["Overident"] = stat, _["df"] = Kins - ntau - Kx2, 
-                              _["yhat"] = yhat, _["sigma21"] = s21, _["sigma22"] = s22);
+                              _["yhat"] = yhat, _["sigma21"] = s21, _["sigma22"] = s22, _["W1"] = W1, 
+                                _["W2"] = W2);
 }
 
 

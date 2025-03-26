@@ -333,7 +333,7 @@ cespeer <- function(formula, instrument, Glist, structural = FALSE, fixed.effect
   Est         <- c(list(Estimate = opt$theta, cov = opt$Vpa, objective = opt$objective),  SIGMA,
                    list(counts = opt$counts, convergence = opt$convergence, message = opt$message))
   out         <- list(model.info   = list(n = n_st, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
-                                          instrument = instrument, fixed.effects = fixed.effects, idX1 = idXiso + 1, idX2 = idXniso + 1, 
+                                          instrument = instrument, fixed.effects = fixed.effects, idXiso = idXiso + 1, idXniso = idXniso + 1, 
                                           HAC = HAC, set.rho = set.rho, yname = yname, xnames = xname, zname = zename),
                       gmm          = Est,
                       first.search = fes)
@@ -363,8 +363,8 @@ summary.cespeer <- function(object, fullparameters = TRUE, ...) {
     xnames       <- object$model.info$xnames
     est          <- object$gmm$Estimate
     covt         <- object$gmm$cov
-    Kx1          <- length(object$model.info$idX1)
-    Kx2          <- length(object$model.info$idX2)
+    Kx1          <- length(object$model.info$idXiso)
+    Kx2          <- length(object$model.info$idXniso)
     tp                  <- fStructParamFull(param = est, covp = covt, ntau = 1, Kx1 = Kx1, Kx2 = Kx2, quantile = 0, ces = TRUE) 
     tp$theta            <- c(tp$theta)
     names(tp$theta)     <- colnames(tp$Vpa) <- rownames(tp$Vpa) <- c(c("rho", paste0(c("G(spillover):", "G(conformity):", "G(total):"), yname)), xnames)

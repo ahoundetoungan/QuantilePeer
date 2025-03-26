@@ -159,8 +159,8 @@ fdiagnostic  <- function(object, nendo) {
   HACnum   <- (0:2)[HAC == c("iid", "hetero", "cluster")]
   ncs      <- c(0, cumsum(nvec))
   igr      <- cbind(head(ncs, M), tail(ncs, M) - 1)
-  idX1     <- object$model.info$idX1 - 1
-  idX2     <- object$model.info$idX2 - 1
+  idX1     <- object$model.info$idXiso - 1
+  idX2     <- object$model.info$idXniso - 1
   y        <- as.matrix(object$data$y)
   endo     <- as.matrix(object$data[[nendo]])
   cnendo   <- colnames(endo)
