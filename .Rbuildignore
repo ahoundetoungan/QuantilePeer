@@ -8,3 +8,5 @@
 ^vignettes/\.gitignore$
 ^scr/*\.so$
 ^scr/*\.o$
+^\.tar\.gz$
+^vignettes/\.pdf$

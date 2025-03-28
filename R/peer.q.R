@@ -241,7 +241,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   # drop
   if (!is.null(drop)) {
     dg       <- fdrop(drop = drop, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
-                           lnIs = lnIs, y = y, X = X, qy = qy, ins = ins)
+                      lnIs = lnIs, y = y, X = X, qy = qy, ins = ins)
     M        <- dg$M
     MIs      <- dg$MIs
     MnIs     <- dg$MnIs
@@ -303,7 +303,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
     if (length(fcheckrank(X = cbind(qy, X), tol = tol)) != (ntau + Kx)) stop("The design matrix is not full rank.")
   }
   
-
+  
   if (structural) {
     ins      <- cbind(X[, idX2 + 1], ins)
     ins0     <- cbind(X0[, idX2 + 1], ins0)
@@ -674,6 +674,80 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
        "iteration" = t)
 } 
 
+
+#' @title Specification Tests for Peer Effects Models
+#'
+#' @param model1,model2 Objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}.
+#' @param which A character string indicating the type of test to be implemented. 
+#' The value must be one of `"uniform"`, `"increasing"`, `"decreasing"`, `"wald-exogeneity"`, or `"j-exogeneity"` (see Details).
+#' @param boot An integer indicating the number of bootstrap replications to use for computing `p-values` in the `"increasing"` and `"decreasing"` tests.
+#' @param maxit,eps_f,eps_g Control parameters for the `optim_lbfgs` solver used to optimize the objective function in the `"increasing"` and `"decreasing"` tests (see Kodde and Palm, 1986). 
+#' The `optim_lbfgs` function is provided by the \pkg{RcppNumerical} package and is based on the `L-BFGS` method.
+#'
+#' @references Hayashi, F. (2000). *Econometrics*. Princeton University Press.
+#' @references Kodde, D. A., & Palm, F. C. (1986). Wald criteria for jointly testing equality and inequality restrictions. *Econometrica*, 54(5), 1243–1248.  
+#'
+#' @description
+#' `qpeer.test` performs specification tests on peer effects models. These include monotonicity tests on quantile peer effects, as well as tests for instrument validity when an alternative set of instruments is available.
+#'
+#' @details
+#' The monotonicity tests evaluate whether the quantile peer effects \eqn{\lambda_{\tau}} are constant, increasing, or decreasing. In this case, `model1` must be an object of class \code{\link{qpeer}}, and the `which` argument specifies the null hypothesis: `"uniform"`, `"increasing"`, or `"decreasing"`.  
+#' For the `"uniform"` test, a standard Wald test is performed. For the `"increasing"` and `"decreasing"` tests, the procedure follows Kodde and Palm (1986). \cr
+#'
+#' The instrument validity tests assess whether a second set of instruments \eqn{Z_2} is valid, under the assumption that a baseline set \eqn{Z_1} is valid. In this case, both `model1` and `model2` must be objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}. 
+#' The test compares the estimates obtained using each instrument set. If \eqn{Z_2} nests \eqn{Z_1}, it is recommended to compare the statistics from the overidentification tests in both estimations (see Hayashi, 2000, Proposition 3.7).
+#'
+#' If \eqn{Z_2} does not nest \eqn{Z_1}, the estimates themselves are compared. To perform the comparison of overidentification statistics, set the `which` argument to `"j-exogeneity"`. To compare the estimates directly, set the `which` argument to `"wald-exogeneity"`.
+#' @examples
+#' \donttest{
+#' set.seed(123)
+#' ngr  <- 50  # Number of subnets
+#' nvec <- rep(30, ngr)  # Size of subnets
+#' n    <- sum(nvec)
+#' 
+#' ### Simulating Data
+#' ## Network matrix
+#' G <- lapply(1:ngr, function(z) {
+#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
+#'   diag(Gz) <- 0
+#'   # Adding isolated nodes (important for the structural model)
+#'   niso <- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1))
+#'   if (niso > 0) {
+#'     Gz[sample(1:nvec[z], niso), ] <- 0
+#'   }
+#'   Gz
+#' })
+#' 
+#' tau <- seq(0, 1, 1/3)
+#' X   <- cbind(rnorm(n), rpois(n, 2))
+#' l   <- c(0.2, 0.15, 0.1, 0.2)
+#' b   <- c(2, -0.5, 1)
+#' eps <- rnorm(n, 0, 0.4)
+#' 
+#' ## Generating `y`
+#' y <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, 
+#'                beta = b, epsilon = eps)$y
+#' 
+#' ### Estimation
+#' ## Computing instruments
+#' Z1 <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), 
+#'                  max.distance = 2, checkrank = TRUE)$instruments
+#' Z2 <- qpeer.inst(formula = y ~ X, Glist = G, tau = seq(0, 1, 0.1), 
+#'                  max.distance = 2, checkrank = TRUE)$instruments
+#' 
+#' ## Reduced-form model 
+#' rest1 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau)
+#' summary(rest1, diagnostic = TRUE)  
+#' rest2 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1 + Z2, Glist = G, tau = tau)
+#' summary(rest2, diagnostic = TRUE)  
+#' 
+#' qpeer.test(rest1, which = "increasing")
+#' qpeer.test(rest1, which = "decreasing")
+#' qpeer.test(rest1, rest2, which = "j-exogeneity")
+#' }
+#' @importFrom MASS ginv
+#' @importFrom stats qchisq
+#' @importFrom stats uniroot
 #' @export
 qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "uniform", "wald-exogeneity", "j-exogeneity"), 
                        boot = 1e4, maxit = 1e6, eps_f = 1e-9, eps_g = 1e-9) {
@@ -683,6 +757,8 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
   pval      <- NULL
   op        <- NULL
   df        <- NULL
+  lt1       <- NULL
+  lt2       <- NULL
   if (which %in% c("increasing", "decreasing", "uniform")) {
     stopifnot(class(model1) == "qpeer")
     
@@ -696,7 +772,7 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
     }
     
     struc <- model1$model.info$structural
-    The <- model1$gmm$Estimate[(struc + 1):(struc + ntau)]
+    lt1  <- model1$gmm$Estimate[(struc + 1):(struc + ntau)]
     
     if (is.null(model1$gmm$cov)) {
       stop("The covariance matrix has not been estimated.")
@@ -706,34 +782,29 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
     if (which == "uniform") {
       R    <- t(diag(1, ntau, ntau - 1))
       R    <- R - cbind(0, R[, 1:(ntau - 1)])
-      stat <- c(t(R %*% The) %*% solve(R %*% CThe %*% t(R), R %*% The))
+      stat <- c(t(R %*%  lt1) %*% solve(R %*% CThe %*% t(R), R %*%  lt1))
       df   <- ntau - 1
       pval <- 1 - pchisq(stat, df)
-    } else if (which == "increasing") {
-      tp   <- NULL
-      ts   <- t(chol(CThe)) %*% matrix(rnorm(ntau * boot), ntau, boot) + The
-      suppressWarnings(
-        tp <- fTestMonotone(thetahat = The, Sigma = CThe, a = rep(1, ntau - 1), thetasimu = ts, Boot = B, maxit = maxit,
-                            eps_f = eps_f, eps_g = eps_g)
-      )
-      stat <- tp$optim$minimum
-      op   <- tp$optim
-      Pi   <- sapply(0:(ntau - 1), function(s) mean(tp$count == s))
-      pval <- uniroot(function(p) mean(qchisq(p, df = (ntau - 1):0, lower.tail = FALSE)*Pi) - stat, interval = c(0, 1), tol = eps_f)$root
     } else {
       tp   <- NULL
-      ts   <- t(chol(CThe)) %*% matrix(rnorm(ntau * boot), ntau, boot) + The
+      ts   <- t(chol(CThe)) %*% matrix(rnorm(ntau * boot), ntau, boot) +  lt1
       suppressWarnings(
-        tp <- fTestMonotone(thetahat = The, Sigma = CThe, a = rep(-1, ntau - 1), thetasimu = ts, Boot = B, maxit = maxit,
+        tp <- fTestMonotone(thetahat =  lt1, Sigma = CThe, a = rep(ifelse(which == "increasing", 1, -1), ntau - 1), 
+                            thetasimu = ts, Boot = boot, maxit = maxit,
                             eps_f = eps_f, eps_g = eps_g)
       )
       stat <- tp$optim$minimum
       op   <- tp$optim
       Pi   <- sapply(0:(ntau - 1), function(s) mean(tp$count == s))
-      pval <- uniroot(function(p) mean(qchisq(p, df = (ntau - 1):0, lower.tail = FALSE)*Pi) - stat, interval = c(0, 1), tol = eps_f)$root
+      pval <- uniroot(function(p){
+        qq   <- qchisq(p, df = (ntau - 1):0, lower.tail = FALSE)
+        qq[qq == Inf] <- 1e10
+        mean(qq*Pi) - stat
+      }, interval = c(0, 1), tol = eps_f)$root
     }
-    
   } else if (which == "wald-exogeneity") {
+    stopifnot(class(model1) %in% c("qpeer", "linpeer", "genpeer"))
+    stopifnot(class(model2) %in% c("qpeer", "linpeer", "genpeer"))
     if (is.null(model1$gmm$cov) | is.null(model2$gmm$cov)) {
       stop("The covariance matrix has not been estimated.")
     }
@@ -807,6 +878,7 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
     if (!tp) {
       stop("`model1` and `model2` differ in data or model specification.")
     }
+    ntau    <- length(tau1)
     igr     <- matrix(c(cumsum(c(0, nvec1[-ngr1])), cumsum(nvec1) - 1), ncol = 2)
     ncs     <- c(0, cumsum(nvec1))
     LIs     <- lapply(1:ngr1, function(m) {
@@ -825,12 +897,12 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
       Z1   <- demean(Z1, igr, ngr1)
       Z2   <- demean(Z2, igr, ngr1)
     } else if(FE1 == "separate") {
-      qy1  <- demean_separate(qy1, igr, LIs, LnIs, ngr1, n)
-      qy2  <- demean_separate(qy2, igr, LIs, LnIs, ngr1, n)
-      X1   <- demean_separate(X1, igr, LIs, LnIs, ngr1, n)
-      X2   <- demean_separate(X2, igr, LIs, LnIs, ngr1, n)
-      Z1   <- demean_separate(Z1, igr, LIs, LnIs, ngr1, n)
-      Z2   <- demean_separate(Z2, igr, LIs, LnIs, ngr1, n)
+      qy1  <- demean_separate(qy1, igr, LIs, LnIs, ngr1, n1)
+      qy2  <- demean_separate(qy2, igr, LIs, LnIs, ngr1, n1)
+      X1   <- demean_separate(X1, igr, LIs, LnIs, ngr1, n1)
+      X2   <- demean_separate(X2, igr, LIs, LnIs, ngr1, n1)
+      Z1   <- demean_separate(Z1, igr, LIs, LnIs, ngr1, n1)
+      Z2   <- demean_separate(Z2, igr, LIs, LnIs, ngr1, n1)
     }
     
     CTT    <- NULL
@@ -839,8 +911,8 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
     if (struc1) {
       K1   <- length(idX11)
       K2   <- length(idX21)
-      Kest1 <- ifelse(FEnum == 0, K1, Kx1 + MIs)
-      Kest2 <- ifelse(FEnum == 0, K2 + ntau + 1, Kx2 + ntau + MnIs)
+      Kest1 <- ifelse(FEnum == 0, K1, K1 + MIs)
+      Kest2 <- ifelse(FEnum == 0, K2 + ntau + 1, K2 + ntau + MnIs)
       CTT   <- Cov2ThetaStruc(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1, 
                               Kest11 = Kest1, Kest21 = Kest2, X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22,
                               e2 = e2, theta2 = theta2, Kest12 = Kest1, Kest22 = Kest2, idX1 = idX11, idX2 = idX21, 
@@ -854,24 +926,61 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
     }
     THe     <- c(theta1, theta2)
     K       <- length(theta1)
-    ntau    <- length(tau1)
     R       <- cbind(diag(K), -diag(K))[1:(ntau + struc1), ]
-    stat    <- c(t(R %*% the) %*% MASS::ginv(R %*% CTT %*% t(R)) %*% R %*% the)
+    stat    <- c(t(R %*% THe) %*% ginv(R %*% CTT %*% t(R)) %*% R %*% THe)
     df      <- nrow(R)
     pval    <- pchisq(stat, df, lower.tail = FALSE)
+    lt1     <- theta1[1:(ntau + struc1)]
+    lt2     <- theta2[1:(ntau + struc1)]
     
   } else {
+    stopifnot(class(model1) %in% c("qpeer", "linpeer", "genpeer"))
+    stopifnot(class(model2) %in% c("qpeer", "linpeer", "genpeer"))
     if (!(tolower(model1$model.info$estimator) %in% c("iv", "gmm.optimal", "gmm.identity") &&
           tolower(model2$model.info$estimator) %in% c("iv", "gmm.optimal", "gmm.identity"))) {
       stop("This test is only valid for IV and GMM estimators.")
     }
     df     <- model2$gmm$Jtest[2] - model1$gmm$Jtest[2]
-    if (df < 0) {
+    if (df <= 0) {
       stop("j-exogeneity test required instruments in model2 to neast instruments in model1")
     }
     stat   <- model2$gmm$Jtest[1] - model1$gmm$Jtest[1]
     pval   <- pchisq(stat, df, lower.tail = FALSE)
+    struc  <- model1$model.info$structural
+    ntau   <- model1$model.info$ntau
+    lt1    <- model1$gmm$Estimate[1:(ntau + struc)]
+    lt2    <- model2$gmm$Estimate[1:(ntau + struc)]
   }
   names(stat) <- names(pval) <- names(df) <- NULL
-  list("statistic" = stat, "pvalue" = pval, df = df, which = which, boot = boot)
+  out         <- list("statistic" = stat, "pvalue" = pval, 
+                      "lambda1" = lt1, "lambda2" = lt2,
+                      df = df, which = which, boot = boot)
+  class(out)  <- "qpeer.test"
+  out
+}
+
+#' @title Printing Specification Tests for Peer Effects Models
+#' @param x an object of class \code{\link{qpeer.test}}
+#' @param ... Further arguments passed to or from other methods.
+#' @description A print method for the class \code{\link{qpeer.test}}.
+#' @export
+print.qpeer.test <- function(x, ...) {
+  stopifnot(class(x) == "qpeer.test")
+  if (x$which %in% c("increasing", "decreasing", "uniform")) {
+    cat("Testing quantile peer effect monotonicity\n\n")
+    cat("Quantile peer effects:\n")
+    cat("  lambda_tau:", x$lambda1, "\n")
+    cat("  Alternative hypothesis: lambda_tau is", x$which, "\n")
+    cat("  Statistic:", x$statistic)
+    cat("  -- p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
+  } else {
+    cat("Testing instrument validity\n\n")
+    cat("Quantile peer effects:\n")
+    cat("  Model 1 (Z1):", x$lambda1, "\n")
+    cat("  Model 2 (Z2):", x$lambda2, "\n")
+    cat("  Alternative hypothesis: Z2 is endogenous\n")
+    cat("  Statistic:", x$statistic)
+    cat("  --  p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
+  }
+  invisible(x)
 }
