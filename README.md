@@ -28,4 +28,4 @@ install_github("ahoundetoungan/QuantilePeer")
 
 
 ## Getting Started
-See the [`vignettes`](https://github.com/ahoundetoungan/QuantilePeer/tree/main/vignettes) for detailed examples demonstrating how to use the package.
+See the [vignettes](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf) for detailed examples demonstrating how to use the package.
