@@ -970,7 +970,7 @@ print.qpeer.test <- function(x, ...) {
     cat("Testing quantile peer effect monotonicity\n\n")
     cat("Quantile peer effects:\n")
     cat("  lambda_tau:", x$lambda1, "\n")
-    cat("  Alternative hypothesis: lambda_tau is", x$which, "\n")
+    cat("  Null hypothesis: lambda_tau is", x$which, "\n")
     cat("  Statistic:", x$statistic)
     cat("  -- p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
   } else {
@@ -978,7 +978,7 @@ print.qpeer.test <- function(x, ...) {
     cat("Quantile peer effects:\n")
     cat("  Model 1 (Z1):", x$lambda1, "\n")
     cat("  Model 2 (Z2):", x$lambda2, "\n")
-    cat("  Alternative hypothesis: Z2 is endogenous\n")
+    cat("  Null hypothesis: Z2 is exogenous\n")
     cat("  Statistic:", x$statistic)
     cat("  --  p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
   }
