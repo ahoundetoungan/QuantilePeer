@@ -679,7 +679,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #'
 #' @param model1,model2 Objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}.
 #' @param which A character string indicating the type of test to be implemented. 
-#' The value must be one of `"uniform"`, `"increasing"`, `"decreasing"`, `"wald-exogeneity"`, or `"j-exogeneity"` (see Details).
+#' The value must be one of `"uniform"`, `"increasing"`, `"decreasing"`, `"wald-exogeneity"`, or `"sargan-exogeneity"` (see Details).
 #' @param boot An integer indicating the number of bootstrap replications to use for computing `p-values` in the `"increasing"` and `"decreasing"` tests.
 #' @param maxit,eps_f,eps_g Control parameters for the `optim_lbfgs` solver used to optimize the objective function in the `"increasing"` and `"decreasing"` tests (see Kodde and Palm, 1986). 
 #' The `optim_lbfgs` function is provided by the \pkg{RcppNumerical} package and is based on the `L-BFGS` method.
@@ -697,7 +697,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' The instrument validity tests assess whether a second set of instruments \eqn{Z_2} is valid, under the assumption that a baseline set \eqn{Z_1} is valid. In this case, both `model1` and `model2` must be objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}. 
 #' The test compares the estimates obtained using each instrument set. If \eqn{Z_2} nests \eqn{Z_1}, it is recommended to compare the statistics from the overidentification tests in both estimations (see Hayashi, 2000, Proposition 3.7).
 #'
-#' If \eqn{Z_2} does not nest \eqn{Z_1}, the estimates themselves are compared. To perform the comparison of overidentification statistics, set the `which` argument to `"j-exogeneity"`. To compare the estimates directly, set the `which` argument to `"wald-exogeneity"`.
+#' If \eqn{Z_2} does not nest \eqn{Z_1}, the estimates themselves are compared. To perform the comparison of overidentification statistics, set the `which` argument to `"sargan-exogeneity"`. To compare the estimates directly, set the `which` argument to `"wald-exogeneity"`.
 #' @examples
 #' \donttest{
 #' set.seed(123)
@@ -743,16 +743,16 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' 
 #' qpeer.test(rest1, which = "increasing")
 #' qpeer.test(rest1, which = "decreasing")
-#' qpeer.test(rest1, rest2, which = "j-exogeneity")
+#' qpeer.test(rest1, rest2, which = "sargan-exogeneity")
 #' }
 #' @importFrom MASS ginv
 #' @importFrom stats qchisq
 #' @importFrom stats uniroot
 #' @export
-qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "uniform", "wald-exogeneity", "j-exogeneity"), 
+qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "uniform", "wald-exogeneity", "sargan-exogeneity"), 
                        boot = 1e4, maxit = 1e6, eps_f = 1e-9, eps_g = 1e-9) {
   which     <- tolower(which[1])
-  stopifnot(which %in% c("increasing", "decreasing", "uniform", "wald-exogeneity", "j-exogeneity"))
+  stopifnot(which %in% c("increasing", "decreasing", "uniform", "wald-exogeneity", "sargan-exogeneity"))
   stat      <- NULL
   pval      <- NULL
   op        <- NULL
@@ -942,7 +942,7 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
     }
     df     <- model2$gmm$Jtest[2] - model1$gmm$Jtest[2]
     if (df <= 0) {
-      stop("j-exogeneity test required instruments in model2 to neast instruments in model1")
+      stop("sargan-exogeneity test required instruments in model2 to neast instruments in model1")
     }
     stat   <- model2$gmm$Jtest[1] - model1$gmm$Jtest[1]
     pval   <- pchisq(stat, df, lower.tail = FALSE)

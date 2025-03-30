@@ -128,7 +128,7 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
   # CES-based model
   Ces     <- summary(cespeer(formula = y ~ X + GX, instrument = ~ Zces, Glist = Gnorm, 
                              structural = TRUE, fixed.effects = fixed.effects, radius = 5,
-                             grid.rho = seq(-300, 300, 1)))
+                             grid.rho = seq(-100, 100, 1)))
   
   LIM           <- LIM$gmm$Estimate
   names(LIM)    <- paste0(ifelse(fixed.effects, "FE.", ""), "LIM.", names(LIM))
@@ -223,41 +223,56 @@ wb <- createWorkbook()
 # This sheet will present results with fixed effects, Quant1, Quant3, LIM, CES 
 # This reproduces the table in the paper
 addWorksheet(wb, "FixedEffects") 
-tp <- Est %>% select(all_of(c(paste0("FE.Q1.y_q", 1:4), "FE.Q1.y_q(conformity)",
-                              paste0("FE.Q3.y_q", 1:4), "FE.Q3.y_q(conformity)", 
-                              "FE.LIM.G(total):y", "FE.LIM.G(conformity):y", 
-                              "FE.CES.rho", "FE.CES.G(total):y", "FE.CES.G(conformity):y"))) 
-tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda1[1], "$"),
-                          paste0("DGP B: $\\boldsymbol\\lambda = (", paste0(lambda2[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda2[1], "$"),
-                          paste0("DGP C: $\\boldsymbol\\lambda = (", paste0(lambda3[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda3[1], "$"),
-                          paste0("DGP D: $\\boldsymbol\\lambda = (", paste0(lambda4[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda4[1], "$"),
-                          paste0("DGP E: $\\boldsymbol\\lambda = (", paste0(lambda5[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda5[1], "$"),
-                          paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
+tp <- Est %>% select(all_of(c(paste0("FE.Q1.y_q", 1:4), "FE.Q1.y_q(spillover)", "FE.Q1.y_q(conformity)",
+                              paste0("FE.Q3.y_q", 1:4), "FE.Q3.y_q(spillover)", "FE.Q3.y_q(conformity)",
+                              "FE.LIM.G(spillover):y", "FE.LIM.G(conformity):y", 
+                              "FE.CES.rho", "FE.CES.G(spillover):y", "FE.CES.G(conformity):y"))) 
+tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", "$\\lambda_2 = ", lambda1[1], "$"),
+                          paste0("DGP B: $\\boldsymbol\\lambda = (", paste0(lambda2[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda2[-1]) - lambda2[1], "$, ", "$\\lambda_2 = ", lambda2[1], "$"),
+                          paste0("DGP C: $\\boldsymbol\\lambda = (", paste0(lambda3[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda3[-1]) - lambda3[1], "$, ", "$\\lambda_2 = ", lambda3[1], "$"),
+                          paste0("DGP D: $\\boldsymbol\\lambda = (", paste0(lambda4[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda4[-1]) - lambda4[1], "$, ", "$\\lambda_2 = ", lambda4[1], "$"),
+                          paste0("DGP E: $\\boldsymbol\\lambda = (", paste0(lambda5[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda5[-1]) - lambda5[1], "$, ", "$\\lambda_2 = ", lambda5[1], "$"),
+                          paste0("DGP F (LIM model): $\\lambda_1 = ", lambda6, "$, $\\lambda_2 = 0$"))
 writeData(wb, "FixedEffects", tp, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 
 # Add a new sheet for result without fixed effects
 addWorksheet(wb, "NoFixedEffects") 
-tp <- Est %>% select(all_of(c(paste0("Q1.y_q", 1:4), "Q1.y_q(conformity)",
-                              paste0("Q3.y_q", 1:4), "Q3.y_q(conformity)", 
-                              "LIM.G(total):y", "LIM.G(conformity):y", 
-                              "CES.rho", "CES.G(total):y", "CES.G(conformity):y"))) 
-tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda1[1], "$"),
-                          paste0("DGP B: $\\boldsymbol\\lambda = (", paste0(lambda2[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda2[1], "$"),
-                          paste0("DGP C: $\\boldsymbol\\lambda = (", paste0(lambda3[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda3[1], "$"),
-                          paste0("DGP D: $\\boldsymbol\\lambda = (", paste0(lambda4[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda4[1], "$"),
-                          paste0("DGP E: $\\boldsymbol\\lambda = (", paste0(lambda5[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda5[1], "$"),
-                          paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
+tp <- Est %>% select(all_of(c(paste0("Q1.y_q", 1:4), "Q1.y_q(spillover)", "Q1.y_q(conformity)",
+                              paste0("Q3.y_q", 1:4), "Q3.y_q(spillover)", "Q3.y_q(conformity)", 
+                              "LIM.G(spillover):y", "LIM.G(conformity):y", 
+                              "CES.rho", "CES.G(spillover):y", "CES.G(conformity):y"))) 
+tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", "$\\lambda_2 = ", lambda1[1], "$"),
+                          paste0("DGP B: $\\boldsymbol\\lambda = (", paste0(lambda2[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda2[-1]) - lambda2[1], "$, ", "$\\lambda_2 = ", lambda2[1], "$"),
+                          paste0("DGP C: $\\boldsymbol\\lambda = (", paste0(lambda3[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda3[-1]) - lambda3[1], "$, ", "$\\lambda_2 = ", lambda3[1], "$"),
+                          paste0("DGP D: $\\boldsymbol\\lambda = (", paste0(lambda4[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda4[-1]) - lambda4[1], "$, ", "$\\lambda_2 = ", lambda4[1], "$"),
+                          paste0("DGP E: $\\boldsymbol\\lambda = (", paste0(lambda5[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda5[-1]) - lambda5[1], "$, ", "$\\lambda_2 = ", lambda5[1], "$"),
+                          paste0("DGP F (LIM model): $\\lambda_1 = ", lambda6, "$, $\\lambda_2 = 0$"))
 writeData(wb, "NoFixedEffects", tp, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 
 # Full results
 addWorksheet(wb, "Full") 
 tp <- Est
-tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda1[1], "$"),
-                          paste0("DGP B: $\\boldsymbol\\lambda = (", paste0(lambda2[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda2[1], "$"),
-                          paste0("DGP C: $\\boldsymbol\\lambda = (", paste0(lambda3[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda3[1], "$"),
-                          paste0("DGP D: $\\boldsymbol\\lambda = (", paste0(lambda4[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda4[1], "$"),
-                          paste0("DGP E: $\\boldsymbol\\lambda = (", paste0(lambda5[-1], collapse = ", "), ")$, $\\lambda_2 = ", lambda5[1], "$"),
-                          paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
+tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", "$\\lambda_2 = ", lambda1[1], "$"),
+                          paste0("DGP B: $\\boldsymbol\\lambda = (", paste0(lambda2[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda2[-1]) - lambda2[1], "$, ", "$\\lambda_2 = ", lambda2[1], "$"),
+                          paste0("DGP C: $\\boldsymbol\\lambda = (", paste0(lambda3[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda3[-1]) - lambda3[1], "$, ", "$\\lambda_2 = ", lambda3[1], "$"),
+                          paste0("DGP D: $\\boldsymbol\\lambda = (", paste0(lambda4[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda4[-1]) - lambda4[1], "$, ", "$\\lambda_2 = ", lambda4[1], "$"),
+                          paste0("DGP E: $\\boldsymbol\\lambda = (", paste0(lambda5[-1], collapse = ", "), ")$, ", 
+                                 "$\\lambda_1 = ", sum(lambda5[-1]) - lambda5[1], "$, ", "$\\lambda_2 = ", lambda5[1], "$"),
+                          paste0("DGP F (LIM model): $\\lambda_1 = ", lambda6, "$, $\\lambda_2 = 0$"))
 writeData(wb, "Full", tp, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 
 

@@ -1,8 +1,8 @@
-# Quantile Peer Effects Model
+# Quantile Peer Effects Models
 
 **Aristide Houndetoungan**
 
-## Monte Carlo Simulation
+## Monte Carlo Simulations
 - The file `simulation.R` produces the simulation results presented in Table 5.1.
 
 ## Application to Add Health Data

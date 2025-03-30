@@ -7,7 +7,8 @@
 qpeer.test(
   model1,
   model2,
-  which = c("increasing", "decreasing", "uniform", "wald-exogeneity", "j-exogeneity"),
+  which = c("increasing", "decreasing", "uniform", "wald-exogeneity",
+    "sargan-exogeneity"),
   boot = 10000,
   maxit = 1e+06,
   eps_f = 1e-09,
@@ -18,7 +19,7 @@ qpeer.test(
 \item{model1, model2}{Objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}.}
 
 \item{which}{A character string indicating the type of test to be implemented.
-The value must be one of \code{"uniform"}, \code{"increasing"}, \code{"decreasing"}, \code{"wald-exogeneity"}, or \code{"j-exogeneity"} (see Details).}
+The value must be one of \code{"uniform"}, \code{"increasing"}, \code{"decreasing"}, \code{"wald-exogeneity"}, or \code{"sargan-exogeneity"} (see Details).}
 
 \item{boot}{An integer indicating the number of bootstrap replications to use for computing \code{p-values} in the \code{"increasing"} and \code{"decreasing"} tests.}
 
@@ -35,7 +36,7 @@ For the \code{"uniform"} test, a standard Wald test is performed. For the \code{
 The instrument validity tests assess whether a second set of instruments \eqn{Z_2} is valid, under the assumption that a baseline set \eqn{Z_1} is valid. In this case, both \code{model1} and \code{model2} must be objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}.
 The test compares the estimates obtained using each instrument set. If \eqn{Z_2} nests \eqn{Z_1}, it is recommended to compare the statistics from the overidentification tests in both estimations (see Hayashi, 2000, Proposition 3.7).
 
-If \eqn{Z_2} does not nest \eqn{Z_1}, the estimates themselves are compared. To perform the comparison of overidentification statistics, set the \code{which} argument to \code{"j-exogeneity"}. To compare the estimates directly, set the \code{which} argument to \code{"wald-exogeneity"}.
+If \eqn{Z_2} does not nest \eqn{Z_1}, the estimates themselves are compared. To perform the comparison of overidentification statistics, set the \code{which} argument to \code{"sargan-exogeneity"}. To compare the estimates directly, set the \code{which} argument to \code{"wald-exogeneity"}.
 }
 \examples{
 \donttest{
@@ -82,7 +83,7 @@ summary(rest2, diagnostic = TRUE)
 
 qpeer.test(rest1, which = "increasing")
 qpeer.test(rest1, which = "decreasing")
-qpeer.test(rest1, rest2, which = "j-exogeneity")
+qpeer.test(rest1, rest2, which = "sargan-exogeneity")
 }
 }
 \references{
