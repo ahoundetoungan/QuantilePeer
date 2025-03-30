@@ -413,6 +413,7 @@ Rcpp::List fCESgmmparms(const double& rho,
       Eigen::ArrayXd e(y - yhat);
       
       Eigen::MatrixXd dV(nst, Kx + 2), dtp(Eigen::MatrixXd::Zero(Kx + 2, Kx + 2));
+      dV << data(sel, Kx + 4)*tp(0), V;
       dtp(0, 0) = (e.matrix().transpose()*data(sel, Kx + 3))(0, 0);
       dtp(0, 1) = (e.matrix().transpose()*data(sel, Kx + 5))(0, 0);
       Eigen::MatrixXd deZ(-dV.transpose()*Z + dtp);
@@ -443,6 +444,11 @@ Rcpp::List fCESgmmparms(const double& rho,
       }
       Eigen::MatrixXd iHdF((H*dF).inverse()); 
       Eigen::MatrixXd HVFH(H*VF*H.transpose());
+      // cout<<H<<endl;
+      // cout<<"*****"<<endl;
+      // cout<<dF<<endl;
+      // cout<<"*****"<<endl;
+      // cout<<VF<<endl;
       Vpa = iHdF * HVFH * iHdF.transpose();
     }
   }
