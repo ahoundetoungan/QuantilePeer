@@ -1,5 +1,5 @@
 ---
-title: "QuantilePeer: An R package for estimating and simulation quantile peer effect models"
+title: "QuantilePeer: An R Package for Estimating and Simulating Quantile Peer Effect Models"
 author: "Aristide Houndetoungan"
 date: "`r Sys.Date()`"
 output:
@@ -16,7 +16,7 @@ abstract: |
  \noindent This vignette makes it easier to get started with the package **QuantilePeer**, which implements quantile peer effect models. Section \ref{sec:model} provides a brief description of quantile peer effect models \citep[][]{houndetoungan2025quantile}. Section \ref{sec:quant} illustrates how to simulate and estimate these models. Section \ref{sec:ces} presents, simulates, and estimates constant elasticity of substitution (CES)-based peer effect models introduced by \cite{boucher2024toward}. Section \ref{sec:other} discusses other specifications that can also be estimated using this package.
 
  If you use **QuantilePeer** in your publications, kindly cite it. You can run \textcolor{DarkRed}{\texttt{citation("QuantilePeer")}} in \textbf{R} to obtain information on how to cite it, including the BibTeX entry for \LaTeX{} users.
- \vspace{1cm}
+ \vspace{1em}
 vignette: >
   %\VignetteEncoding{UTF-8}
   %\VignetteIndexEntry{QuantilePeer package: Examples and Applications}
@@ -26,7 +26,7 @@ header-includes:
   - \usepackage[T1]{fontenc}
   - \usepackage{xcolor}
   - \usepackage{mathpazo}        # Palatino font
-  - \renewcommand{\normalsize}{\fontsize{11}{16}\selectfont}
+  - \renewcommand{\normalsize}{\fontsize{11.5}{16}\selectfont}
   - \usepackage[x11names]{xcolor}
 ---
 \definecolor{shadecolor}{rgb}{0.97, 0.97, 0.95}
@@ -263,7 +263,7 @@ As in Section \ref{sec:model}, CES-based models can describe preferences that ex
 
 
 ## Data simulation 
-The function \texttt{cespee.sim} can be used to simulate the CES-based peer effect model. This is useful, for example, for conducting counterfactual analyses such as changes in the intercept (e.g., providing subsidies or introducing a tax), in the network structure, or in the exogenous characteristics $\boldsymbol{x}$. As in Section \ref{sec:quant}, the following code simulates two outcomes based on the CES model: one outcome is generated from the reduced-form model (with only spillover), and the other from the structural model.
+The function \texttt{cespee.sim} can be used to simulate the CES-based peer effect model. This is useful, for example, for conducting counterfactual analyzes such as changes in the intercept (e.g., providing subsidies or introducing a tax), in the network structure, or in the exogenous characteristics $\boldsymbol{x}$. As in Section \ref{sec:quant}, the following code simulates two outcomes based on the CES model: one outcome is generated from the reduced-form model (with only spillover), and the other from the structural model.
 
 
 ```{r}
@@ -307,11 +307,12 @@ y2      <- y2$y
 One important limitation of the CES specification is that it does not accommodate zero or negative outcomes. To simulate data from this model, the term $\boldsymbol{x}_i^{\prime}\boldsymbol{\beta} + \varepsilon_i$ must be strictly positive for all $i$. The parameter $\boldsymbol{\beta}$ is therefore defined to ensure that this condition is satisfied.
 
 ## Estimation
+The model can be estimated using the function \texttt{cespeer}. As suggested by \cite{boucher2024toward}, the instrument for the social norm can be constructed using an exogenous prediction of the outcome. This prediction can be obtained from a simple linear regression of the outcome on the exogenous characteristics, as shown in the following code:
 ```{r}
 yhat1 <- fitted(lm(y1 ~ X))
 yhat2 <- fitted(lm(y2 ~ X))
 ```
-
+Using the function \texttt{cespeer}, the exogenous prediction can be specified through the argument \texttt{instrument}. The remaining arguments are similar to those of the function \texttt{qpeer}, except that the quantile level vector \texttt{tau} is not required.
 ```{r}
 cesR1 <- cespeer(formula = y1 ~ X, instrument = ~ yhat1, Glist = G, 
                  structural = FALSE)
@@ -320,44 +321,49 @@ cesS1 <- cespeer(formula = y2 ~ X, instrument = ~ yhat1, Glist = G,
                  structural = TRUE)
 summary(cesS1)
 ```
+The estimates appear reasonable, including the CES parameter $\rho$.
+
+Since $\rho < 1$, peers with low outcomes play a more important role in explaining agent outcomes. For instance, if the user were to estimate a quantile peer effect model on the same data, the function \texttt{qpeer.test} can be used to test whether the $\lambda_{\tau}$'s are monotonic (increasing or decreasing). The following code tests whether the $\lambda_{\tau}$'s are decreasing:
+
 
 ```{r}
 Z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1),  
                   max.distance = 2, checkrank = TRUE)$instruments 
-
 QtR1 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z, Glist = G, 
               tau = seq(0, 1, 1/3))
 qpeer.test(QtR1, which = "decreasing")
 ```
+The null hypothesis is not rejected, suggesting that the CES model can be used in this case to analyze the outcome. The CES model involves fewer parameters and thus provides more precise estimates than the quantile model.
+ 
 
 # Other specifications
 \label{sec:other}
-The package also provides a method for estimating the standard linear peer effect model, where the average of the outcome among peers serves as an explanatory variable. The `linpeer` function performs this estimation. The function arguments are similar to the `qpper` function (except for the quantile-specific arguments such as `tau` and `type`).  
+I discuss two important functions in this section for estimating other specifications of peer effect models. The first function is \texttt{linpeer}, which estimates the standard LIM model. The second function is \texttt{genpeer}, which allows the user to define their own social norm.
 
-For the standard linear model, instruments can be $\mathbf{GX}$ when the model does not include contextual effects or $\mathbf G^2\mathbf X$ otherwise, where $\mathbf{G}$ is row-normalized so that $\mathbf{GX}$ can be interpreted as averages of $\boldsymbol x$ among peers \citep[see][]{bramoulle2009identification}. It is also possible to include higher powers of $\mathbf{G}$ to enhance instrument strength \citep[see][]{houndetoungan2024inference}. To normalize the network and compute $\mathbf{GX}$, I use the functions `norm.network` and `peer.avg` from the [**PartialNetwork**](https://cran.r-project.org/package=PartialNetwork) package \citep{Boucher2024PartialNetwork}. In the following code, I use both $\mathbf{GX}$ and $\mathbf G^2\mathbf X$ as instruments.  
+For the standard LIM model, instruments can be $\mathbf{GX}$ when the model does not include contextual effects, or $\mathbf{G}^2\mathbf{X}$ when it does \citep[see][]{bramoulle2009identification}. It is also possible to include higher powers of $\mathbf{G}$ to strengthen the instruments \citep[see][]{houndetoungan2024inference}. To compute $\mathbf{G}^k\mathbf{X}$ for $k \geq 1$, I use the function \texttt{peer.avg} from the **PartialNetwork** package \citep{Boucher2024PartialNetwork}. In the following code, I use both $\mathbf{GX}$ and $\mathbf{G}^2\mathbf{X}$ as instruments.
+
 ```{r}
 library(PartialNetwork)
-Gn  <- norm.network(G)
-GX  <- peer.avg(Gn, X)
-GGX <- peer.avg(Gn, GX)
-M11 <- linpeer(formula = y2 ~ X, excluded.instruments = ~ GX + GGX, Glist = Gn, 
+GX  <- peer.avg(G, X)
+GGX <- peer.avg(G, GX)
+Ot1 <- linpeer(formula = y2 ~ X, excluded.instruments = ~ GX + GGX, Glist = G, 
                structural = TRUE, estimator = "gmm.optimal", 
-               fixed.effects = "separate", HAC = "hetero")
-summary(M11, diagnostic = TRUE)
+               fixed.effects = "separate", HAC = "cluster")
+summary(Ot1, diagnostic = TRUE)
 ```
-The conformity parameter appears consistent, as the estimate is similar to what was obtained from the previous estimations using the quantile model. However, the total effect seems to correspond to the sum of the estimates across different quantiles from the previous estimations.  
 
-In the `qpeer` and `linpeer` functions, the endogenous variables are not defined by the user. For example, in the quantile model, one only needs to set the quantile levels. This feature can limit the estimation of certain specifications. To address this issue, the `QuantilePeer` package provides the generic function `genpeer`, which allows users to define their endogenous variables. This option is useful for estimating the effects of quantiles among girl and boy peers, combining average peer effects with quantile peer effects in the same model, or specifying other social norms.  
+In the \texttt{qpeer} and \texttt{linpeer} functions, the endogenous variables are not defined by the user. For example, in the quantile model, one only needs to set the quantile levels. While this simplifies usage, it can limit the estimation of certain specifications. To address this, the **QuantilePeer** package provides the generic function \texttt{genpeer}, which allows users to define their own endogenous variables. This option is useful for estimating the effects of quantiles among girl and boy peers separately, combining average peer effects with quantile peer effects in the same model, or specifying other custom social norms.
 
-The `endogenous.variables` argument of the function must be defined as a formula where the endogenous variables are specified. Below is an example where average peer effects and quantile peer effects are estimated.  
+The \texttt{endogenous.variables} argument must be specified as a formula that includes the desired endogenous variables. Below is an example in which both average and quantile peer effects are estimated.
+ 
 ```{r}
-Gy2 <- peer.avg(Gn, y2)
+Gy2 <- peer.avg(G, y2)
 qy2 <- qpeer.inst(formula = y2 ~ 1, Glist = G, tau = tau[1])$qy 
-M12 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + GX + GGX, 
+Ot2 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + GX + GGX, 
                endogenous.variables = ~ Gy2 + qy2, Glist = G, structural = TRUE, 
                estimator = "gmm.optimal", fixed.effects = "separate", 
-               HAC = "hetero")
-summary(M12, diagnostic = TRUE)
+               HAC = "cluster")
+summary(Ot2, diagnostic = TRUE)
 ```
 
 
