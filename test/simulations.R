@@ -2,8 +2,8 @@
 ##############################################################################################################
 ########################### Quantile Peer Effect Models by Aristide Houndetoungan ############################
 ##############################################################################################################
-# Last updated: 2025-03-15
-# Monte Carlo Simulations
+# Last updated: 2025-04-03
+# Monte Carlo Simulations (Table 5.1)
 
 rm(list = ls())
 library(QuantilePeer)
