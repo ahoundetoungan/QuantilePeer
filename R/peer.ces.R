@@ -561,13 +561,13 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
   ## talpha
   talpha   <- X %*% b + eps
   if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - lamst)
-  if (any(talpha <= 0)) {
-    stop("`x*beta + epsilon` is not strictly positive.")
-  }
   
   ## init
   if (missing(init)) {
     init   <- rep(max(talpha)/(1 - lam))
+  }
+  if (all(init <= 0)) {
+    stop("`x*beta + epsilon` is negative.")
   }
   if (length(init) == 1){
     init   <- rep(init, n)
@@ -605,6 +605,7 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
   t        <- fNashECES(y = y, G = Glist, talpha = talpha, lambda = lam, rho = rho, friendindex = friendindex, 
                         igroup = igr, frzeroy = frzeroy, nvec = nvec, yFMiMa = yFMiMa, ngroup = M, n = n, tol = tol, 
                         maxit = maxit)
+  names(y) <- names(eps) <- NULL
   # Output
   list("y"         = c(y),
        "epsilon"   = eps,
@@ -622,10 +623,10 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
 #' `cespeer.data` computes the CES social norm, along with the first and second derivatives of the CES social norm with respect to the substitution parameter \eqn{\rho}.
 #' 
 #' @return A four-column matrix with the following columns:
-#'   \item{y}{The outcome;}
-#'   \item{ces(y, rho)}{The CES social norm;}
-#'   \item{d[ces(y, rho)]}{The first derivative of the social norm;}
-#'   \item{dd[ces(y, rho)]}{The second derivative of the social norm.}
+#'   \item{`y`}{The outcome;}
+#'   \item{`ces(y, rho)`}{The CES social norm;}
+#'   \item{`d[ces(y, rho)]`}{The first derivative of the social norm;}
+#'   \item{`dd[ces(y, rho)]`}{The second derivative of the social norm.}
 #' 
 #' @export
 cespeer.data <- function(y, Glist, rho) {

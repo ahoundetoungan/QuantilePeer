@@ -28,7 +28,7 @@ depvar  <- c("gpa", "academiceffort", "nclubs", "futureperception", "trouble", "
 # drop false isolated 
 dropfis <- TRUE
 
-# The following function takes an outcome and estimate the LIM and the quantile-based model
+# The following function takes an outcome and estimate the LIM, quantile-based, and the CES models.
 festim  <- function(outcome) {
   cat("Outcome: ", outcome, "\n", sep = "")
   ########################################################

@@ -15,10 +15,10 @@ cespeer.data(y, Glist, rho)
 }
 \value{
 A four-column matrix with the following columns:
-\item{y}{The outcome;}
-\item{ces(y, rho)}{The CES social norm;}
-\item{d\link{ces(y, rho)}}{The first derivative of the social norm;}
-\item{dd\link{ces(y, rho)}}{The second derivative of the social norm.}
+\item{\code{y}}{The outcome;}
+\item{\code{ces(y, rho)}}{The CES social norm;}
+\item{\code{d[ces(y, rho)]}}{The first derivative of the social norm;}
+\item{\code{dd[ces(y, rho)]}}{The second derivative of the social norm.}
 }
 \description{
 \code{cespeer.data} computes the CES social norm, along with the first and second derivatives of the CES social norm with respect to the substitution parameter \eqn{\rho}.

@@ -25,10 +25,11 @@ OutResPath  <- "~/Dropbox/Academy/1.Papers/Quantile Peer Effects/Application/Out
 depvar  <- c("gpa", "academiceffort", "nclubs", "futureperception", "trouble", "smoke", "drink", "risky",
              "selfesteem", "physicalexercise", "fight")
 
-# The following function takes an outcome and estimate the LIM and the quantile-based model
+# The following function takes an outcome and compute the impact of an increase in the intercept.
 fsim    <- function(outcome) {
   # cat("Outcome: ", outcome, "\n", sep = "")
   outcome <- "gpa"
+  cat("Outcome: ", outcome, "\n", sep = "")
   ########################################################
   ################### Data Preparation ###################
   ########################################################
@@ -57,12 +58,16 @@ fsim    <- function(outcome) {
   I1      <- rep(0, nrow(X))
   I2      <- I1 + 1
   
-  # Linear model
+  #############################################################
+  ######################## Simulations ########################
+  #############################################################
+  
+  #### Linear model
   LIMsim  <- linpeer.sim(formula = ~ -1 + I2 + X + GX, 
                          Glist = Gnorm,
                          lambda = SLIM$gmm$Estimate[c("G(conformity):y", "G(total):y")],
                          beta = c(1, SLIM$gmm$Estimate[c(paste0("X", colnames(X)),
-                                                    paste0("GX", colnames(GX)))]),
+                                                         paste0("GX", colnames(GX)))]),
                          structural = TRUE,
                          epsilon = 0)$y - 
     linpeer.sim(formula = ~ -1 + I1 + X + GX, 
@@ -73,39 +78,74 @@ fsim    <- function(outcome) {
                 structural = TRUE,
                 epsilon = 0)$y
   
-  # Quantile model
+  #### Quantile model
   # because this model is not linear in y, it is important to estimate the residual
   # tau1
   Xmat     <- cbind(X, GX)
   # multiply isolated individual X by 1 - lambda2
-  Xmat[(match + nmatch) > 0,] <- Xmat[(match + nmatch) > 0,]*(1 - SQ11$gmm$Estimate["y_q(conformity)"])
+  Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SQ11$gmm$Estimate["y_q(conformity)"])
   # qy
   qy       <- qpeer.instrument(y ~ 1, tau = tau1, Glist = Gnorm)$qy
   # residuals
-  res      <- y - cbind(qy, Xmat) %*% SQ11$gmm$Estimate[-"qy"]
-  res[(match + nmatch) > 0] <- res[(match + nmatch) > 0]/(1 - SQ11$gmm$Estimate["y_q(conformity)"])
+  res      <- y - cbind(qy, Xmat) %*% SQ11$gmm$Estimate[c(paste0("y_q", 1:length(tau1)),
+                                                          paste0("X", colnames(X)),
+                                                          paste0("GX", colnames(GX)))]
+  res[match > 0] <- res[match > 0]/(1 - SQ11$gmm$Estimate["y_q(conformity)"])
   
-  Qsim1    <- LIMsim  <- linpeer.sim(formula = ~ -1 + I2 + X + GX, 
-                                     Glist = Gnorm,
-                                     lambda = SLIM$gmm$Estimate[c("G(conformity):y", "G(total):y")],
-                                     beta = c(1, SLIM$gmm$Estimate[c(paste0("X", colnames(X)),
-                                                                     paste0("GX", colnames(GX)))]),
-                                     structural = TRUE,
-                                     epsilon = 0)$y - 
-    linpeer.sim(formula = ~ -1 + I1 + X + GX, 
-                Glist = Gnorm,
-                lambda = SLIM$gmm$Estimate[c("G(conformity):y", "G(total):y")],
-                beta = c(1, SLIM$gmm$Estimate[c(paste0("X", colnames(X)),
-                                                paste0("GX", colnames(GX)))]),
-                structural = TRUE,
-                epsilon = 0)$y
+  Qsim1    <- qpeer.sim(formula = ~ -1 + I2 + X + GX, 
+                        Glist = Gnorm,
+                        tau = tau1,
+                        lambda = SQ11$gmm$Estimate[c("y_q(conformity)", paste0("y_q", 1:length(tau1)))],
+                        beta = c(1, SQ11$gmm$Estimate[c(paste0("X", colnames(X)),
+                                                        paste0("GX", colnames(GX)))]),
+                        structural = TRUE,
+                        epsilon = res)$y - y # because y is the outcome before the increase in the intercept
   
+  # tau2
+  Xmat     <- cbind(X, GX)
+  # multiply isolated individual X by 1 - lambda2
+  Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SQ21$gmm$Estimate["y_q(conformity)"])
+  # qy
+  qy       <- qpeer.instrument(y ~ 1, tau = tau2, Glist = Gnorm)$qy
+  # residuals
+  res      <- y - cbind(qy, Xmat) %*% SQ21$gmm$Estimate[c(paste0("y_q", 1:length(tau2)),
+                                                          paste0("X", colnames(X)),
+                                                          paste0("GX", colnames(GX)))]
+  res[match > 0] <- res[match > 0]/(1 - SQ21$gmm$Estimate["y_q(conformity)"])
   
-  ehat     <- y - cbind(X, GX)
-  MSQ11
+  Qsim2    <- qpeer.sim(formula = ~ -1 + I2 + X + GX, 
+                        Glist = Gnorm,
+                        tau = tau2,
+                        lambda = SQ21$gmm$Estimate[c("y_q(conformity)", paste0("y_q", 1:length(tau2)))],
+                        beta = c(1, SQ21$gmm$Estimate[c(paste0("X", colnames(X)),
+                                                        paste0("GX", colnames(GX)))]),
+                        structural = TRUE,
+                        epsilon = res)$y - y # because y is the outcome before the increase in the intercept
   
-  MSQ21
+  #### CES model
+  # because this model is not linear in y, it is important to estimate the residual
+  Xmat     <- cbind(X, GX)
+  # multiply isolated individual X by 1 - lambda2
+  Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SCES$gmm$Estimate["G(conformity):y"])
+  # social norm
+  Gy       <- cespeer.data(y, Glist = Gnorm, rho = SCES$gmm$Estimate["rho"])[,"ces(y, rho)"]
+  # residuals
+  res      <- y - cbind(Gy, Xmat) %*% SCES$gmm$Estimate[c("G(total):y",
+                                                          paste0("X", colnames(X)),
+                                                          paste0("GX", colnames(GX)))]
+  res[match > 0] <- res[match > 0]/(1 - SCES$gmm$Estimate["y_q(conformity)"])
   
-  
-  NULL # Returns nothing, the results are directly saved
+  CESsim   <- cespeer.sim(formula = ~ -1 + I2 + X + GX, 
+                          Glist = Gnorm,
+                          rho = SCES$gmm$Estimate["rho"],
+                          lambda = SCES$gmm$Estimate[c("G(conformity):y", "G(total):y")],
+                          beta = c(1, SCES$gmm$Estimate[c(paste0("X", colnames(X)),
+                                                          paste0("GX", colnames(GX)))]),
+                          structural = TRUE,
+                          epsilon = res)$y - y # because y is the outcome before the increase in the intercept
+  saveRDS(data.frame(LIM = LIMsim, Q1 = Qsim1, Q2 = Qsim2, CES = CESsim),
+          file = paste0(OutResPath, outcome, ".RDS"))
 }
+
+# Estimation
+sapply(depvar, fsim) 
