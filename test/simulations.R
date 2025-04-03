@@ -7,6 +7,7 @@
 
 rm(list = ls())
 library(QuantilePeer)
+library(CDatanet) #Another of my package to simulate and estimate peer effects models (count data, linear model, Tobit, ...)
 library(parallel)
 library(dplyr)
 library(openxlsx)
@@ -69,7 +70,7 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
   if (linear) {
     # If linear lambda is set to the sum of lambda
     y      <- linpeer.sim(formula = ~ X + GX, Glist = Gnorm, lambda = sum(lambda), 
-                          beta = beta, structural = TRUE, epsilon = rnorm(n, 0, sigma))$y 
+                          beta = beta, structural = FALSE, epsilon = rnorm(n, 0, sigma))$y 
   } else {
     y      <- qpeer.sim(formula = ~ X + GX, Glist = G, tau = tau, lambda = lambda, 
                           beta = beta, structural = TRUE, epsilon = rnorm(n, 0, sigma))$y 
