@@ -53,12 +53,58 @@ fsim    <- function(outcome) {
   # Load results
   load(paste0(OutResPath, outcome, ".Rda"))
   
-  qpeer.sim(formula = y ~ X + GX, 
-            Glist = Gnorm,
-            tau = tau1,
-            lambda = 
-            type = 7)
+  # Intercepts 1 and 2
+  I1      <- rep(0, nrow(X))
+  I2      <- I1 + 1
   
+  # Linear model
+  LIMsim  <- linpeer.sim(formula = ~ -1 + I2 + X + GX, 
+                         Glist = Gnorm,
+                         lambda = SLIM$gmm$Estimate[c("G(conformity):y", "G(total):y")],
+                         beta = c(1, SLIM$gmm$Estimate[c(paste0("X", colnames(X)),
+                                                    paste0("GX", colnames(GX)))]),
+                         structural = TRUE,
+                         epsilon = 0)$y - 
+    linpeer.sim(formula = ~ -1 + I1 + X + GX, 
+                Glist = Gnorm,
+                lambda = SLIM$gmm$Estimate[c("G(conformity):y", "G(total):y")],
+                beta = c(1, SLIM$gmm$Estimate[c(paste0("X", colnames(X)),
+                                                paste0("GX", colnames(GX)))]),
+                structural = TRUE,
+                epsilon = 0)$y
+  
+  # Quantile model
+  # because this model is not linear in y, it is important to estimate the residual
+  # tau1
+  Xmat     <- cbind(X, GX)
+  # multiply isolated individual X by 1 - lambda2
+  Xmat[(match + nmatch) > 0,] <- Xmat[(match + nmatch) > 0,]*(1 - SQ11$gmm$Estimate["y_q(conformity)"])
+  # qy
+  qy       <- qpeer.instrument(y ~ 1, tau = tau1, Glist = Gnorm)$qy
+  # residuals
+  res      <- y - cbind(qy, Xmat) %*% SQ11$gmm$Estimate[-"qy"]
+  res[(match + nmatch) > 0] <- res[(match + nmatch) > 0]/(1 - SQ11$gmm$Estimate["y_q(conformity)"])
+  
+  Qsim1    <- LIMsim  <- linpeer.sim(formula = ~ -1 + I2 + X + GX, 
+                                     Glist = Gnorm,
+                                     lambda = SLIM$gmm$Estimate[c("G(conformity):y", "G(total):y")],
+                                     beta = c(1, SLIM$gmm$Estimate[c(paste0("X", colnames(X)),
+                                                                     paste0("GX", colnames(GX)))]),
+                                     structural = TRUE,
+                                     epsilon = 0)$y - 
+    linpeer.sim(formula = ~ -1 + I1 + X + GX, 
+                Glist = Gnorm,
+                lambda = SLIM$gmm$Estimate[c("G(conformity):y", "G(total):y")],
+                beta = c(1, SLIM$gmm$Estimate[c(paste0("X", colnames(X)),
+                                                paste0("GX", colnames(GX)))]),
+                structural = TRUE,
+                epsilon = 0)$y
+  
+  
+  ehat     <- y - cbind(X, GX)
+  MSQ11
+  
+  MSQ21
   
   
   NULL # Returns nothing, the results are directly saved

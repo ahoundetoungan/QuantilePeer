@@ -612,3 +612,73 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
        "iteration" = t)
 } 
 
+#' @title Compute the CES Social Norm
+#' 
+#' @param y A vector of outcomes used to compute the social norm.
+#' @param rho The CES substitution parameter.
+#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
+#' 
+#' @description
+#' `cespeer.data` computes the CES social norm, along with the first and second derivatives of the CES social norm with respect to the substitution parameter \eqn{\rho}.
+#' 
+#' @return A four-column matrix with the following columns:
+#'   \item{y}{The outcome;}
+#'   \item{ces(y, rho)}{The CES social norm;}
+#'   \item{d[ces(y, rho)]}{The first derivative of the social norm;}
+#'   \item{dd[ces(y, rho)]}{The second derivative of the social norm.}
+#' 
+#' @export
+cespeer.data <- function(y, Glist, rho) {
+  stopifnot(rho != 0)
+  # Network
+  if (!is.list(Glist)) {
+    Glist  <- list(Glist)
+  }
+  dg       <- fnetwork(Glist = Glist)
+  M        <- dg$M
+  # MIs      <- dg$MIs
+  # MnIs     <- dg$MnIs
+  nvec     <- dg$nvec
+  n        <- dg$n
+  igr      <- dg$igr
+  lIs      <- dg$lIs
+  Is       <- dg$Is
+  lnIs     <- dg$lnIs
+  nIs      <- dg$nIs
+  ldg      <- dg$ldg
+  dg       <- dg$dg
+  y        <- unlist(y)
+  stopifnot(length(y) == n)
+  
+  # Create additional variables)
+  z        <- y
+  hasIso   <- fCESdatainit(y = y, z = z, G = Glist, nvec = nvec, M = M, ldg = ldg, lIs = lIs, lnIs = lnIs, drop = rep(0, n))
+  frindex  <- hasIso$friendindex
+  frzeroy  <- hasIso$frzeroy
+  frzeroz  <- hasIso$frzeroz
+  ldg_st   <- hasIso$ldg
+  dg_st    <- hasIso$dg
+  M_st     <- hasIso$M
+  MIs_st   <- hasIso$MIs
+  MnIs_st  <- hasIso$MnIs
+  yFMiMa   <- cbind(hasIso$yFmin, hasIso$yFmax)
+  zFMiMa   <- cbind(hasIso$zFmin, hasIso$zFmax)
+  lIs      <- hasIso$lIs # After selection
+  Is       <- hasIso$Is # After selection
+  lnIs     <- hasIso$lnIs # After selection
+  nIs      <- hasIso$nIs # After selection
+  hasIso   <- hasIso$hasIso
+  niso     <- length(Is)
+  nniso    <- length(nIs)
+  n_st     <- niso + nniso
+  sel      <- sort(c(Is, nIs))
+  if ((1 %in% frzeroy) | (1 %in% frzeroz)) {
+    stop("`y` must be strictly positive.")
+  }
+  
+  out     <- fCESdata(X = matrix(NA, n, 1), y = y, z = z, G = Glist, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
+                      frzeroz = frzeroz, lIs = lIs, lnIs = lnIs, nvec = nvec, yFMiMa = yFMiMa, zFMiMa = zFMiMa, 
+                      n = n, Kx = 1, ngroup = M, rho = rho, FEnum = 0, deriv = TRUE)[,c(-1, -3, -5)]
+  colnames(out) <- c("y", "ces(y, rho)", "d[ces(y, rho)]", "dd[ces(y, rho)]")
+  out
+}
