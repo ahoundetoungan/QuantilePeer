@@ -131,10 +131,10 @@ The structural specification of the model differs between isolated and nonisolat
 For isolated \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
 \deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
 If node \eqn{i} is non-isolated, the specification is given by:
-\deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta  + \varepsilon_i,}
-where \eqn{\lambda^*} determines whether preferences exhibit conformity or complementarity/substitution. In general, \eqn{\lambda^* > 0} and this means that that preferences are conformist (anti-conformity may be possible in some models when \eqn{\lambda^* < 0}).
-In contrast, when \eqn{\lambda^* = 0}, there is complementarity/substitution between individuals depending on the signs of the \eqn{\lambda_{\tau}} parameters.
-It is obvious that \eqn{\beta} and \eqn{\lambda^*} can be identified only if the network includes enough isolated individuals.
+\deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda_2)(\mathbf{x}_i^{\prime}\beta  + \varepsilon_i),}
+where \eqn{\lambda_2} determines whether preferences exhibit conformity or complementarity/substitution. In general, \eqn{\lambda_2 > 0} and this means that that preferences are conformist (anti-conformity may be possible in some models when \eqn{\lambda_2 < 0}).
+In contrast, when \eqn{\lambda_2 = 0}, there is complementarity/substitution between individuals depending on the signs of the \eqn{\lambda_{\tau}} parameters.
+It is obvious that \eqn{\beta} and \eqn{\lambda_2} can be identified only if the network includes enough isolated individuals.
 }
 \examples{
 \donttest{

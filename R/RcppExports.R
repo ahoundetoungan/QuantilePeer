@@ -73,6 +73,10 @@ optins_struc <- function(beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, n
     .Call(`_QuantilePeer_optins_struc`, beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, ntau, type, Kx, tol, maxit)
 }
 
+fylim <- function(y, Gy, G, talpha, igroup, ngroup, lambda) {
+    invisible(.Call(`_QuantilePeer_fylim`, y, Gy, G, talpha, igroup, ngroup, lambda))
+}
+
 fJIVE_redInd <- function(y, V, ins, Kx, Kins, ntau, n, Kest, HAC = 0L, COV = TRUE) {
     .Call(`_QuantilePeer_fJIVE_redInd`, y, V, ins, Kx, Kins, ntau, n, Kest, HAC, COV)
 }

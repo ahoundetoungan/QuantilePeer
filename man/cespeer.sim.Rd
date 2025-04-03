@@ -46,7 +46,7 @@ between two consecutive values of \code{y} is less than \code{tol}.}
 
 \item{maxit}{The maximum number of iterations for the Fixed Point Iteration Method.}
 
-\item{data}{An optional data frame, list, or environment containing the model variables. If a variable is not found in \code{data}, it is retrieved from \code{environment(formula)}, typically the environment from which \code{sim.cespeer} is called.}
+\item{data}{An optional data frame, list, or environment containing the model variables. If a variable is not found in \code{data}, it is retrieved from \code{environment(formula)}, typically the environment from which \code{cespeer.sim} is called.}
 }
 \value{
 A list containing:

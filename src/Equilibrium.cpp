@@ -556,3 +556,27 @@ arma::mat optins_struc(const arma::vec& beta,
          ntau, type, tol, maxit);
   return fQtauy(Ey, G, d, igroup, nvec, stau, ngroup, n, ntau, type);
 }
+
+// Equilibrium of the standard LIM model
+//[[Rcpp::export]]
+void fylim(arma::vec& y,
+           arma::vec& Gy,
+           List& G,
+           const arma::vec& talpha,
+           const arma::mat& igroup,
+           const int& ngroup,
+           const double& lambda) {
+  int nm;
+  arma::vec ym;
+  arma::mat Am;
+  //loop over group
+  for (int m(0); m < ngroup; ++ m) {
+    nm            = igroup(m,1) - igroup(m,0) + 1;
+    arma::mat Gm  = G[m];
+    Am            = arma::diagmat(arma::ones(nm)) - lambda*Gm;
+    ym            = arma::solve(Am, talpha.subvec(igroup(m,0), igroup(m,1)));
+    
+    y.rows(igroup(m,0), igroup(m,1))    = ym;
+    Gy.rows(igroup(m,0), igroup(m,1))   = Gm * ym;
+  }
+}

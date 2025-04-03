@@ -63,75 +63,12 @@ festim  <- function(outcome) {
   Z21     <- qpeer.inst(formula = y ~ X + GX, Glist = G, tau = tau1,
                         max.distance = 1, checkrank = TRUE, type = 7)$instruments
   # Second type of instruments with tau2
-  Z22     <- qpeer.inst(formula = y ~ X + GX, Glist = G, tau = tau2,
+  Z22     <- qpeer.inst(formula = y ~ X + GX, Glist = G, tau = tau1,
                         max.distance = 1, checkrank = TRUE, type = 7)$instruments
   X       <- cbind(X, nmatch = nmatch, match = match) # Adding additional variables
   # Exogenous prediction of y for te CES
   Zces    <- fitted(lm(y ~ X + GX + as.factor(data$SCID)))
   Zces[Zces <= 0] <- min(Zces[Zces > 0]) # Because z cannot be <= 0 for the CES-based model
-  
-  ###############################################################
-  ################### Reduced form estimation ###################
-  ###############################################################
-  # Linear model
-  RLIM    <- summary(linpeer(formula = y ~ X + GX, 
-                             excluded.instruments = ~ G2X, 
-                             Glist = Gnorm,
-                             drop = drop,
-                             fixed.effects = "separate"), 
-                     diagnostics = TRUE)
-  
-  # Quantile-based specification using tau1
-  # Only Z1 as instruments
-  RQ11    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ G2X + Z1, 
-                           Glist = Gnorm,
-                           fixed.effects = "separate",
-                           drop = drop,
-                           tau = tau1,
-                           type = 7), # Type 7 quantile
-                     diagnostics = TRUE)
-  
-  # Only Z1 and Z21 as instruments
-  RQ12    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ G2X + Z1 + Z21, 
-                           Glist = Gnorm,
-                           fixed.effects = "separate",
-                           drop = drop,
-                           tau = tau1,
-                           type = 7), # Type 7 quantile
-                     diagnostics = TRUE)
-  
-  
-  # Quantile-based specification using tau2
-  # Only Z1 as instruments
-  RQ21    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ G2X + Z1, 
-                           Glist = Gnorm,
-                           fixed.effects = "separate",
-                           drop = drop,
-                           tau = tau2,
-                           type = 7), # Type 7 quantile
-                     diagnostics = TRUE)
-  
-  # Only Z1 and Z2 as instruments
-  RQ22    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ G2X + Z1 + Z22, 
-                           Glist = Gnorm,
-                           fixed.effects = "separate",
-                           drop = drop,
-                           tau = tau2,
-                           type = 7), # Type 7 quantile
-                     diagnostics = TRUE)
-  
-  # CES
-  RCES    <- summary(cespeer(formula = y ~ X + GX, 
-                             instrument = ~ Zces, 
-                             Glist = Gnorm, 
-                             fixed.effects = "separate",
-                             drop = drop, 
-                             radius = 5,
-                             grid.rho = seq(-300, 300, 1)))
   
   #############################################################
   ################### Structural estimation ###################
@@ -147,50 +84,91 @@ festim  <- function(outcome) {
   
   # Quantile-based specification using tau1
   # Only Z1 as instruments
-  SQ11    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ G2X + Z1, 
-                           Glist = Gnorm,
-                           fixed.effects = "separate",
-                           drop = drop,
-                           tau = tau1,
-                           type = 7, # Type 7 quantile
-                           structural = TRUE),
-                     diagnostics = TRUE)
+  MSQ11   <- qpeer(formula = y ~ X + GX, 
+                   excluded.instruments = ~ Z1, 
+                   Glist = Gnorm,
+                   fixed.effects = "separate",
+                   drop = drop,
+                   tau = tau1,
+                   type = 7, # Type 7 quantile
+                   structural = TRUE)
+  SQ11    <- summary(MSQ11, diagnostics = TRUE)
+  
+  # Only Z21 as instruments
+  MSQ12   <- qpeer(formula = y ~ X + GX, 
+                   excluded.instruments = ~ Z21, 
+                   Glist = Gnorm,
+                   fixed.effects = "separate",
+                   drop = drop,
+                   tau = tau1,
+                   type = 7, # Type 7 quantile
+                   structural = TRUE)
+  SQ12    <- summary(MSQ12, diagnostics = TRUE)
   
   # Only Z1 and Z21 as instruments
-  SQ12    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ G2X + Z1 + Z21, 
-                           Glist = Gnorm,
-                           fixed.effects = "separate",
-                           drop = drop,
-                           tau = tau1,
-                           type = 7, # Type 7 quantile
-                           structural = TRUE),
-                     diagnostics = TRUE)
+  MSQ13   <- qpeer(formula = y ~ X + GX, 
+                   excluded.instruments = ~ Z1 + Z21, 
+                   Glist = Gnorm,
+                   fixed.effects = "separate",
+                   drop = drop,
+                   tau = tau1,
+                   type = 7, # Type 7 quantile
+                   structural = TRUE)
+  SQ13    <- summary(MSQ13, diagnostics = TRUE)
   
+  # Testing exogeneity of Z21
+  TWSQ12  <- qpeer.test(MSQ11, MSQ12, which = "wald-exogeneity")
+  TJSQ13  <- qpeer.test(MSQ11, MSQ13, which = "sargan-exogeneity") # Since Z2 nests Z1 here
+  TWSQ13  <- qpeer.test(MSQ11, MSQ13, which = "wald-exogeneity")
+  
+  # Testing Monotonicity
+  TM1     <- c(U = qpeer.test(MSQ11, which = "uniform")$pvalue, 
+               I = qpeer.test(MSQ11, which = "increasing")$pvalue, 
+               D = qpeer.test(MSQ11, which = "decreasing")$pvalue)
   
   # Quantile-based specification using tau2
   # Only Z1 as instruments
-  SQ21    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ G2X + Z1, 
-                           Glist = Gnorm,
-                           fixed.effects = "separate",
-                           drop = drop,
-                           tau = tau2,
-                           type = 7, # Type 7 quantile
-                           structural = TRUE),
-                     diagnostics = TRUE)
+  MSQ21   <- qpeer(formula = y ~ X + GX, 
+                   excluded.instruments = ~ Z1, 
+                   Glist = Gnorm,
+                   fixed.effects = "separate",
+                   drop = drop,
+                   tau = tau2,
+                   type = 7, # Type 7 quantile
+                   structural = TRUE)
+  SQ21    <- summary(MSQ21, diagnostics = TRUE)
   
-  # Only Z1 and Z2 as instruments
-  SQ22    <- summary(qpeer(formula = y ~ X + GX, 
-                           excluded.instruments = ~ G2X + Z1 + Z22, 
-                           Glist = Gnorm,
-                           fixed.effects = "separate",
-                           drop = drop,
-                           tau = tau2,
-                           type = 7, # Type 7 quantile
-                           structural = TRUE),
-                     diagnostics = TRUE)
+  # Only Z22 as instruments
+  MSQ22   <- qpeer(formula = y ~ X + GX, 
+                   excluded.instruments = ~ Z22, 
+                   Glist = Gnorm,
+                   fixed.effects = "separate",
+                   drop = drop,
+                   tau = tau2,
+                   type = 7, # Type 7 quantile
+                   structural = TRUE)
+  SQ22    <- summary(MSQ22, diagnostics = TRUE)
+  
+  # Only Z1 and Z22 as instruments
+  MSQ23    <- qpeer(formula = y ~ X + GX, 
+                    excluded.instruments = ~ Z1 + Z22, 
+                    Glist = Gnorm,
+                    fixed.effects = "separate",
+                    drop = drop,
+                    tau = tau2,
+                    type = 7, # Type 7 quantile
+                    structural = TRUE)
+  SQ23    <- summary(MSQ23, diagnostics = TRUE)
+  
+  # Testing exogeneity of Z22
+  TWSQ22  <- qpeer.test(MSQ21, MSQ22, which = "wald-exogeneity")
+  TJSQ23  <- qpeer.test(MSQ21, MSQ23, which = "sargan-exogeneity") # Since Z2 nests Z1 here
+  TWSQ23  <- qpeer.test(MSQ21, MSQ23, which = "wald-exogeneity")
+  
+  # Testing Monotonicity
+  TM2     <- c(U = qpeer.test(MSQ21, which = "uniform")$pvalue, 
+               I = qpeer.test(MSQ21, which = "increasing")$pvalue, 
+               D = qpeer.test(MSQ21, which = "decreasing")$pvalue)
   
   # CES
   SCES    <- summary(cespeer(formula = y ~ X + GX, 
@@ -200,30 +178,52 @@ festim  <- function(outcome) {
                              fixed.effects = "separate",
                              drop = drop, 
                              radius = 5,
-                             grid.rho = seq(-300, 300, 1)))
+                             grid.rho = seq(-100, 100, 1)))
+  
+  # Only isolated
+  nISQ1   <- summary(qpeer(formula = y ~ X + GX, 
+                           excluded.instruments = ~ Z1, 
+                           Glist = Gnorm,
+                           fixed.effects = "separate",
+                           drop = ifelse(match > 0, 0, 1), # only isolated students
+                           tau = tau1,
+                           type = 7, # Type 7 quantile
+                           structural = FALSE), diagnostics = TRUE)
+  
+  nISQ2   <- summary(qpeer(formula = y ~ X + GX, 
+                           excluded.instruments = ~ Z1, 
+                           Glist = Gnorm,
+                           fixed.effects = "separate",
+                           drop = ifelse(match > 0, 0, 1), # only isolated students
+                           tau = tau2,
+                           type = 7, # Type 7 quantile
+                           structural = FALSE), diagnostics = TRUE)
   
   # Remove non-listed objects
   rm(list = setdiff(ls(), c("outcome", "depvar", "festim", "OutDataPath", "OutResPath", 
-                            "RLIM", "RQ11", "RQ12", "RQ21", "RQ22", "RCES",
-                            "SLIM", "SQ11", "SQ12", "SQ21", "SQ22", "SCES"))) 
+                            "SLIM", "SQ11", "SQ12", "SQ13", "TWSQ12", "TJSQ13", "TWSQ13", "TM1", 
+                            "SQ21", "SQ22", "SQ23", "SCES", "TWSQ22", "TJSQ23", "TWSQ23", "TM2",
+                            "nISQ1", "nISQ2"))) 
   gc()
   
   # Save results
-  save(RLIM, RQ11, RQ12, RQ21, RQ22, RCES, SLIM, SQ11, SQ12, SQ21, SQ22, SCES,
+  save(SLIM, SQ11, SQ12, SQ13, TWSQ12, TJSQ13, TWSQ13, 
+       SQ21, SQ22, SQ23, SCES, TWSQ22, TJSQ23, TWSQ23,
+       nISQ1, nISQ2, TM1, TM2,
        file = paste0(OutResPath, outcome, ".Rda"))
   NULL # Returns nothing, the results are directly saved
 }
 
 # Estimation
-# sapply(depvar, festim) 
+sapply(depvar, festim) 
 
 # create an Excel workbook
 wb        <- createWorkbook()
 addWorksheet(wb, "Estimation") # Add sheet
 
 # Label of Outcome
-OUTCOME <- c("GPA", "Academic Effort", "Clubs", "Future Perception", "Trouble", "Smoke", "Drink", "Risky",
-             "Self-esteem", "Exercise", "Fight")
+OUTCOME <- c("Academic achievements (GPA)", "Academic effort", "Extracurricular activities", "Future perception", 
+             "Trouble at school", "Smoking", "Drinking", "Risky behaviors", "Self-esteem", "Physical exercise", "Fighting")
 # tau
 tau1    <- seq(0, 1, 1/3) # Four quantiles
 tau2    <- seq(0, 1, 1/4) # Five quantiles
@@ -241,55 +241,81 @@ fres <- function(k, pval = TRUE) {
   }
   
   # Peer effects: structural models
-  Se1     <- rbind(t(SQ11$coefficients[c(paste0("y_q", 1:length(tau1)), "y_q(conformity)"), ecol]),
-                   t(c(SQ11$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"], NA)),
-                   t(c(SQ11$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau1)))))
-  Se2     <- rbind(t(SQ12$coefficients[c(paste0("y_q", 1:length(tau1)), "y_q(conformity)"), ecol]),
-                   t(c(SQ12$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"], NA)),
-                   t(c(SQ12$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau1)))))
-  Se3     <- rbind(t(SQ21$coefficients[c(paste0("y_q", 1:length(tau2)), "y_q(conformity)"), ecol]),
-                   t(c(SQ21$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"], NA)),
-                   t(c(SQ21$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau2)))))
-  Se4     <- rbind(t(SQ22$coefficients[c(paste0("y_q", 1:length(tau2)), "y_q(conformity)"), ecol]),
-                   t(c(SQ22$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"], NA)),
-                   t(c(SQ22$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau2)))))
-  Se5     <- rbind(t(SLIM$coefficients[c("G(total):y", "G(conformity):y"), ecol]),
-                   t(c(SLIM$diagnostics["Weak instruments", "p-value"], NA)),
-                   t(c(SLIM$diagnostics["Hansen's J-test", "p-value"], NA)))
-  Se6     <- rbind(t(SCES$coefficients[c("rho", "G(total):y", "G(conformity):y"), ecol]),
-                   NA, NA)
+  Se1     <- rbind(t(SQ11$coefficients[c(paste0("y_q", 1:length(tau1)), "y_q(spillover)", "y_q(conformity)"), ecol]),
+                   t(c(SQ11$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"], NA, NA)),
+                   t(c(SQ11$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + length(tau1)))),
+                   t(rep(NA, 2 + length(tau1))),
+                   t(rep(NA, 2 + length(tau1))))
+  Se2     <- rbind(t(SQ12$coefficients[c(paste0("y_q", 1:length(tau1)), "y_q(spillover)", "y_q(conformity)"), ecol]),
+                   t(c(SQ12$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"], NA, NA)),
+                   t(c(SQ12$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + length(tau1)))),
+                   t(rep(NA, 2 + length(tau1))),
+                   t(c(TWSQ12$pvalue, rep(NA, 1 + length(tau1)))))
+  Se3     <- rbind(t(SQ13$coefficients[c(paste0("y_q", 1:length(tau1)), "y_q(spillover)", "y_q(conformity)"), ecol]),
+                   t(c(SQ13$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"], NA, NA)),
+                   t(c(SQ13$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + length(tau1)))),
+                   t(c(TJSQ13$pvalue, rep(NA, 1 + length(tau1)))),
+                   t(c(TWSQ13$pvalue, rep(NA, 1 + length(tau1)))))
   
-  # Peer effects: reduced forms
-  Re1     <- rbind(t(RQ11$coefficients[paste0("y_q", 1:length(tau1)), ecol]),
-                   t(RQ11$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"]),
-                   t(c(RQ11$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau1) - 1))))
-  Re2     <- rbind(t(RQ12$coefficients[paste0("y_q", 1:length(tau1)), ecol]),
-                   t(RQ12$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"]),
-                   t(c(RQ12$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau1) - 1))))
-  Re3     <- rbind(t(RQ21$coefficients[paste0("y_q", 1:length(tau2)), ecol]),
-                   t(RQ21$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"]),
-                   t(c(RQ21$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau2) - 1))))
-  Re4     <- rbind(t(RQ22$coefficients[paste0("y_q", 1:length(tau2)), ecol]),
-                   t(RQ22$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"]),
-                   t(c(RQ22$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau2) - 1))))
-  Re5     <- rbind(t(RLIM$coefficients["G:y", ecol, drop = FALSE]),
-                   RLIM$diagnostics["Weak instruments", "p-value"],
-                   RLIM$diagnostics["Hansen's J-test", "p-value"])
-  Re6     <- rbind(t(RCES$coefficients[c("rho", "G:y"), ecol]),
-                   NA, NA)
+  Se4     <- rbind(t(SQ21$coefficients[c(paste0("y_q", 1:length(tau2)), "y_q(spillover)", "y_q(conformity)"), ecol]),
+                   t(c(SQ21$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"], NA, NA)),
+                   t(c(SQ21$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + length(tau2)))),
+                   t(rep(NA, 2 + length(tau2))),
+                   t(rep(NA, 2 + length(tau2))))
+  Se5     <- rbind(t(SQ22$coefficients[c(paste0("y_q", 1:length(tau2)), "y_q(spillover)", "y_q(conformity)"), ecol]),
+                   t(c(SQ22$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"], NA, NA)),
+                   t(c(SQ22$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + length(tau2)))),
+                   t(rep(NA, 2 + length(tau2))),
+                   t(c(TWSQ22$pvalue, rep(NA, 1 + length(tau2)))))
+  Se6     <- rbind(t(SQ23$coefficients[c(paste0("y_q", 1:length(tau2)), "y_q(spillover)", "y_q(conformity)"), ecol]),
+                   t(c(SQ23$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"], NA, NA)),
+                   t(c(SQ23$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + length(tau2)))),
+                   t(c(TJSQ23$pvalue, rep(NA, 1 + length(tau2)))),
+                   t(c(TWSQ23$pvalue, rep(NA, 1 + length(tau2)))))
+  
+  Se7     <- rbind(t(SLIM$coefficients[c("G(spillover):y", "G(conformity):y"), ecol]),
+                   t(c(SLIM$diagnostics["Weak instruments", "p-value"], NA)),
+                   t(c(SLIM$diagnostics["Hansen's J-test", "p-value"], NA)),
+                   t(rep(NA, 2)),
+                   t(rep(NA, 2)))
+  Se8     <- rbind(t(SCES$coefficients[c("rho", "G(spillover):y", "G(conformity):y"), ecol]),
+                   t(rep(NA, 3)),
+                   t(rep(NA, 3)),
+                   t(rep(NA, 3)),
+                   t(rep(NA, 3)))
+  
+  # Peer effects: reduced forms for non isolated
+  Re1     <- rbind(t(nISQ1$coefficients[paste0("y_q", 1:length(tau1)), ecol]),
+                   t(nISQ1$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"]),
+                   t(c(nISQ1$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau1) - 1))),
+                   t(rep(NA, length(tau1))),
+                   t(rep(NA, length(tau1))))
+  Re2     <- rbind(t(nISQ2$coefficients[paste0("y_q", 1:length(tau2)), ecol]),
+                   t(nISQ2$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"]),
+                   t(c(nISQ2$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau2) - 1))),
+                   t(rep(NA, length(tau2))),
+                   t(rep(NA, length(tau2))))
+  
+  Tmo1    <- rbind(t(TM1),
+                   matrix(NA, 5 + pval, 3))
+  
+  Tmo2    <- rbind(t(TM2),
+                   matrix(NA, 5 + pval, 3))
   
   # Put result together
-  out    <- cbind(Id = NA, Id = NA, Se1, Id = NA, Se2, Id = NA, Se3, Id = NA, Se4, Id = NA, Se5, Id = NA, Se6, Id = NA, 
-                  Re1, Id = NA, Re2, Id = NA, Re3, Id = NA, Re4, Id = NA, Re5, Id = NA, Re4, Id = NA, Re6)
+  out    <- cbind(Id = NA, Id = NA, Se1, Id = NA, Se2, Id = NA, Se3, Id = NA, Tmo1, 
+                  Id = NA, Se4, Id = NA, Se5, Id = NA, Se6, Id = NA, Tmo2, 
+                  Id = NA, Se7, Id = NA, Se8, 
+                  Id = NA, Re1, Id = NA, Re2)
   
   # Formatting
   tp        <- matrix(NA, 1, ncol(out))
   out       <- as.data.frame(rbind(tp, out, tp))
   out[1, 1] <- OUTCOME[k]
   if (pval) {
-    out[2:6, 2] <- c("Mean", "StD", "Prob", "Weak Ins.", "Sargan")
+    out[2:8, 2] <- c("Mean", "StD", "Prob", "Weak Ins.", "Sargan", "Exo Z2 Sargan", "Exo Z2 Wald")
   } else {
-    out[2:5, 2] <- c("Mean", "StD", "Weak Ins.", "Sargan")
+    out[2:7, 2] <- c("Mean", "StD", "Weak Ins.", "Sargan", "Exo Z2 Sargan", "Exo Z2 Wald")
   }
   out
 }
@@ -304,14 +330,14 @@ addStyle(wb, sheet = "Estimation", style = createStyle(numFmt = "0.000"),
          cols = 2:ncol(out), rows = 3:(nrow(out) + 2), gridExpand = TRUE)
 setColWidths(wb, sheet = "Estimation", cols = 2, widths = 20)
 ## Second row
-tp     <- c("", "", rep(c(paste0("lbdatau", 1:length(tau1)), "lbda2", ""), 2),
-            rep(c(paste0("lbdatau", 1:length(tau2)), "lbda2", ""), 2),
-            c("lbda", "lbda2", ""),
-            c("rho", "lbda", "lbda2", ""),
-            rep(c(paste0("lbdatau", 1:length(tau1)), ""), 2),
-            rep(c(paste0("lbdatau", 1:length(tau2)), ""), 2),
-            c("lbda", ""),
-            c("rho", "lbda"))
+tp     <- c("", "", rep(c(paste0("lbdatau", 1:length(tau1)), "lbda1", "lbda2", ""), 3),
+            c("Uniform", "Increasing", "Decreasing", ""),
+            rep(c(paste0("lbdatau", 1:length(tau2)), "lbda1", "lbda2", ""), 3),
+            c("Uniform", "Increasing", "Decreasing", ""),
+            c("lbda1", "lbda2", ""),
+            c("rho", "lbda1", "lbda2", ""),
+            c(paste0("lbdatau", 1:length(tau1)), ""),
+            c(paste0("lbdatau", 1:length(tau2)), ""))
 writeData(wb, sheet = "Estimation", x = t(tp), startCol = 1, startRow = 2, colNames = FALSE)
 addStyle(wb, sheet = "Estimation", style = createStyle(halign = "center", fontSize = 12, textDecoration = "bold"), 
          rows = 2, cols = 1:ncol(out), gridExpand = TRUE)          

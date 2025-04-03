@@ -90,9 +90,9 @@ The structural specification of the model differs for isolated and non-isolated 
 For an \strong{isolated} \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
 \deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
 If node \eqn{i} is \strong{non-isolated}, the specification is:
-\deqn{y_i = \lambda\left(\sum_{j = 1}^n g_{ij}y_j^{\rho}\right)^{1/\rho} + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
-where \eqn{\lambda^*} determines whether preferences exhibit conformity or complementarity/substitution.
-Identification of \eqn{\beta} and \eqn{\lambda^*} requires the network to include a sufficient number of isolated individuals.
+\deqn{y_i = \lambda\left(\sum_{j = 1}^n g_{ij}y_j^{\rho}\right)^{1/\rho} + (1 - \lambda_2)\mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
+where \eqn{\lambda_2} determines whether preferences exhibit conformity or complementarity/substitution.
+Identification of \eqn{\beta} and \eqn{\lambda_2} requires the network to include a sufficient number of isolated individuals.
 }
 \examples{
 \donttest{

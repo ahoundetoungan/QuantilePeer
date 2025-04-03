@@ -437,6 +437,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fylim
+void fylim(arma::vec& y, arma::vec& Gy, List& G, const arma::vec& talpha, const arma::mat& igroup, const int& ngroup, const double& lambda);
+RcppExport SEXP _QuantilePeer_fylim(SEXP ySEXP, SEXP GySEXP, SEXP GSEXP, SEXP talphaSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type Gy(GySEXP);
+    Rcpp::traits::input_parameter< List& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type talpha(talphaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type ngroup(ngroupSEXP);
+    Rcpp::traits::input_parameter< const double& >::type lambda(lambdaSEXP);
+    fylim(y, Gy, G, talpha, igroup, ngroup, lambda);
+    return R_NilValue;
+END_RCPP
+}
 // fJIVE_redInd
 Rcpp::List fJIVE_redInd(const Eigen::VectorXd& y, const Eigen::MatrixXd& V, const Eigen::MatrixXd& ins, const int& Kx, const int& Kins, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& COV);
 RcppExport SEXP _QuantilePeer_fJIVE_redInd(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP COVSEXP) {
@@ -961,6 +977,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_QuantilePeer_fNashE", (DL_FUNC) &_QuantilePeer_fNashE, 14},
     {"_QuantilePeer_optins_red", (DL_FUNC) &_QuantilePeer_optins_red, 15},
     {"_QuantilePeer_optins_struc", (DL_FUNC) &_QuantilePeer_optins_struc, 16},
+    {"_QuantilePeer_fylim", (DL_FUNC) &_QuantilePeer_fylim, 7},
     {"_QuantilePeer_fJIVE_redInd", (DL_FUNC) &_QuantilePeer_fJIVE_redInd, 10},
     {"_QuantilePeer_fJIVE2_redInd", (DL_FUNC) &_QuantilePeer_fJIVE2_redInd, 10},
     {"_QuantilePeer_fJIVE_redClu", (DL_FUNC) &_QuantilePeer_fJIVE_redClu, 12},

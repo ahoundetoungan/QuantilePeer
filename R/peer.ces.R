@@ -46,9 +46,9 @@
 #' For an **isolated** \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
 #' \deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
 #' If node \eqn{i} is **non-isolated**, the specification is:
-#' \deqn{y_i = \lambda\left(\sum_{j = 1}^n g_{ij}y_j^{\rho}\right)^{1/\rho} + (1 - \lambda^*)\mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
-#' where \eqn{\lambda^*} determines whether preferences exhibit conformity or complementarity/substitution.  
-#' Identification of \eqn{\beta} and \eqn{\lambda^*} requires the network to include a sufficient number of isolated individuals.
+#' \deqn{y_i = \lambda\left(\sum_{j = 1}^n g_{ij}y_j^{\rho}\right)^{1/\rho} + (1 - \lambda_2)\mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
+#' where \eqn{\lambda_2} determines whether preferences exhibit conformity or complementarity/substitution.  
+#' Identification of \eqn{\beta} and \eqn{\lambda_2} requires the network to include a sufficient number of isolated individuals.
 #' @seealso \code{\link{qpeer}}, \code{\link{linpeer}}
 #' @references Boucher, V., Rendall, M., Ushchev, P., & Zenou, Y. (2024). Toward a general theory of peer effects. Econometrica, 92(2), 543-565, \doi{10.3982/ECTA21048}.
 #' @return A list containing:
@@ -443,7 +443,7 @@ print.cespeer <- function(x, ...) {
 #' @param beta The true value of the vector \eqn{\beta}.
 #' @param epsilon A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in the Details section of \code{\link{cespeer}}). 
 #' @param maxit The maximum number of iterations for the Fixed Point Iteration Method.
-#' @param data An optional data frame, list, or environment containing the model variables. If a variable is not found in `data`, it is retrieved from \code{environment(formula)}, typically the environment from which `sim.cespeer` is called.
+#' @param data An optional data frame, list, or environment containing the model variables. If a variable is not found in `data`, it is retrieved from \code{environment(formula)}, typically the environment from which `cespeer.sim` is called.
 #' @param tol The tolerance value used in the Fixed Point Iteration Method to compute the outcome `y`. The process stops if the \eqn{\ell_1}-distance 
 #' between two consecutive values of `y` is less than `tol`.
 #' @param init An optional initial guess for the equilibrium.
@@ -480,7 +480,9 @@ print.cespeer <- function(x, ...) {
 cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, structural = FALSE, 
                         init, tol = 1e-10, maxit = 500, data){
   # Network
-  
+  if (!is.list(Glist)) {
+    Glist  <- list(Glist)
+  }
   dg       <- fnetwork(Glist = Glist)
   M        <- dg$M
   nvec     <- dg$nvec

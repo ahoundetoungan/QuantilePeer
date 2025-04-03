@@ -30,7 +30,7 @@ where \code{x1} and \code{x2} are control variables, which can include contextua
 
 \item{parms}{A vector defining the true values of \eqn{(\lambda', \beta')'}, where \eqn{\lambda} is a vector of \eqn{\lambda_{\tau}} for each quantile level \eqn{\tau}.
 The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately using the arguments \code{lambda} and \code{beta}. For the structural model,
-\eqn{\lambda = (\lambda^{*}, \lambda_{\tau_1}, \lambda_{\tau_2}, \dots)^{\prime}} (see the Details section of \code{\link{qpeer}}).}
+\eqn{\lambda = (\lambda_2, \lambda_{\tau_1}, \lambda_{\tau_2}, \dots)^{\prime}} (see the Details section of \code{\link{qpeer}}).}
 
 \item{lambda}{The true value of the vector \eqn{\lambda}.}
 
