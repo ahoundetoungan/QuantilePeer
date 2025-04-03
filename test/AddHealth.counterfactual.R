@@ -15,7 +15,7 @@ rm(list = ls())
 library(dplyr)
 library(QuantilePeer)
 library(PartialNetwork)
-library(openxlsx)
+library(ggplot2)
 
 OutDataPath <- "~/Dropbox/Data/AHdata/CleanData/" # Where prepared data for each outcome are saved (/ at the end is important)
 OutResPath  <- "~/Dropbox/Academy/1.Papers/Quantile Peer Effects/Application/Outputs/" # Where results should be saved
@@ -27,8 +27,6 @@ depvar  <- c("gpa", "academiceffort", "nclubs", "futureperception", "trouble", "
 
 # The following function takes an outcome and compute the impact of an increase in the intercept.
 fsim    <- function(outcome) {
-  # cat("Outcome: ", outcome, "\n", sep = "")
-  outcome <- "gpa"
   cat("Outcome: ", outcome, "\n", sep = "")
   ########################################################
   ################### Data Preparation ###################
@@ -133,7 +131,7 @@ fsim    <- function(outcome) {
   res      <- y - cbind(Gy, Xmat) %*% SCES$gmm$Estimate[c("G(total):y",
                                                           paste0("X", colnames(X)),
                                                           paste0("GX", colnames(GX)))]
-  res[match > 0] <- res[match > 0]/(1 - SCES$gmm$Estimate["y_q(conformity)"])
+  res[match > 0] <- res[match > 0]/(1 - SCES$gmm$Estimate["G(conformity):y"])
   
   CESsim   <- cespeer.sim(formula = ~ -1 + I2 + X + GX, 
                           Glist = Gnorm,
@@ -149,3 +147,37 @@ fsim    <- function(outcome) {
 
 # Estimation
 sapply(depvar, fsim) 
+
+# Label of Outcome
+OUTCOME <- c("Academic achievements", "Academic effort", "Extracurricular activities", "Future perception", 
+             "Trouble at school", "Smoking", "Drinking", "Risky behaviors", "Self-esteem", "Physical exercise", "Fighting")
+
+# data to plot
+dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
+  cat("Outcome: ", OUTCOME[k], "\n", sep = "")
+  load(file = paste0(OutDataPath, depvar[k], ".Rda")) # Load saved data using with the script 0-Data.R
+  SIM     <-  readRDS(paste0(OutResPath, depvar[k], ".RDS")) # Load results
+  match   <- data$match
+  SIM     <- SIM[match > 0,] #only for non-isolated because the social multiplier is one for isolated
+  sim     <- c(SIM$Q1, SIM$LIM, SIM$CES)
+  model   <- rep(1:3, each = nrow(SIM))
+  data.frame(outcome = k, model, sim)
+})) %>% mutate(outcome = factor(outcome, levels = 1:length(depvar), labels = OUTCOME),
+               model = factor(model, levels = 1:3, labels = c("Quantile", "LIM", "CES")))
+
+(graph <- ggplot(dataplot, aes(x = model, y = sim)) +
+    geom_boxplot(outlier.shape = NA, fill = "grey80", color = "black") +
+    facet_wrap(~ outcome, ncol = 3, scales = "free_y") +
+    theme_minimal(base_size = 12, base_family = "Palatino") +
+    theme(
+      strip.text = element_text(face = "bold"),
+      axis.text.x = element_text(hjust = 1),
+      panel.spacing = unit(1, "lines"),
+      plot.title = element_text(hjust = 0.5)
+    ) +
+    labs(
+      x = "Model",
+      y = "Social Multiplier",
+    ))
+
+ggsave("CountFact.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7, height = 7)
