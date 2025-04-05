@@ -181,7 +181,17 @@ festim  <- function(outcome) {
                              grid.rho = seq(-100, 100, 1)))
   
   # Only isolated
-  nISQ1   <- summary(qpeer(formula = y ~ X + GX, 
+  # LIM
+  nIRLIM  <- summary(linpeer(formula = y ~ X + GX, 
+                             excluded.instruments = ~ G2X, 
+                             Glist = Gnorm,
+                             fixed.effects = "separate",
+                             drop = ifelse(match > 0, 0, 1), # only isolated students
+                             structural = FALSE), 
+                     diagnostics = TRUE)
+  
+  # Quantile
+  nIRQ1   <- summary(qpeer(formula = y ~ X + GX, 
                            excluded.instruments = ~ Z1, 
                            Glist = Gnorm,
                            fixed.effects = "separate",
@@ -190,7 +200,7 @@ festim  <- function(outcome) {
                            type = 7, # Type 7 quantile
                            structural = FALSE), diagnostics = TRUE)
   
-  nISQ2   <- summary(qpeer(formula = y ~ X + GX, 
+  nIRQ2   <- summary(qpeer(formula = y ~ X + GX, 
                            excluded.instruments = ~ Z1, 
                            Glist = Gnorm,
                            fixed.effects = "separate",
@@ -199,17 +209,27 @@ festim  <- function(outcome) {
                            type = 7, # Type 7 quantile
                            structural = FALSE), diagnostics = TRUE)
   
+  # CES
+  nIRCES  <- summary(cespeer(formula = y ~ X + GX, 
+                             instrument = ~ Zces, 
+                             Glist = Gnorm, 
+                             structural = FALSE,
+                             fixed.effects = "separate",
+                             drop = ifelse(match > 0, 0, 1), # only isolated students
+                             radius = 5,
+                             grid.rho = seq(-100, 100, 1)))
+  
   # Remove non-listed objects
   rm(list = setdiff(ls(), c("outcome", "depvar", "festim", "OutDataPath", "OutResPath", 
                             "SLIM", "SQ11", "SQ12", "SQ13", "TWSQ12", "TJSQ13", "TWSQ13", "TM1", 
                             "SQ21", "SQ22", "SQ23", "SCES", "TWSQ22", "TJSQ23", "TWSQ23", "TM2",
-                            "nISQ1", "nISQ2"))) 
+                            "nIRLIM", "nIRQ1", "nIRQ2", "nIRCES"))) 
   gc()
   
   # Save results
   save(SLIM, SQ11, SQ12, SQ13, TWSQ12, TJSQ13, TWSQ13, 
        SQ21, SQ22, SQ23, SCES, TWSQ22, TJSQ23, TWSQ23,
-       nISQ1, nISQ2, TM1, TM2,
+       nIRQ1, nIRQ2, nIRLIM, nIRCES, TM1, TM2,
        file = paste0(OutResPath, outcome, ".Rda"))
   NULL # Returns nothing, the results are directly saved
 }
@@ -244,12 +264,11 @@ fres <- function(k, pval = TRUE) {
   Se1     <- rbind(t(SQ11$coefficients[c(paste0("y_q", 1:length(tau1)), "y_q(spillover)", "y_q(conformity)"), ecol]),
                    t(c(SQ11$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"], NA, NA)),
                    t(c(SQ11$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + length(tau1)))),
-                   t(rep(NA, 2 + length(tau1))),
-                   t(rep(NA, 2 + length(tau1))))
+                   matrix(NA, 2, 2 + length(tau1)))
   Se2     <- rbind(t(SQ12$coefficients[c(paste0("y_q", 1:length(tau1)), "y_q(spillover)", "y_q(conformity)"), ecol]),
                    t(c(SQ12$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"], NA, NA)),
                    t(c(SQ12$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + length(tau1)))),
-                   t(rep(NA, 2 + length(tau1))),
+                   matrix(NA, 1, 2 + length(tau1)),
                    t(c(TWSQ12$pvalue, rep(NA, 1 + length(tau1)))))
   Se3     <- rbind(t(SQ13$coefficients[c(paste0("y_q", 1:length(tau1)), "y_q(spillover)", "y_q(conformity)"), ecol]),
                    t(c(SQ13$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"], NA, NA)),
@@ -260,12 +279,11 @@ fres <- function(k, pval = TRUE) {
   Se4     <- rbind(t(SQ21$coefficients[c(paste0("y_q", 1:length(tau2)), "y_q(spillover)", "y_q(conformity)"), ecol]),
                    t(c(SQ21$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"], NA, NA)),
                    t(c(SQ21$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + length(tau2)))),
-                   t(rep(NA, 2 + length(tau2))),
-                   t(rep(NA, 2 + length(tau2))))
+                   matrix(NA, 2, 2 + length(tau2)))
   Se5     <- rbind(t(SQ22$coefficients[c(paste0("y_q", 1:length(tau2)), "y_q(spillover)", "y_q(conformity)"), ecol]),
                    t(c(SQ22$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"], NA, NA)),
                    t(c(SQ22$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + length(tau2)))),
-                   t(rep(NA, 2 + length(tau2))),
+                   matrix(NA, 1, 2 + length(tau2)),
                    t(c(TWSQ22$pvalue, rep(NA, 1 + length(tau2)))))
   Se6     <- rbind(t(SQ23$coefficients[c(paste0("y_q", 1:length(tau2)), "y_q(spillover)", "y_q(conformity)"), ecol]),
                    t(c(SQ23$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"], NA, NA)),
@@ -276,25 +294,26 @@ fres <- function(k, pval = TRUE) {
   Se7     <- rbind(t(SLIM$coefficients[c("G(spillover):y", "G(conformity):y"), ecol]),
                    t(c(SLIM$diagnostics["Weak instruments", "p-value"], NA)),
                    t(c(SLIM$diagnostics["Hansen's J-test", "p-value"], NA)),
-                   t(rep(NA, 2)),
-                   t(rep(NA, 2)))
+                   matrix(NA, 2, 2))
   Se8     <- rbind(t(SCES$coefficients[c("rho", "G(spillover):y", "G(conformity):y"), ecol]),
-                   t(rep(NA, 3)),
-                   t(rep(NA, 3)),
-                   t(rep(NA, 3)),
-                   t(rep(NA, 3)))
+                   matrix(NA, 4, 3))
   
   # Peer effects: reduced forms for non isolated
-  Re1     <- rbind(t(nISQ1$coefficients[paste0("y_q", 1:length(tau1)), ecol]),
-                   t(nISQ1$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"]),
-                   t(c(nISQ1$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau1) - 1))),
-                   t(rep(NA, length(tau1))),
-                   t(rep(NA, length(tau1))))
-  Re2     <- rbind(t(nISQ2$coefficients[paste0("y_q", 1:length(tau2)), ecol]),
-                   t(nISQ2$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"]),
-                   t(c(nISQ2$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau2) - 1))),
-                   t(rep(NA, length(tau2))),
-                   t(rep(NA, length(tau2))))
+  Re1     <- rbind(t(nIRQ1$coefficients[paste0("y_q", 1:length(tau1)), ecol]),
+                   t(nIRQ1$diagnostics[paste0("Weak instruments (y_q", 1:length(tau1), ")"), "p-value"]),
+                   t(c(nIRQ1$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau1) - 1))),
+                   matrix(NA, 2, length(tau1)))
+  Re2     <- rbind(t(nIRQ2$coefficients[paste0("y_q", 1:length(tau2)), ecol]),
+                   t(nIRQ2$diagnostics[paste0("Weak instruments (y_q", 1:length(tau2), ")"), "p-value"]),
+                   t(c(nIRQ2$diagnostics["Hansen's J-test", "p-value"], rep(NA, length(tau2) - 1))),
+                   matrix(NA, 2, length(tau2)))
+  
+  Re3     <- rbind(t(nIRLIM$coefficients["G:y", ecol, drop = FALSE]),
+                   nIRLIM$diagnostics["Weak instruments", "p-value"],
+                   nIRLIM$diagnostics["Hansen's J-test", "p-value"],
+                   matrix(NA, 2, 1))
+  Re4     <- rbind(t(nIRCES$coefficients[c("rho", "G:y"), ecol]),
+                   matrix(NA, 4, 2))
   
   Tmo1    <- rbind(t(TM1),
                    matrix(NA, 5 + pval, 3))
@@ -306,7 +325,7 @@ fres <- function(k, pval = TRUE) {
   out    <- cbind(Id = NA, Id = NA, Se1, Id = NA, Se2, Id = NA, Se3, Id = NA, Tmo1, 
                   Id = NA, Se4, Id = NA, Se5, Id = NA, Se6, Id = NA, Tmo2, 
                   Id = NA, Se7, Id = NA, Se8, 
-                  Id = NA, Re1, Id = NA, Re2)
+                  Id = NA, Re1, Id = NA, Re2, Id = NA, Re3, Id = NA, Re4)
   
   # Formatting
   tp        <- matrix(NA, 1, ncol(out))
@@ -337,7 +356,9 @@ tp     <- c("", "", rep(c(paste0("lbdatau", 1:length(tau1)), "lbda1", "lbda2", "
             c("lbda1", "lbda2", ""),
             c("rho", "lbda1", "lbda2", ""),
             c(paste0("lbdatau", 1:length(tau1)), ""),
-            c(paste0("lbdatau", 1:length(tau2)), ""))
+            c(paste0("lbdatau", 1:length(tau2)), ""),
+            c("lbda", ""),
+            c("rho", "lbda", ""))
 writeData(wb, sheet = "Estimation", x = t(tp), startCol = 1, startRow = 2, colNames = FALSE)
 addStyle(wb, sheet = "Estimation", style = createStyle(halign = "center", fontSize = 12, textDecoration = "bold"), 
          rows = 2, cols = 1:ncol(out), gridExpand = TRUE)          
