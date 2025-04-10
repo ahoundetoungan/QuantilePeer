@@ -46,7 +46,8 @@ The package also provides routines for estimating peer effect models with a cons
 
 This documentation is organized as follows. Section \ref{sec:model} provides a brief overview of quantile peer effect models. Section \ref{sec:quant} illustrates how to simulate and estimate these models. Section \ref{sec:ces} presents, simulates, and estimates CES-based peer effect models. Section \ref{sec:other} discusses additional model specifications that can also be estimated using this package.
 
-To cite **QuantilePeer**, kindly run \textcolor{DarkRed}{\texttt{citation("QuantilePeer")}} in \textbf{R}. This will display the citation information, including the BibTeX entry for \LaTeX{} users.
+To cite **QuantilePeer**, kindly run \textcolor{DarkRed}{\texttt{citation("QuantilePeer")}} in \textbf{R}. This will display the citation information, including the Bib\TeX{} entry for \LaTeX{} users. Please also cite the paper associated with the package \citep[][]{houndetoungan2025quantile}.
+
 
  
 # A brief description of the model 
@@ -232,7 +233,7 @@ summary(QtS5, diagnostic = TRUE)
 
 ## Specification tests
 \label{sec:quant:test}
-\noindent Several specification tests have been discussed above. These include weak instrument, endogeneity, and overidentification tests that can be performed by setting \texttt{diagnostic} to \texttt{TRUE} in the \texttt{summary} method. In this section, I discuss monotonicity tests for quantile peer effects and the validity of type 2 instruments (see the discussion of the two types of instruments in Section \ref{sec:quant:instruments}).
+\noindent Several specification tests have been discussed above. These include weak instrument, endogeneity, and overidentification tests, which can be performed by setting \texttt{diagnostic} to \texttt{TRUE} in the \texttt{summary} method. In this section, I discuss monotonicity tests for quantile peer effects, the validity of type 2 instruments (see the discussion of the two types of instruments in Section \ref{sec:quant:instruments}), and an encompassing test to choose between competing sets of quantile levels.
 
 These tests can be performed using the function \texttt{qpeer.test}. The argument \texttt{which} indicates the type of test. For instance, \texttt{which} can take the values \texttt{"uniform"}, \texttt{"increasing"}, and \texttt{"decreasing"} to test whether the $\lambda_{\tau}$'s are uniform, increasing, or decreasing. The uniform test is based on a standard Wald test for the equality of all $\lambda_{\tau}$'s. The increasing and decreasing tests are based on \cite{kodde1986wald}. Here is an example:
 
@@ -243,14 +244,31 @@ qpeer.test(QtS5, which = "decreasing")
 
 The monotonicity tests can be useful for selecting a more parsimonious and precise model, as they involve fewer parameters. For instance, if the null hypothesis that the $\lambda_{\tau}$'s are uniform is not rejected, then a standard LIM peer effect model can be used instead of a quantile model. Moreover, if the $\lambda_{\tau}$'s are monotonic (increasing or decreasing), the constant elasticity of substitution (CES)-based model can be used (see Section \ref{sec:ces}).
 
-To test the endogeneity of $\mathbf{Z}_2$, \texttt{which} can be set to \texttt{"wald-exogeneity"} or \texttt{"sargan-exogeneity"}. The former is a simple Wald test comparing the estimates under $\mathbf{Z}_1$ and $\mathbf{Z}_2$. If the null hypothesis that both estimates are equal is not rejected, then $\mathbf{Z}_2$ is considered exogenous. This test can be used even if $\mathbf{Z}_2$ does not nest $\mathbf{Z}_1$. The latter is an overidentification test of the validity of the additional columns in $\mathbf{Z}_2$ and assumes that $\mathbf{Z}_2$ nests $\mathbf{Z}_1$ \citep[see][Proposition 3.7]{hayashi2000econometrics}. The following example illustrates the test:
+To test the endogeneity of $\mathbf{Z}_2$, \texttt{which} can be set to \texttt{"wald"} or \texttt{"sargan"}. The former is a simple Wald test comparing the estimates under $\mathbf{Z}_1$ and $\mathbf{Z}_2$. If the null hypothesis that both estimates are equal is not rejected, then $\mathbf{Z}_2$ is considered exogenous. This test can be used even if $\mathbf{Z}_2$ does not nest $\mathbf{Z}_1$. The latter is an overidentification test of the validity of the additional columns in $\mathbf{Z}_2$ and assumes that $\mathbf{Z}_2$ nests $\mathbf{Z}_1$ \citep[see][Proposition 3.7]{hayashi2000econometrics}. The following examples illustrates the test:
 
 ```{r}
-qpeer.test(QtR1, QtR2, which = "wald-exogeneity")
-qpeer.test(QtS3, QtS4, which = "sargan-exogeneity")
+qpeer.test(QtR1, QtR2, which = "wald")
+qpeer.test(QtS3, QtS4, which = "sargan")
 ```
 
 If the estimations based on the type 2 instrument set are not rejected, then the user can report these estimates, as the type 2 instrument set is likely stronger.
+
+Choosing suitable quantile levels is important. The `qpeer.test` function offers an encompassing test to choose between two competing specifications. Assume that the quantile peer effect model is estimated with two sets of quantile levels, $\mathcal{T}_1$ and $\mathcal{T}_2$. By setting `which` to `"encompassing"`, one can test whether one model performs worse; that is, whether it fails to replicate the features captured by the other. The `model1` and `model2` arguments are used to specify both models estimated using the `qpeer` function. The null hypothesis is that `model1` is not worse.
+
+```{r}
+# Estimating QtS6 with a misspecified tau
+QtS6 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, 
+              tau = c(0, 1), structural = TRUE, estimator = "gmm.optimal", 
+              HAC = "cluster", fixed.effects = "separate")
+qpeer.test(model1 = QtS6, model2 = QtS5, which = "encompassing")
+```
+In the preceding code, the null hypothesis is that the specification which includes only the minimum and the maximum as quantile levels does not perform worse. The hypothesis is rejected, which is expected since the data are simulated with more quantile levels. Consequently, the model with only two quantile levels is not a good choice.
+
+In the following code, the null hypothesis is that the model with four quantile levels is not worse than the competing model with two quantile levels:
+```{r}
+qpeer.test(model1 = QtS5, model2 = QtS6, which = "encompassing")
+``` 
+Here, the null hypothesis is not rejected. However, this does not directly imply that the other model is well specified. The model should also be compared with alternative specifications that include, for example, five or six quantile levels. Indeed, encompassing tests only compare two models and do not imply that one of them is correctly specified. Of course, in this example, we know that the model with four quantile levels is well specified because we know the data-generating process. Therefore, the model with four quantile levels cannot be rejected, in general, against other well-specified competing models.
 
 # CES-based peer effect models
 \label{sec:ces}
@@ -380,7 +398,8 @@ summary(Ot2, diagnostic = TRUE)
 
 # Conclusion
 
-\noindent Thank you for reading this documentation. If you encounter any issues, please report them via the [Issues](https://github.com/ahoundetoungan/QuantilePeer/issues) page on GitHub. If you use **QuantilePeer** in your research or publications, kindly cite it. You can run \textcolor{DarkRed}{\texttt{citation("QuantilePeer")}} in **R** to obtain citation information, including the BibTeX entry for \LaTeX{} users.
+\noindent Thank you for reading this documentation. If you encounter any issues, please report them via the [Issues](https://github.com/ahoundetoungan/QuantilePeer/issues) page on GitHub. If you use **QuantilePeer** in your research or publications, please cite it. You can run \textcolor{DarkRed}{\texttt{citation("QuantilePeer")}} in **R** to obtain the citation information, including the Bib\TeX{} entry for \LaTeX{} users. Please also cite the paper associated with the package \citep[][]{houndetoungan2025quantile}.
+
 
 
 \newpage

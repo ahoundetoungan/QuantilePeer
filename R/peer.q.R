@@ -347,7 +347,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
     
     # Estimation
     GMMe     <- fstruct(y = y, X = X, qy = qy, ins = ins, idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igr = igr, 
-                        nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, M = M, Kins = Kins, Kx = Kx, ntau = ntau, 
+                        nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, M = M, MnIs = MnIs, Kins = Kins, Kx = Kx, ntau = ntau, 
                         Kest1 = Kest1, Kest2 = Kest2, n = n, HACnum = HACnum, iv = iv, estimator = estimator, 
                         compute.cov = compute.cov, estname = estname)
   } else {
@@ -681,11 +681,13 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #'
 #' @param model1,model2 Objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}.
 #' @param which A character string indicating the type of test to be implemented. 
-#' The value must be one of `"uniform"`, `"increasing"`, `"decreasing"`, `"wald-exogeneity"`, or `"sargan-exogeneity"` (see Details).
+#' The value must be one of `"uniform"`, `"increasing"`, `"decreasing"`, `"wald"`, `"sargan"`, and `"encompassing"` (see Details).
 #' @param boot An integer indicating the number of bootstrap replications to use for computing `p-values` in the `"increasing"` and `"decreasing"` tests.
 #' @param maxit,eps_f,eps_g Control parameters for the `optim_lbfgs` solver used to optimize the objective function in the `"increasing"` and `"decreasing"` tests (see Kodde and Palm, 1986). 
 #' The `optim_lbfgs` function is provided by the \pkg{RcppNumerical} package and is based on the `L-BFGS` method.
-#'
+#' @param full A Boolean indicating whether the parameters associated with the exogenous variables should be compared. This is used
+#' for tests that compare two competing parameter sets.
+#' 
 #' @references Hayashi, F. (2000). *Econometrics*. Princeton University Press.
 #' @references Kodde, D. A., & Palm, F. C. (1986). Wald criteria for jointly testing equality and inequality restrictions. *Econometrica*, 54(5), 1243–1248.  
 #'
@@ -696,10 +698,11 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' The monotonicity tests evaluate whether the quantile peer effects \eqn{\lambda_{\tau}} are constant, increasing, or decreasing. In this case, `model1` must be an object of class \code{\link{qpeer}}, and the `which` argument specifies the null hypothesis: `"uniform"`, `"increasing"`, or `"decreasing"`.  
 #' For the `"uniform"` test, a standard Wald test is performed. For the `"increasing"` and `"decreasing"` tests, the procedure follows Kodde and Palm (1986). \cr
 #'
-#' The instrument validity tests assess whether a second set of instruments \eqn{Z_2} is valid, under the assumption that a baseline set \eqn{Z_1} is valid. In this case, both `model1` and `model2` must be objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}. 
-#' The test compares the estimates obtained using each instrument set. If \eqn{Z_2} nests \eqn{Z_1}, it is recommended to compare the statistics from the overidentification tests in both estimations (see Hayashi, 2000, Proposition 3.7).
-#'
-#' If \eqn{Z_2} does not nest \eqn{Z_1}, the estimates themselves are compared. To perform the comparison of overidentification statistics, set the `which` argument to `"sargan-exogeneity"`. To compare the estimates directly, set the `which` argument to `"wald-exogeneity"`.
+#' The instrument validity tests assess whether a second set of instruments \eqn{Z_2} is valid, assuming that a baseline set \eqn{Z_1} is valid. In this case, both `model1` and `model2` must be objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}. 
+#' The test compares the estimates obtained using each instrument set. If \eqn{Z_2} nests \eqn{Z_1}, it is recommended to compare the overidentification statistics from both estimations (see Hayashi, 2000, Proposition 3.7).
+#' If \eqn{Z_2} does not nest \eqn{Z_1}, the estimates themselves are compared. To compare the overidentification statistics, set the `which` argument to `"sargan"`. To compare the estimates directly, set the `which` argument to `"wald"`.\cr
+#' 
+#' Given two competing models, it is possible to test whether one is significantly worse using an encompassing test by setting `which` to `"encompassing"`. The null hypothesis is that `model1` is not worse.
 #' @examples
 #' \donttest{
 #' set.seed(123)
@@ -743,28 +746,75 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' rest2 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1 + Z2, Glist = G, tau = tau)
 #' summary(rest2, diagnostic = TRUE)  
 #' 
-#' qpeer.test(rest1, which = "increasing")
-#' qpeer.test(rest1, which = "decreasing")
-#' qpeer.test(rest1, rest2, which = "sargan-exogeneity")
+#' qpeer.test(model1 = rest1, which = "increasing")
+#' qpeer.test(model1 = rest1, which = "decreasing")
+#' qpeer.test(model1 = rest1, model2 = rest2, which = "sargan")
+#' 
+#' #' A model with a mispecified tau
+#' rest3 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1 + Z2, Glist = G, tau = c(0, 1))
+#' summary(rest3)
+#' #' Test is rest3 is worse than rest1
+#' qpeer.test(model1 = rest3, model2 = rest1, which = "encompassing")
 #' }
 #' @importFrom MASS ginv
 #' @importFrom stats qchisq
 #' @importFrom stats uniroot
 #' @export
-qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "uniform", "wald-exogeneity", "sargan-exogeneity"), 
+qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
                        boot = 1e4, maxit = 1e6, eps_f = 1e-9, eps_g = 1e-9) {
-  which     <- tolower(which[1])
-  stopifnot(which %in% c("increasing", "decreasing", "uniform", "wald-exogeneity", "sargan-exogeneity"))
-  stat      <- NULL
-  pval      <- NULL
-  op        <- NULL
-  df        <- NULL
-  lt1       <- NULL
-  lt2       <- NULL
+  which  <- tolower(which[1])
+  stopifnot(which %in% c("increasing", "decreasing", "uniform", "wald", "sargan", "encompassing"))
+  
+  struc1 <- model1$model.info$structural
+  struc2 <- model2$model.info$structural
+  qy1    <- model1$data$qy
+  qy2    <- model2$data$qy
+  X1     <- model1$data$X
+  X2     <- model2$data$X
+  Z1     <- model1$data$instruments
+  Z2     <- model2$data$instruments
+  W11    <- model1$gmm$Wiso
+  W21    <- model1$gmm$Wniso
+  W1     <- model1$gmm$W
+  W12    <- model2$gmm$Wiso
+  W22    <- model2$gmm$Wniso
+  W2     <- model2$gmm$W
+  e1     <- model1$gmm$residuals
+  e2     <- model2$gmm$residuals
+  theta1 <- model1$gmm$Estimate
+  theta2 <- model2$gmm$Estimate
+  HAC1   <- (0:2)[model1$model.info$HAC == c("iid", "hetero", "cluster")]
+  HAC2   <- (0:2)[model2$model.info$HAC == c("iid", "hetero", "cluster")]  
+  idX11  <- model1$model.info$idXiso - 1
+  idX21  <- model2$model.info$idXniso - 1
+  idX12  <- model1$model.info$idXiso - 1
+  idX22  <- model2$model.info$idXniso - 1
+  nIs1   <- model1$data$non.isolated - 1
+  Is1    <- model1$data$isolated - 1
+  nIs2   <- model2$data$non.isolated - 1
+  Is2    <- model2$data$isolated - 1
+  ngr1   <- model1$model.info$ngroup
+  ngr2   <- model2$model.info$ngroup
+  FE1    <- model1$model.info$fixed.effects
+  FE2    <- model2$model.info$fixed.effects
+  nvec1  <- model1$model.info$nvec
+  nvec2  <- model2$model.info$nvec
+  n1     <- model1$model.info$n
+  n2     <- model2$model.info$n
+  tau1   <- model1$model.info$tau
+  tau2   <- model2$model.info$tau
+  
+  stat   <- NULL
+  pval   <- NULL
+  op     <- NULL
+  df     <- NULL
+  lt1    <- NULL
+  lt2    <- NULL
+  dtheta <- NULL
   if (which %in% c("increasing", "decreasing", "uniform")) {
     stopifnot(class(model1) == "qpeer")
     
-    if (!missing(model2)) {
+    if (!is.null(model2)) {
       stop('Testing whether peer effects are "increasing", "decreasing", or "uniform" is only possible on `model1`.')
     }
     
@@ -804,7 +854,7 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
         mean(qq*Pi) - stat
       }, interval = c(0, 1), tol = eps_f)$root
     }
-  } else if (which == "wald-exogeneity") {
+  } else if (which %in% c("wald", "cox", "encompassing")) {
     stopifnot(class(model1) %in% c("qpeer", "linpeer", "genpeer"))
     stopifnot(class(model2) %in% c("qpeer", "linpeer", "genpeer"))
     if (is.null(model1$gmm$cov) | is.null(model2$gmm$cov)) {
@@ -816,71 +866,19 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
       stop("This test is only valid for IV and GMM estimators.")
     }
     
-    struc1 <- model1$model.info$structural
-    struc2 <- model2$model.info$structural
-    qy1    <- as.matrix(model1$data$qy)
-    qy2    <- as.matrix(model2$data$qy)
-    X1     <- as.matrix(model1$data$X)
-    X2     <- as.matrix(model2$data$X)
-    Z1     <- as.matrix(model1$data$instruments)
-    Z2     <- as.matrix(model2$data$instruments)
-    W11    <- model1$gmm$Wiso
-    W21    <- model1$gmm$Wniso
-    W1     <- model1$gmm$W
-    W12    <- model2$gmm$Wiso
-    W22    <- model2$gmm$Wniso
-    W2     <- model2$gmm$W
-    e1     <- model1$gmm$residuals
-    e2     <- model2$gmm$residuals
-    theta1 <- model1$gmm$Estimate
-    theta2 <- model2$gmm$Estimate
-    HAC1   <- (0:2)[model1$model.info$HAC == c("iid", "hetero", "cluster")]
-    HAC2   <- (0:2)[model2$model.info$HAC == c("iid", "hetero", "cluster")]  
-    idX11  <- model1$model.info$idXiso - 1
-    idX21  <- model2$model.info$idXniso - 1
-    idX12  <- model1$model.info$idXiso - 1
-    idX22  <- model2$model.info$idXniso - 1
-    nIs1   <- model1$data$non.isolated - 1
-    Is1    <- model1$data$isolated - 1
-    nIs2   <- model2$data$non.isolated - 1
-    Is2    <- model2$data$isolated - 1
-    ngr1   <- model1$model.info$ngroup
-    ngr2   <- model2$model.info$ngroup
-    FE1    <- model1$model.info$fixed.effects
-    FE2    <- model2$model.info$fixed.effects
-    nvec1  <- model1$model.info$nvec
-    nvec2  <- model2$model.info$nvec
-    n1     <- model1$model.info$n
-    n2     <- model2$model.info$n
-    tau1   <- model1$model.info$tau
-    tau2   <- model2$model.info$tau
-    
     tp     <- (struc1 == struc2) &&
-      (length(qy1) == length(qy2)) &&
-      (length(X1) == length(X2)) &&
-      # (length(Z1) == length(Z2)) &&
-      (length(W11) == length(W12)) &&
-      # (length(W21) == length(W22)) &&
-      # (length(W1) == length(W2)) &&
       (length(e1) == length(e2)) &&
-      (length(theta1) == length(theta2)) &&
       (HAC1 == HAC2) &&
-      (length(idX11) == length(idX12)) &&
-      (length(idX21) == length(idX22)) &&
       all(nIs1 == nIs2) &&
       all(Is1 == Is2) &&
       (ngr1 == ngr2) &&
       (FE1 == FE2) &&
       all(nvec1 == nvec2) &&
-      all(colnames(qy1) == colnames(qy2)) &&
-      all(colnames(X1) == colnames(X2)) &&
-      (n1 == n2) &&
-      all(tau1 == tau2)
+      (n1 == n2)
     
     if (!tp) {
       stop("`model1` and `model2` differ in data or model specification.")
     }
-    ntau    <- length(tau1)
     igr     <- matrix(c(cumsum(c(0, nvec1[-ngr1])), cumsum(nvec1) - 1), ncol = 2)
     ncs     <- c(0, cumsum(nvec1))
     LIs     <- lapply(1:ngr1, function(m) {
@@ -907,35 +905,82 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
       Z2   <- demean_separate(Z2, igr, LIs, LnIs, ngr1, n1)
     }
     
-    CTT    <- NULL
     MIs    <- sum(sapply(LIs, function(s) length(s) > 0))
     MnIs   <- sum(sapply(LnIs, function(s) length(s) > 0))
-    if (struc1) {
-      K1   <- length(idX11)
-      K2   <- length(idX21)
-      Kest1 <- ifelse(FEnum == 0, K1, K1 + MIs)
-      Kest2 <- ifelse(FEnum == 0, K2 + ntau + 1, K2 + ntau + MnIs)
-      CTT   <- Cov2ThetaStruc(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1, 
-                              Kest11 = Kest1, Kest21 = Kest2, X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22,
-                              e2 = e2, theta2 = theta2, Kest12 = Kest1, Kest22 = Kest2, idX1 = idX11, idX2 = idX21, 
-                              nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1)
-    } else {
-      K     <- length(theta1)
-      Kest  <- ifelse(FEnum == 0, K, ifelse(FEnum == 1, K + ngr1, K + MIs + MnIs))
-      CTT   <- Cov2ThetaRed(V1 = cbind(qy1, X1), Z1 = Z1, W1 = W1, e1 = e1, Kest1 = Kest,
-                            V2 = cbind(qy2, X2), Z2 = Z2, W2 = W2, e2 = e2, Kest2 = Kest, 
-                            ngroup = ngr1, cumsn = ncs, HAC = HAC1)
-    }
-    THe     <- c(theta1, theta2)
-    K       <- length(theta1)
-    R       <- cbind(diag(K), -diag(K))[1:(ntau + struc1), ]
-    stat    <- c(t(R %*% THe) %*% ginv(R %*% CTT %*% t(R)) %*% R %*% THe)
-    df      <- nrow(R)
-    pval    <- pchisq(stat, df, lower.tail = FALSE)
-    lt1     <- theta1[1:(ntau + struc1)]
-    lt2     <- theta2[1:(ntau + struc1)]
     
-  } else {
+    if (which == "wald") {
+      tp     <- (length(qy1) == length(qy2)) &&
+        (length(X1) == length(X2)) &&
+        (length(W11) == length(W12)) &&
+        (length(theta1) == length(theta2)) &&
+        (length(idX11) == length(idX12)) &&
+        (length(idX21) == length(idX22)) &&
+        all(colnames(qy1) == colnames(qy2)) &&
+        all(colnames(X1) == colnames(X2)) &&
+        all(tau1 == tau2)
+      
+      if (!tp) {
+        stop("`model1` and `model2` differ in data or model specification.")
+      }
+      
+      CTT    <- NULL
+      ntau   <- length(tau1)
+      if (struc1) {
+        K1   <- length(idX11)
+        K2   <- length(idX21)
+        Kest1 <- ifelse(FEnum == 0, K1, K1 + MIs)
+        Kest2 <- ifelse(FEnum == 0, K2 + ntau + 1, K2 + ntau + MnIs)
+        CTT   <- Cov2ThetaStruc(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1, 
+                                Kest11 = Kest1, Kest21 = Kest2, X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22,
+                                e2 = e2, theta2 = theta2, Kest12 = Kest1, Kest22 = Kest2, idX1 = idX11, idX2 = idX21, 
+                                nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
+      } else {
+        K     <- length(theta1)
+        Kest  <- ifelse(FEnum == 0, K, ifelse(FEnum == 1, K + ngr1, K + MIs + MnIs))
+        CTT   <- Cov2ThetaRed(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest,
+                              X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest, 
+                              ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
+      }
+      stat    <- c(CTT$stat)
+      df      <- c(CTT$df)
+      pval    <- pchisq(stat, df, lower.tail = FALSE)
+      lt1     <- c(CTT$theta1)
+      lt2     <- c(CTT$theta2)
+    } else if (which == "encompassing") {
+      ntau1   <- length(tau1)
+      ntau2   <- length(tau2)
+      CTT     <- NULL
+      if (struc1) {
+        K11   <- length(idX11)
+        K21   <- length(idX21)
+        K12   <- length(idX12)
+        K22   <- length(idX22)
+        Kest11<- ifelse(FEnum == 0, K11, K11 + MIs)
+        Kest21<- ifelse(FEnum == 0, K21 + ntau1 + 1, K21 + ntau1 + MnIs)
+        Kest12<- ifelse(FEnum == 0, K12, K12 + MIs)
+        Kest22<- ifelse(FEnum == 0, K22 + ntau2 + 1, K22 + ntau2 + MnIs)
+        CTT   <- fEncompassingStruc(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1,
+                                    idX11 = idX11, idX21 = idX21, Kest11 = Kest11, Kest21 = Kest21,
+                                    X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22, e2 = e2, theta2 = theta2,
+                                    idX12 = idX12, idX22 = idX22, Kest12 = Kest12, Kest22 = Kest22,
+                                    nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
+      } else {
+        K1    <- length(theta1)
+        K2    <- length(theta2)
+        Kest1 <- ifelse(FEnum == 0, K1, ifelse(FEnum == 1, K1 + ngr1, K1 + MIs + MnIs))
+        Kest2 <- ifelse(FEnum == 0, K2, ifelse(FEnum == 1, K2 + ngr1, K2 + MIs + MnIs))
+        CTT   <- fEncompassingRed(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
+                                  X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
+                                  ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
+      }
+      stat    <- c(CTT$stat)
+      df      <- c(CTT$df)
+      pval    <- pchisq(stat, df, lower.tail = FALSE)
+      dtheta  <- c(CTT$diff)
+    } else if (which == "cox") { #TO not available yet
+    }
+    
+  } else if (which == "sargan") {
     stopifnot(class(model1) %in% c("qpeer", "linpeer", "genpeer"))
     stopifnot(class(model2) %in% c("qpeer", "linpeer", "genpeer"))
     if (!(tolower(model1$model.info$estimator) %in% c("iv", "gmm.optimal", "gmm.identity") &&
@@ -944,7 +989,7 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
     }
     df     <- model2$gmm$Jtest[2] - model1$gmm$Jtest[2]
     if (df <= 0) {
-      stop("sargan-exogeneity test required instruments in model2 to neast instruments in model1")
+      stop("sargan test required instruments in model2 to neast instruments in model1")
     }
     stat   <- model2$gmm$Jtest[1] - model1$gmm$Jtest[1]
     pval   <- pchisq(stat, df, lower.tail = FALSE)
@@ -953,12 +998,12 @@ qpeer.test <- function(model1, model2, which = c("increasing", "decreasing", "un
     lt1    <- model1$gmm$Estimate[1:(ntau + struc)]
     lt2    <- model2$gmm$Estimate[1:(ntau + struc)]
   }
-  names(stat) <- names(pval) <- names(df) <- NULL
-  out         <- list("statistic" = stat, "pvalue" = pval, 
-                      "lambda1" = lt1, "lambda2" = lt2,
-                      df = df, which = which, boot = boot)
-  class(out)  <- "qpeer.test"
-  out
+names(stat) <- names(pval) <- names(df) <- NULL
+out         <- list("statistic" = stat, "pvalue" = pval, 
+                    "lambda1" = lt1, "lambda2" = lt2,
+                    df = df, which = which, boot = boot)
+class(out)  <- "qpeer.test"
+out
 }
 
 #' @title Printing Specification Tests for Peer Effects Models
@@ -975,14 +1020,19 @@ print.qpeer.test <- function(x, ...) {
     cat("  Null hypothesis: lambda_tau is", x$which, "\n")
     cat("  Statistic:", x$statistic)
     cat("  -- p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
-  } else {
-    cat("Testing instrument validity\n\n")
+  } else if (x$which %in% c("wald", "sargan")) {
+    cat("Testing instrument validity (", ifelse(x$which == "wald", "Wald", "J-Sargan"), " Test)", "\n\n", sep = "")
     cat("Quantile peer effects:\n")
     cat("  Model 1 (Z1):", x$lambda1, "\n")
     cat("  Model 2 (Z2):", x$lambda2, "\n")
     cat("  Null hypothesis: Z2 is exogenous\n")
     cat("  Statistic:", x$statistic)
     cat("  --  p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
+  } else if (x$which == "encompassing") {
+    cat("Encompassing Test\n")
+    cat("  Null hypothesis: Model 1 is not worse\n")
+    cat("  Statistic:", x$statistic)
+    cat("  -- p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
   }
   invisible(x)
 }

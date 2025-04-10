@@ -1,19 +1,19 @@
 # Structural
-fstruct <- function(y, X, qy, ins, idX1, idX2, Kx1, Kx2, igr, nIs, Is, lnIs, lIs, M, Kins, Kx, 
+fstruct <- function(y, X, qy, ins, idX1, idX2, Kx1, Kx2, igr, nIs, Is, lnIs, lIs, M, MnIs, Kins, Kx, 
                     ntau, Kest1, Kest2,  n, HACnum, iv, estimator, compute.cov, estname) {
   Kest        <- Kest1 + Kest2
   GMMe        <- NULL
   if (estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
     GMMe      <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = diag(Kx1), W2 = diag(Kins + 1), idX1 = idX1, 
                             idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igroup = igr, nIs = nIs, Is = Is, ngroup = M, 
-                            Kins = Kins, Kx = Kx, ntau = ntau, Kest1 = Kest1, Kest2 = Kest2, n = n, HAC = HACnum, 
-                            iv = iv)
+                            ngroup2 = MnIs, Kins = Kins, Kx = Kx, ntau = ntau, Kest1 = Kest1, Kest2 = Kest2, n = n, 
+                            HAC = HACnum, iv = iv)
     
     if (estimator == "GMM.optimal" & HACnum != 0) {
       GMMe    <- fgmm_struc(y = y, X = X, qy = qy, ins = ins, W1 = solve(GMMe$VF1), W2 = solve(GMMe$VF2), 
                             idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igroup = igr, nIs = nIs, Is = Is, 
-                            ngroup = M, Kins = Kins, Kx = Kx, ntau = ntau, Kest1 = Kest1, Kest2 = Kest2, n = n, 
-                            HAC = HACnum, iv = FALSE)
+                            ngroup = M, ngroup2 = MnIs, Kins = Kins, Kx = Kx, ntau = ntau, Kest1 = Kest1, 
+                            Kest2 = Kest2, n = n, HAC = HACnum, iv = FALSE)
     }
   } else if (estimator == "JIVE") {
     if (HACnum == 2) {
@@ -65,6 +65,7 @@ fstruct <- function(y, X, qy, ins, idX1, idX2, Kx1, Kx2, igr, nIs, Is, lnIs, lIs
   sigmaniso   <- sqrt(GMMe$sigma22);  if(is.na(sigmaniso)) sigmaniso = NULL
   GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma1 = sigmaiso, sigma2 = sigmaniso, fitted.values = fv, 
                       residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
+                      info.criteria = GMMe$criterion,
                       Jtest = c("statistic" = ifelse(is.null(GMMe$Overident), NA, GMMe$Overident), 
                                 "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))), Wiso = GMMe$W1, Wniso = GMMe$W2)
   names(GMMe$Estimate)  <- colnames(GMMe$cov) <- rownames(GMMe$cov)    <- estname
@@ -113,6 +114,7 @@ freduce <- function(y, V, ins, igr, nvec, M, Kins, Kx, ntau, Kest, n, HACnum, iv
   sigma       <- sqrt(GMMe$sigma2);  if(is.na(sigma)) sigma = NULL
   GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
                       residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
+                      info.criteria = GMMe$criterion,
                       Jtest = c("statistic" = ifelse(is.null(GMMe$Overident), NA, GMMe$Overident), 
                                 "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))), W = GMMe$W)
   names(GMMe$Estimate)  <- colnames(GMMe$cov) <- rownames(GMMe$cov)    <- estname

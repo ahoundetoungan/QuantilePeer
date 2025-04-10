@@ -65,8 +65,28 @@ Rcpp::List fgmm_red(const Eigen::VectorXd& y,
   // overidentification
   Eigen::VectorXd Ze(ins.transpose()*e.matrix());
   double stat = (Ze.array()*(VZe.colPivHouseholderQr().solve(Ze)).array()).sum();
-  return Rcpp::List::create(_["parms"] = parms, _["Vpa"] = Vpa, _["VZe"] = VZe, _["Overident"] = stat, 
-                            _["df"] = Kins - Kx - ntau, _["yhat"] = yhat, _["sigma2"] = s2, _["W"] = W);
+  
+  // criterion
+  double cri, BIC, AIC, HQIC;
+  if (HAC == 2) {
+    cri  = Ze.dot(W*Ze)/ngroup;
+    BIC  = cri - (Kins - Kx - ntau)*log(ngroup);
+    AIC  = cri - 2*(Kins - Kx - ntau);
+    HQIC = cri - 2.01*(Kins - Kx - ntau)*log(log(ngroup));
+  } else{
+    cri  = Ze.dot(W*Ze)/n;
+    BIC  = cri - (Kins - Kx - ntau)*log(n);
+    AIC  = cri - 2*(Kins - Kx - ntau);
+    HQIC = cri - 2.01*(Kins - Kx - ntau)*log(log(n));
+  }
+  Rcpp::List critLis = Rcpp::List::create(_["criterion"] = cri,
+                                          _["BIC"]       = BIC,
+                                          _["AIC"]       = AIC,
+                                          _["HQIC"]      = HQIC);
+    
+    return Rcpp::List::create(_["parms"] = parms, _["Vpa"] = Vpa, _["VZe"] = VZe, _["Overident"] = stat, 
+                              _["df"] = Kins - Kx - ntau, _["yhat"] = yhat, _["sigma2"] = s2, _["W"] = W,
+                                _["criterion"] = critLis);
 }
 
 Rcpp::List fgmm_redARMA(const arma::vec& y,
@@ -136,6 +156,7 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
                       const Eigen::VectorXi& nIs,
                       const Eigen::VectorXi& Is,
                       const int& ngroup,
+                      const int& ngroup2,
                       const int& Kins,
                       const int& Kx,
                       const int& ntau,
@@ -230,10 +251,28 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   Eigen::MatrixXd VF1(VF.block(0, 0, Kx1, Kx1)), VF2(VF.block(Kx1, Kx1, Kins + 1, Kins + 1));
   double stat = (F2.array()*(VF2.colPivHouseholderQr().solve(F2)).array()).sum();
   
+  // criterion
+  double cri, BIC, AIC, HQIC;
+  if (HAC == 2) {
+    cri  = F2.dot(W2*F2)/ngroup2;
+    BIC  = cri - (Kins - Kx2 - ntau)*log(ngroup2);
+    AIC  = cri - 2*(Kins - Kx2 - ntau);
+    HQIC = cri - 2.01*(Kins - Kx2 - ntau)*log(log(ngroup2));
+  } else{
+    cri  = F2.dot(W2*F2)/n_niso;
+    BIC  = cri - (Kins - Kx2 - ntau)*log(n_niso);
+    AIC  = cri - 2*(Kins - Kx2 - ntau);
+    HQIC = cri - 2.01*(Kins - Kx2 - ntau)*log(log(n_niso));
+  }
+  Rcpp::List critLis = Rcpp::List::create(_["criterion"] = cri,
+                                          _["BIC"]       = BIC,
+                                          _["AIC"]       = AIC,
+                                          _["HQIC"]      = HQIC);
+  
   return Rcpp::List::create(_["beta"] = b, _["lambda"] = lambda, _["Vpa"] = Vpa, _["VF1"] = VF1, 
                             _["VF2"] = VF2, _["Overident"] = stat, _["df"] = Kins - ntau - Kx2, 
                               _["yhat"] = yhat, _["sigma21"] = s21, _["sigma22"] = s22, _["W1"] = W1, 
-                                _["W2"] = W2);
+                                _["W2"] = W2, _["criterion"] = critLis);
 }
 
 

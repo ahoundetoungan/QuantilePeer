@@ -9,29 +9,61 @@ using namespace Rcpp;
 using namespace arma;
 using namespace std;
 
+// generalized inverse
+Eigen::MatrixXd ginv(const Eigen::MatrixXd& A, double tol = 1e-8) {
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  
+  const Eigen::VectorXd& singularValues = svd.singularValues();
+  Eigen::VectorXd singularValuesInv = singularValues;
+  
+  for (int i = 0; i < singularValues.size(); ++i) {
+    if (singularValues(i) > tol)
+      singularValuesInv(i) = 1.0 / singularValues(i);
+    else
+      singularValuesInv(i) = 0.0;
+  }
+  
+  Eigen::MatrixXd Dplus = singularValuesInv.asDiagonal();
+  Eigen::MatrixXd Ainv = svd.matrixV() * Dplus * svd.matrixU().transpose();
+  
+  return Ainv;
+}
+
 // Covariance matrix of two theta using two different sets of instruments, reduced form
 //[[Rcpp::export]]
-Eigen::MatrixXd Cov2ThetaRed(const Eigen::MatrixXd& V1,
+Rcpp::List Cov2ThetaRed(const Eigen::MatrixXd& X1,
+                             const Eigen::MatrixXd& qy1,
                              const Eigen::MatrixXd& Z1,
                              const Eigen::MatrixXd& W1,
                              const Eigen::ArrayXd& e1,
+                             const Eigen::VectorXd theta1,
                              const int& Kest1,
-                             const Eigen::MatrixXd& V2,
+                             const Eigen::MatrixXd& X2,
+                             const Eigen::MatrixXd& qy2,
                              const Eigen::MatrixXd& Z2,
                              const Eigen::MatrixXd& W2,
                              const Eigen::ArrayXd& e2,
+                             const Eigen::VectorXd theta2,
                              const int& Kest2,
                              const int& ngroup, //common to both models
                              const Eigen::ArrayXi& cumsn, //common to both models
-                             const int& HAC = 0) { //common to both models
-  int Kins1(Z1.cols()), Kins2(Z2.cols()), Kins(Kins1 + Kins2), n(V1.rows()), K1(V1.cols()), K2(V2.cols()), K(K1+K2);
+                             const int& HAC = 0, //common to both models
+                             const bool& full = false) { 
+  int ntau1(qy1.cols()), ntau2(qy2.cols()), ntau(ntau1 + ntau2), Kins1(Z1.cols()), Kins2(Z2.cols()), 
+  Kins(Kins1 + Kins2), n(X1.rows()), K1(X1.cols()), K2(X2.cols()), K(K1 + K2), 
+  Kv1(K1 + ntau1), Kv2(K2 + ntau2), Kv(Kv1 + Kv2);
+  
+  Eigen::MatrixXd V1(n, Kv1), V2(n, Kv2);
+  V1 << qy1, X1;
+  V2 << qy2, X2;
+  
   Eigen::MatrixXd VZ1(V1.transpose()*Z1), VZW1(VZ1*W1), VZWZV1(VZW1*VZ1.transpose());
   Eigen::MatrixXd VZ2(V2.transpose()*Z2), VZW2(VZ2*W2), VZWZV2(VZW2*VZ2.transpose());
-  Eigen::MatrixXd VZWZV(Eigen::MatrixXd::Zero(K, K)), VZW(Eigen::MatrixXd::Zero(K, Kins));
-  VZWZV.block(0, 0, K1, K1)       = VZWZV1;
-  VZWZV.block(K1, K1, K2, K2)     = VZWZV2;
-  VZW.block(0, 0, K1, Kins1)      = VZW1;
-  VZW.block(K1, Kins1, K2, Kins2) = VZW2;
+  Eigen::MatrixXd VZWZV(Eigen::MatrixXd::Zero(Kv, Kv)), VZW(Eigen::MatrixXd::Zero(Kv, Kins));
+  VZWZV.block(0, 0, Kv1, Kv1)       = VZWZV1;
+  VZWZV.block(Kv1, Kv1, Kv2, Kv2)   = VZWZV2;
+  VZW.block(0, 0, Kv1, Kins1)       = VZW1;
+  VZW.block(Kv1, Kins1, Kv2, Kins2) = VZW2;
   
   // variance of Ze
   Eigen::MatrixXd VZe(Eigen::MatrixXd::Zero(Kins, Kins));
@@ -62,13 +94,37 @@ Eigen::MatrixXd Cov2ThetaRed(const Eigen::MatrixXd& V1,
   }
   Eigen::MatrixXd iHdF((VZWZV).inverse()); 
   Eigen::MatrixXd HVFH(VZW*VZe*VZW.transpose());
-  return iHdF * HVFH * iHdF.transpose();
+  
+  // theta 
+  Eigen::VectorXd theta(Kv);
+  theta << theta1, theta2;
+  
+  // test all parameters of just quantiles
+  int df(ntau1);
+  if (full) { 
+    df = Kv1; 
+  }
+  
+  // R matrix
+  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(df, Kv));
+  R(Eigen::all, Eigen::seqN(0, df))   = Eigen::MatrixXd::Identity(df, df);
+  R(Eigen::all, Eigen::seqN(Kv1, df)) = -Eigen::MatrixXd::Identity(df, df);
+
+  // test statistic
+  Eigen::VectorXd Rtheta(R*theta);
+  Eigen::MatrixXd RiHdF(R*iHdF);
+  Eigen::VectorXd stat(Rtheta.transpose() * ginv(RiHdF * HVFH * RiHdF.transpose()) * Rtheta);
+  
+  return Rcpp::List::create(_["stat"]   = stat, 
+                            _["df"]     = df, 
+                            _["theta1"] = theta1.head(ntau1),
+                            _["theta2"] = theta2.head(ntau2));
 }
 
 
 // Covariance matrix of two theta using two different sets of instruments, Structural form
 //[[Rcpp::export]]
-Eigen::MatrixXd Cov2ThetaStruc(const Eigen::MatrixXd& X1,
+Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& X1,
                                const Eigen::MatrixXd& qy1,
                                const Eigen::MatrixXd& Z1,
                                const Eigen::MatrixXd& W11,
@@ -92,7 +148,8 @@ Eigen::MatrixXd Cov2ThetaStruc(const Eigen::MatrixXd& X1,
                                const Eigen::ArrayXi& Is, //common to both models
                                const int& ngroup, //common to both models
                                const Eigen::ArrayXi& cumsn, //common to both models
-                               const int& HAC = 0) {//common to both models
+                               const int& HAC = 0, //common to both models
+                               const bool& full = false) {
   int Kins1(Z1.cols()), Kins2(Z2.cols()), Kins(Kins1 + Kins2), n(X1.rows()), K1(idX1.size()), K2(idX2.size()), K(K1 + K2),
   ntau(qy1.cols()), n_iso(Is.size()), n_niso(n - n_iso);
   
@@ -216,7 +273,40 @@ Eigen::MatrixXd Cov2ThetaStruc(const Eigen::MatrixXd& X1,
   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(2 + 2*ntau + 2*K, 2 + 2*ntau + 2*K));
   R.block(0, 0, 1 + ntau + K, 1 + ntau + K) = R1;
   R.block(1 + ntau + K, 1 + ntau + K, 1 + ntau + K, 1 + ntau + K) = R2;
-  return R * Vpa * R.transpose();
+  
+  // theta 
+  Eigen::VectorXd theta(2*K + 2*ntau + 2);
+  theta << theta1, theta2;
+  
+  // test all parameters of just quantiles
+  int df(ntau);
+  if (full) { 
+    df = 1 + ntau + K2; 
+  }
+  
+  // R matrix for the test
+  Eigen::MatrixXd Rt(Eigen::MatrixXd::Zero(df, 2*K + 2*ntau + 2));
+  if (full) { 
+    Rt(Eigen::seqN(0, 1 + ntau), Eigen::seqN(0, 1 + ntau)) = Eigen::MatrixXd::Identity(1 + ntau, 1 + ntau);
+    Rt(Eigen::seqN(0, 1 + ntau), Eigen::seqN(1 + ntau + K, 1 + ntau)) = -Eigen::MatrixXd::Identity(1 + ntau, 1 + ntau);
+    if (K2 > 0) {
+      Rt(Eigen::seqN(1 + ntau, K2), 1 + ntau + idX2) = Eigen::MatrixXd::Identity(K2, K2);
+      Rt(Eigen::seqN(1 + ntau, K2), 2 + 2*ntau + K + idX2) = -Eigen::MatrixXd::Identity(K2, K2); 
+    }
+  } else {
+    Rt(Eigen::all, Eigen::seqN(1, ntau)) = Eigen::MatrixXd::Identity(ntau, ntau);
+    Rt(Eigen::all, Eigen::seqN(2 + ntau + K, ntau)) = -Eigen::MatrixXd::Identity(ntau, ntau);
+  }
+  
+  // test statistic
+  Eigen::VectorXd Rtheta(Rt * theta);
+  Eigen::MatrixXd RtR(Rt * R);
+  Eigen::VectorXd stat(Rtheta.transpose() * ginv(RtR * Vpa * RtR.transpose()) * Rtheta);
+  
+  return Rcpp::List::create(_["stat"]   = stat, 
+                            _["df"]     = df, 
+                            _["theta1"] = theta1.head(ntau + 1),
+                            _["theta2"] = theta2.head(ntau + 1));
 }
 
 // Optimization
@@ -297,11 +387,182 @@ Rcpp::List fTestMonotone(const Eigen::VectorXd& thetahat,
     Rcpp::List tp = fOptimTest(thetasimu.col(b), Sigma, a, K, maxit, eps_f, eps_g);
     Eigen::ArrayXd thetab = tp["lambda"];
     Eigen::ArrayXi tp1((((thetab.segment(1, K - 1) - thetab.segment(0, K - 1)) * a.array())
-                         > (1e5 * (eps_f + eps_g))).cast<int>());
+                          > (1e5 * (eps_f + eps_g))).cast<int>());
     // cout<<thetab.transpose()<<endl;
     // cout<<tp1.transpose()<<endl;
     // cout<<tp1.sum()<<endl;
     countPos(b) = tp1.sum();
   }
   return Rcpp::List::create(_["optim"] = tpopt, _["count"] = countPos);
+}
+
+// Encompassing test
+//[[Rcpp::export]]
+Rcpp::List fEncompassingStruc(const Eigen::MatrixXd& X1,
+                              const Eigen::MatrixXd& qy1,
+                              const Eigen::MatrixXd& Z1,
+                              const Eigen::MatrixXd& W11,
+                              const Eigen::MatrixXd& W21,
+                              const Eigen::VectorXd& e1,
+                              const Eigen::VectorXd theta1,
+                              const Eigen::ArrayXi& idX11,
+                              const Eigen::ArrayXi& idX21,
+                              const int& Kest11,
+                              const int& Kest21,
+                              const Eigen::MatrixXd& X2,
+                              const Eigen::MatrixXd& qy2,
+                              const Eigen::MatrixXd& Z2,
+                              const Eigen::MatrixXd& W12,
+                              const Eigen::MatrixXd& W22,
+                              const Eigen::VectorXd& e2,
+                              const Eigen::VectorXd theta2,
+                              const Eigen::ArrayXi& idX12,
+                              const Eigen::ArrayXi& idX22,
+                              const int& Kest12,
+                              const int& Kest22,
+                              const Eigen::ArrayXi& nIs, //common to both models
+                              const Eigen::ArrayXi& Is, //common to both models
+                              const int& ngroup, //common to both models
+                              const Eigen::ArrayXi& cumsn, //common to both models
+                              const int& HAC = 0, //common to both models
+                              const bool& full = false) {
+  int Kins1(Z1.cols()), Kins2(Z2.cols()), n(X1.rows()), K21(idX21.size()), 
+  K22(idX22.size()), ntau1(qy1.cols()), ntau2(qy2.cols()), n_iso(Is.size()), n_niso(n - n_iso);
+  
+  // First stage
+  Eigen::MatrixXd X11(X1(Is, idX11)), XX11(X11.transpose()*X11), XXW11(XX11*W11), XXWXX11(XXW11*XX11);
+  Eigen::MatrixXd X12(X2(Is, idX12)), XX12(X12.transpose()*X12), XXW12(XX12*W12), XXWXX12(XXW12*XX12);
+  Eigen::VectorXd b1(theta1(1 + ntau1 + idX11)), b2(theta2(1 + ntau2 + idX12));
+  
+  // Second stage
+  Eigen::VectorXd Xb1(X1(Eigen::all, idX11)*b1), Xb11(Xb1(Is)), Xb21(Xb1(nIs));
+  Eigen::VectorXd Xb2(X2(Eigen::all, idX12)*b2), Xb12(Xb2(Is)), Xb22(Xb2(nIs));
+  
+  Eigen::MatrixXd X21(X1(nIs, idX21)),  X211(X1(nIs, idX11)), V21(n_niso, 1 + ntau1 + K21);
+  V21 << Xb21, qy1(nIs, Eigen::all), X21;
+  Eigen::MatrixXd X22(X2(nIs, idX22)),  X212(X2(nIs, idX12)), V22(n_niso, 1 + ntau2 + K22);
+  V22 << Xb22, qy2(nIs, Eigen::all), X22;
+  
+  Eigen::MatrixXd Z21(n_niso, 1 + Kins1);
+  Z21 << Xb21, Z1(nIs, Eigen::all);
+  Eigen::MatrixXd Z22(n_niso, 1 + Kins2);
+  Z22 << Xb22, Z2(nIs, Eigen::all);
+  
+  //residuals
+  Eigen::VectorXd e21(e1(nIs)*(1 - theta1(0)));
+  // Eigen::VectorXd e22(e2(nIs)*(1 - theta2(0)));
+  
+  //H
+  Eigen::MatrixXd Z2V2(Z22.transpose()*V22);
+  Eigen::MatrixXd V2Z2W2(Z2V2.transpose()*W22);
+  Eigen::MatrixXd H((V2Z2W2*Z2V2).colPivHouseholderQr().solve(V2Z2W2));
+  // cout<<((V2Z2W2*Z2V2).colPivHouseholderQr().solve(V2Z2W2*(Z22.transpose()*e21))).transpose()<<endl;
+  
+  // Variance Ze1
+  Eigen::MatrixXd Z2e1((Z22.array().colwise()*e21.array()).matrix());
+  Eigen::MatrixXd VZ2e1(Eigen::MatrixXd::Zero(Kins2 + 1, Kins2 + 1));
+  if (HAC <= 1) {
+    VZ2e1 = Z2e1.transpose()*Z2e1;
+  }
+  if (HAC == 2) {
+    Eigen::MatrixXd Z(Eigen::MatrixXd::Zero(n, 1 + Kins1));
+    Z(nIs, Eigen::all) << Xb22, Z2(nIs, Eigen::all);
+    Eigen::VectorXd e(Eigen::VectorXd::Zero(n));
+    e(nIs) = e21;
+    for (int r(0); r < ngroup; ++ r) {
+      int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
+      Eigen::VectorXd tp(Z(Eigen::seq(n1, n2), Eigen::all).transpose()*e.segment(n1, n2));
+      VZ2e1 += tp*tp.transpose();
+    }
+  }
+  
+  // R matrix
+  int df(ntau2);
+  if (full) { 
+    df = 1 + ntau2 + K22; 
+  }
+  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(df, 1 + ntau2 + K22));
+  if (full) {
+    R(Eigen::all, Eigen::seqN(0, df)) = Eigen::MatrixXd::Identity(df, df);
+  } else {
+    R(Eigen::all, Eigen::seqN(1, df)) = Eigen::MatrixXd::Identity(df, df);
+  }
+  
+  
+  // statistic and its variance
+  Eigen::VectorXd HZ2e1(H*Z22.transpose()*e21);
+  Eigen::VectorXd RHZ2e1(R*HZ2e1);
+  Eigen::MatrixXd RH(R*H);
+  Eigen::MatrixXd Vstat(RH*VZ2e1*RH.transpose());
+  Eigen::MatrixXd stat(RHZ2e1.transpose()*ginv(Vstat)*RHZ2e1);
+  
+  return Rcpp::List::create(_["stat"] = stat, _["df"] = df, _["diff"] = HZ2e1);
+}
+
+
+//[[Rcpp::export]]
+Rcpp::List fEncompassingRed(const Eigen::MatrixXd& X1,
+                              const Eigen::MatrixXd& qy1,
+                              const Eigen::MatrixXd& Z1,
+                              const Eigen::MatrixXd& W1,
+                              const Eigen::VectorXd& e1,
+                              const Eigen::VectorXd theta1,
+                              const int& Kest1,
+                              const Eigen::MatrixXd& X2,
+                              const Eigen::MatrixXd& qy2,
+                              const Eigen::MatrixXd& Z2,
+                              const Eigen::MatrixXd& W2,
+                              const Eigen::VectorXd& e2,
+                              const Eigen::VectorXd theta2,
+                              const int& Kest2,
+                              const int& ngroup, //common to both models
+                              const Eigen::ArrayXi& cumsn, //common to both models
+                              const int& HAC = 0, //common to both models
+                              const bool& full = false) {
+  int Kins2(Z2.cols()), n(X1.rows()), K1(X1.cols()), K2(X2.cols()), 
+  ntau1(qy1.cols()), ntau2(qy2.cols());
+  
+  Eigen::MatrixXd V1(n, ntau1 + K1), V2(n, ntau2 + K2);
+  V1 << qy1, X1;
+  V2 << qy2, X2;
+  
+  //residuals
+  // Eigen::VectorXd e21(e1(nIs)*(1 - theta1(0)));
+  // Eigen::VectorXd e22(e2(nIs)*(1 - theta2(0)));
+  
+  //H
+  Eigen::MatrixXd Z2V2(Z2.transpose()*V2);
+  Eigen::MatrixXd V2Z2W2(Z2V2.transpose()*W2);
+  Eigen::MatrixXd H((V2Z2W2*Z2V2).colPivHouseholderQr().solve(V2Z2W2));
+  
+  // Variance Ze1
+  Eigen::MatrixXd Z2e1((Z2.array().colwise()*e1.array()).matrix());
+  Eigen::MatrixXd VZ2e1(Eigen::MatrixXd::Zero(Kins2, Kins2));
+  if (HAC <= 1) {
+    VZ2e1 = Z2e1.transpose()*Z2e1;
+  }
+  if (HAC == 2) {
+    for (int r(0); r < ngroup; ++ r) {
+      int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
+      Eigen::VectorXd tp(Z2(Eigen::seq(n1, n2), Eigen::all).transpose()*e1.segment(n1, n2));
+      VZ2e1 += tp*tp.transpose();
+    }
+  }
+  
+  // R matrix
+  int df(ntau2);
+  if (full) { 
+    df = ntau2 + K2; 
+  }
+  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(df, ntau2 + K2));
+  R(Eigen::all, Eigen::seqN(0, df)) = Eigen::MatrixXd::Identity(df, df);
+  
+  // statistic and its variance
+  Eigen::VectorXd HZ2e1(H*Z2.transpose()*e1);
+  Eigen::VectorXd RHZ2e1(R*HZ2e1);
+  Eigen::MatrixXd RH(R*H);
+  Eigen::MatrixXd Vstat(RH*VZ2e1*RH.transpose());
+  Eigen::MatrixXd stat(RHZ2e1.transpose()*ginv(Vstat)*RHZ2e1);
+  
+  return Rcpp::List::create(_["stat"] = stat, _["df"] = df, _["diff"] = HZ2e1);
 }

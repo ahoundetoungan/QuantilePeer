@@ -141,12 +141,55 @@ fsim    <- function(outcome) {
 }
 
 # Estimation
+set.seed(2025)
 sapply(depvar, fsim) 
 
 # Label of Outcome
 OUTCOME <- c("Academic achievements", "Academic effort", "Extracurricular activities", "Future perception", 
              "Trouble at school", "Smoking", "Drinking", "Risky behaviors", "Self-esteem", "Physical exercise", "Fighting")
 
+# Scatterplot
+# data to plot
+dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
+  cat("Outcome: ", OUTCOME[k], "\n", sep = "")
+  load(file = paste0(OutDataPath, depvar[k], ".Rda")) # Load saved data using with the script 0-Data.R
+  SIM     <-  readRDS(paste0(OutResPath, depvar[k], ".RDS")) # Load results
+  match   <- data$match
+  SIM     <- SIM[match > 0,] #only for non-isolated because the social multiplier is one for isolated
+  data.frame(outcome  = k,
+             model    = rep(1:2, each = nrow(SIM)),
+             Quantile = rep(SIM$Q1, 2), 
+             Other    = c(SIM$LIM, CES = SIM$CES))
+})) %>% mutate(outcome = factor(outcome, levels = 1:length(depvar), labels = OUTCOME),
+               model = factor(model, levels = 1:2, labels = c("Quantile vs LIM", "Quantile vs CES")))
+
+# Select only 10%
+dataplot_sampled <- dataplot %>%
+  group_by(outcome, model) %>%
+  sample_frac(0.05)
+
+(graph <- ggplot(dataplot_sampled, aes(x = Quantile, y = Other, colour = model, shape = model)) +
+    geom_point(size = 1.5, alpha = 1) +
+    facet_wrap(~ outcome, ncol = 2, scales = "free") +
+    scale_colour_manual(values = c("#c66", "#66c")) +
+    scale_shape_manual(values = c(2, 4)) +
+    theme_minimal(base_size = 12, base_family = "Palatino") +
+    theme(
+      strip.text = element_text(face = "bold"),
+      axis.text.x = element_text(hjust = 1),
+      panel.spacing = unit(1, "lines"),
+      plot.title = element_text(hjust = 0.5),
+      legend.position = "bottom"
+    ) +
+    labs(
+      x = "Quantile Model",
+      y = "LIM and CES Models",
+      colour = NULL,
+      shape = NULL
+    ))
+ggsave("CFScatter.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7.5, height = 10)
+
+# Boxplot
 # data to plot
 dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
   cat("Outcome: ", OUTCOME[k], "\n", sep = "")
@@ -175,4 +218,5 @@ dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
       y = "Social Multiplier",
     ))
 
-ggsave("CountFact.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7, height = 7)
+ggsave("CFBox.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7, height = 7)
+

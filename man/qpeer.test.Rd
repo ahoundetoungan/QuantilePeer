@@ -6,9 +6,9 @@
 \usage{
 qpeer.test(
   model1,
-  model2,
-  which = c("increasing", "decreasing", "uniform", "wald-exogeneity",
-    "sargan-exogeneity"),
+  model2 = NULL,
+  which,
+  full = FALSE,
   boot = 10000,
   maxit = 1e+06,
   eps_f = 1e-09,
@@ -19,7 +19,10 @@ qpeer.test(
 \item{model1, model2}{Objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}.}
 
 \item{which}{A character string indicating the type of test to be implemented.
-The value must be one of \code{"uniform"}, \code{"increasing"}, \code{"decreasing"}, \code{"wald-exogeneity"}, or \code{"sargan-exogeneity"} (see Details).}
+The value must be one of \code{"uniform"}, \code{"increasing"}, \code{"decreasing"}, \code{"wald"}, \code{"sargan"}, and \code{"encompassing"} (see Details).}
+
+\item{full}{A Boolean indicating whether the parameters associated with the exogenous variables should be compared. This is used
+for tests that compare two competing parameter sets.}
 
 \item{boot}{An integer indicating the number of bootstrap replications to use for computing \code{p-values} in the \code{"increasing"} and \code{"decreasing"} tests.}
 
@@ -33,10 +36,11 @@ The \code{optim_lbfgs} function is provided by the \pkg{RcppNumerical} package a
 The monotonicity tests evaluate whether the quantile peer effects \eqn{\lambda_{\tau}} are constant, increasing, or decreasing. In this case, \code{model1} must be an object of class \code{\link{qpeer}}, and the \code{which} argument specifies the null hypothesis: \code{"uniform"}, \code{"increasing"}, or \code{"decreasing"}.
 For the \code{"uniform"} test, a standard Wald test is performed. For the \code{"increasing"} and \code{"decreasing"} tests, the procedure follows Kodde and Palm (1986). \cr
 
-The instrument validity tests assess whether a second set of instruments \eqn{Z_2} is valid, under the assumption that a baseline set \eqn{Z_1} is valid. In this case, both \code{model1} and \code{model2} must be objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}.
-The test compares the estimates obtained using each instrument set. If \eqn{Z_2} nests \eqn{Z_1}, it is recommended to compare the statistics from the overidentification tests in both estimations (see Hayashi, 2000, Proposition 3.7).
+The instrument validity tests assess whether a second set of instruments \eqn{Z_2} is valid, assuming that a baseline set \eqn{Z_1} is valid. In this case, both \code{model1} and \code{model2} must be objects of class \code{\link{qpeer}}, \code{\link{linpeer}}, or \code{\link{genpeer}}.
+The test compares the estimates obtained using each instrument set. If \eqn{Z_2} nests \eqn{Z_1}, it is recommended to compare the overidentification statistics from both estimations (see Hayashi, 2000, Proposition 3.7).
+If \eqn{Z_2} does not nest \eqn{Z_1}, the estimates themselves are compared. To compare the overidentification statistics, set the \code{which} argument to \code{"sargan"}. To compare the estimates directly, set the \code{which} argument to \code{"wald"}.\cr
 
-If \eqn{Z_2} does not nest \eqn{Z_1}, the estimates themselves are compared. To perform the comparison of overidentification statistics, set the \code{which} argument to \code{"sargan-exogeneity"}. To compare the estimates directly, set the \code{which} argument to \code{"wald-exogeneity"}.
+Given two competing models, it is possible to test whether one is significantly worse using an encompassing test by setting \code{which} to \code{"encompassing"}. The null hypothesis is that \code{model1} is not worse.
 }
 \examples{
 \donttest{
@@ -81,9 +85,15 @@ summary(rest1, diagnostic = TRUE)
 rest2 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1 + Z2, Glist = G, tau = tau)
 summary(rest2, diagnostic = TRUE)  
 
-qpeer.test(rest1, which = "increasing")
-qpeer.test(rest1, which = "decreasing")
-qpeer.test(rest1, rest2, which = "sargan-exogeneity")
+qpeer.test(model1 = rest1, which = "increasing")
+qpeer.test(model1 = rest1, which = "decreasing")
+qpeer.test(model1 = rest1, model2 = rest2, which = "sargan")
+
+#' A model with a mispecified tau
+rest3 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1 + Z2, Glist = G, tau = c(0, 1))
+summary(rest3)
+#' Test is rest3 is worse than rest1
+qpeer.test(model1 = rest3, model2 = rest1, which = "encompassing")
 }
 }
 \references{

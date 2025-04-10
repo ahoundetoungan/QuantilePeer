@@ -186,7 +186,7 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
     
     # Estimation
     GMMe     <- fstruct(y = y, X = X, qy = endo, ins = ins, idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igr = igr, 
-                        nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, M = M, Kins = Kins, Kx = Kx, ntau = Kendo, 
+                        nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, M = M, MnIs = MnIs, Kins = Kins, Kx = Kx, ntau = Kendo, 
                         Kest1 = Kest1, Kest2 = Kest2, n = n, HACnum = HACnum, iv = iv, estimator = estimator, 
                         compute.cov = compute.cov, estname = estname)
   } else {

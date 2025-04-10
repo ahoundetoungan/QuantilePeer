@@ -235,6 +235,7 @@ festim  <- function(outcome) {
 }
 
 # Estimation
+set.seed(2025)
 sapply(depvar, festim) 
 
 # create an Excel workbook
