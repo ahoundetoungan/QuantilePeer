@@ -83,7 +83,7 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
   Z1       <- qpeer.inst(formula = ~ X + GX, Glist = G, tau = seq(0, 1, 0.1), 
                          max.distance = 2, checkrank = TRUE)$instruments 
   Z2       <- qpeer.inst(formula = y ~ X + GX, Glist = G, tau = tau, 
-                         checkrank = TRUE)$instruments 
+                         max.distance = 2, checkrank = TRUE)$instruments 
   # CES model: exogenous prediction of y
   Zces     <- NULL
   if (fixed.effects) {
@@ -95,52 +95,78 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
   
   
   # Linear model
-  LIM     <- summary(linpeer(formula = y ~ X + GX, 
+  LIM     <- linpeer(formula = y ~ X + GX, 
                              excluded.instruments = ~ GGX, 
                              Glist = Gnorm,
                              structural = TRUE,
-                             fixed.effects = fixed.effects))
+                             fixed.effects = fixed.effects)
   
   # Quantile-based model using Z1 as instruments
-  Quant1  <- summary(qpeer(formula = y ~ X + GX, 
+  Quant1  <- qpeer(formula = y ~ X + GX, 
                            excluded.instruments = ~ Z1, 
                            Glist = Gnorm,
                            structural = TRUE,
                            tau = tau,
-                           fixed.effects = fixed.effects))
+                           fixed.effects = fixed.effects)
   
   # Quantile-based model using Z2 as instruments
-  Quant2  <- summary(qpeer(formula = y ~ X + GX, 
+  Quant2  <- qpeer(formula = y ~ X + GX, 
                            excluded.instruments = ~ Z2, 
                            Glist = Gnorm,
                            structural = TRUE,
                            tau = tau,
-                           fixed.effects = fixed.effects))
+                           fixed.effects = fixed.effects)
   
   # Quantile-based model using Z1 nd Z2 as instruments
-  Quant3  <- summary(qpeer(formula = y ~ X + GX, 
+  Quant3  <- qpeer(formula = y ~ X + GX, 
                            excluded.instruments = ~ Z1 + Z2, 
                            Glist = Gnorm,
                            structural = TRUE,
                            tau = tau,
-                           fixed.effects = fixed.effects))
+                           fixed.effects = fixed.effects)
   
   # CES-based model
-  Ces     <- summary(cespeer(formula = y ~ X + GX, instrument = ~ Zces, Glist = Gnorm, 
+  Ces     <- cespeer(formula = y ~ X + GX, instrument = ~ Zces, Glist = Gnorm, 
                              structural = TRUE, fixed.effects = fixed.effects, radius = 5,
-                             grid.rho = seq(-100, 100, 1)))
+                             grid.rho = seq(-100, 100, 1))
   
-  LIM           <- LIM$gmm$Estimate
+  # Quantile model with 3 quantiles
+  Quant1a <- qpeer(formula = y ~ X + GX, 
+              excluded.instruments = ~ Z1, 
+              Glist = Gnorm,
+              structural = TRUE,
+              tau = seq(0, 1, 1/2),
+              fixed.effects = fixed.effects)
+  
+  # Quantile model with 5 quantiles
+  Quant1b <- qpeer(formula = y ~ X + GX, 
+              excluded.instruments = ~ Z1, 
+              Glist = Gnorm,
+              structural = TRUE,
+              tau = seq(0, 1, 1/4),
+              fixed.effects = fixed.effects)
+  
+  # Encompassing test
+  Etest    <- c(qpeer.test(Quant1a, Quant1, which = "encompassing")$pvalue, # testing where 4 quantiles is better than 2 quantiles
+                qpeer.test(Quant1, Quant1b, which = "encompassing")$pvalue) # testing where 5 quantiles is better than 4 quantiles
+  
+  LIM           <- summary(LIM)$gmm$Estimate
   names(LIM)    <- paste0(ifelse(fixed.effects, "FE.", ""), "LIM.", names(LIM))
-  Quant1        <- Quant1$gmm$Estimate
+  Quant1        <- summary(Quant1)$gmm$Estimate
   names(Quant1) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q1.", names(Quant1))
-  Quant2        <- Quant2$gmm$Estimate
+  Quant2        <- summary(Quant2)$gmm$Estimate
   names(Quant2) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q2.", names(Quant2))
-  Quant3        <- Quant3$gmm$Estimate
+  Quant3        <- summary(Quant3)$gmm$Estimate
   names(Quant3) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q3.", names(Quant3))
-  Ces           <- Ces$gmm$Estimate
+  Ces           <- summary(Ces)$gmm$Estimate
   names(Ces)    <- paste0(ifelse(fixed.effects, "FE.", ""), "CES.", names(Ces))
-  c(LIM, Quant1, Quant2, Quant3, Ces)
+  Etest         <- Etest > 0.05
+  names(Etest)  <- paste0(ifelse(fixed.effects, "FE.", ""), "Test.ntau=", c(3, 4))
+  Quant1a       <- summary(Quant1a)$gmm$Estimate
+  names(Quant1a)<- paste0(ifelse(fixed.effects, "FE.", ""), "Q1a.", names(Quant1a))
+  Quant1b       <- summary(Quant1b)$gmm$Estimate
+  names(Quant1b)<- paste0(ifelse(fixed.effects, "FE.", ""), "Q1b.", names(Quant1b))
+  c(LIM, Quant1, Quant2, Quant3, Ces, Etest, Quant1a, Quant1b)
 }
 
 # Number of simulations
@@ -226,7 +252,8 @@ addWorksheet(wb, "FixedEffects")
 tp <- Est %>% select(all_of(c(paste0("FE.Q1.y_q", 1:4), "FE.Q1.y_q(spillover)", "FE.Q1.y_q(conformity)",
                               paste0("FE.Q3.y_q", 1:4), "FE.Q3.y_q(spillover)", "FE.Q3.y_q(conformity)",
                               "FE.LIM.G(total):y", "FE.LIM.G(spillover):y", "FE.LIM.G(conformity):y", 
-                              "FE.CES.rho", "FE.CES.G(total):y", "FE.CES.G(spillover):y", "FE.CES.G(conformity):y"))) 
+                              "FE.CES.rho", "FE.CES.G(total):y", "FE.CES.G(spillover):y", "FE.CES.G(conformity):y",
+                              "FE.Test.ntau=3", "FE.Test.ntau=4"))) 
 tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
                                  # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 
                                  "$\\lambda_2 = ", lambda1[1], "$"),
@@ -250,7 +277,8 @@ addWorksheet(wb, "NoFixedEffects")
 tp <- Est %>% select(all_of(c(paste0("Q1.y_q", 1:4), "Q1.y_q(spillover)", "Q1.y_q(conformity)",
                               paste0("Q3.y_q", 1:4), "Q3.y_q(spillover)", "Q3.y_q(conformity)", 
                               "LIM.G(total):y", "LIM.G(spillover):y", "LIM.G(conformity):y", 
-                              "CES.rho", "CES.G(total):y", "CES.G(spillover):y", "CES.G(conformity):y"))) 
+                              "CES.rho", "CES.G(total):y", "CES.G(spillover):y", "CES.G(conformity):y",
+                              "FE.Test.ntau=3", "FE.Test.ntau=4"))) 
 tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
                                  # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 
                                  "$\\lambda_2 = ", lambda1[1], "$"),
