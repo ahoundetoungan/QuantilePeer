@@ -40,10 +40,6 @@ fsim    <- function(outcome) {
   GX      <- peer.avg(Gnorm, X) 
   X       <- cbind(X, nmatch = nmatch, match = match) # Adding additional variables
   
-  # I test two vectors for tau
-  tau1    <- seq(0, 1, 1/3) # Four quantiles
-  tau2    <- seq(0, 1, 1/4) # Five quantiles
-  
   # Load results
   load(paste0(OutResPath, outcome, ".Rda"))
   
@@ -73,44 +69,46 @@ fsim    <- function(outcome) {
   
   #### Quantile model
   # because this model is not linear in y, it is important to estimate the residual
-  # tau1
+  # tau3
+  tau3     <- SQ13$model.info$tau
   Xmat     <- cbind(X, GX)
   # multiply isolated individual X by 1 - lambda2
-  Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SQ11$gmm$Estimate["y_q(conformity)"])
+  Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SQ13$gmm$Estimate["y_q(conformity)"])
   # qy
-  qy       <- qpeer.instrument(y ~ 1, tau = tau1, Glist = Gnorm)$qy
+  qy       <- qpeer.instrument(y ~ 1, tau = tau3, Glist = Gnorm)$qy
   # residuals
-  res      <- y - cbind(qy, Xmat) %*% SQ11$gmm$Estimate[c(paste0("y_q", 1:length(tau1)),
+  res      <- y - cbind(qy, Xmat) %*% SQ13$gmm$Estimate[c(paste0("y_q", 1:length(tau3)),
                                                           paste0("X", colnames(X)),
                                                           paste0("GX", colnames(GX)))]
-  res[match > 0] <- res[match > 0]/(1 - SQ11$gmm$Estimate["y_q(conformity)"])
+  res[match > 0] <- res[match > 0]/(1 - SQ13$gmm$Estimate["y_q(conformity)"])
   
-  Qsim1    <- qpeer.sim(formula = ~ -1 + I2 + X + GX, 
+  Qsim3    <- qpeer.sim(formula = ~ -1 + I2 + X + GX, 
                         Glist = Gnorm,
-                        tau = tau1,
-                        lambda = SQ11$gmm$Estimate[c("y_q(conformity)", paste0("y_q", 1:length(tau1)))],
-                        beta = c(1, SQ11$gmm$Estimate[c(paste0("X", colnames(X)),
+                        tau = tau3,
+                        lambda = SQ13$gmm$Estimate[c("y_q(conformity)", paste0("y_q", 1:length(tau3)))],
+                        beta = c(1, SQ13$gmm$Estimate[c(paste0("X", colnames(X)),
                                                         paste0("GX", colnames(GX)))]),
                         structural = TRUE,
                         epsilon = res)$y - y # because y is the outcome before the increase in the intercept
   
-  # tau2
+  # tau4
+  tau4     <- SQ14$model.info$tau
   Xmat     <- cbind(X, GX)
   # multiply isolated individual X by 1 - lambda2
-  Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SQ21$gmm$Estimate["y_q(conformity)"])
+  Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SQ14$gmm$Estimate["y_q(conformity)"])
   # qy
-  qy       <- qpeer.instrument(y ~ 1, tau = tau2, Glist = Gnorm)$qy
+  qy       <- qpeer.instrument(y ~ 1, tau = tau4, Glist = Gnorm)$qy
   # residuals
-  res      <- y - cbind(qy, Xmat) %*% SQ21$gmm$Estimate[c(paste0("y_q", 1:length(tau2)),
+  res      <- y - cbind(qy, Xmat) %*% SQ14$gmm$Estimate[c(paste0("y_q", 1:length(tau4)),
                                                           paste0("X", colnames(X)),
                                                           paste0("GX", colnames(GX)))]
-  res[match > 0] <- res[match > 0]/(1 - SQ21$gmm$Estimate["y_q(conformity)"])
+  res[match > 0] <- res[match > 0]/(1 - SQ14$gmm$Estimate["y_q(conformity)"])
   
-  Qsim2    <- qpeer.sim(formula = ~ -1 + I2 + X + GX, 
+  Qsim4    <- qpeer.sim(formula = ~ -1 + I2 + X + GX, 
                         Glist = Gnorm,
-                        tau = tau2,
-                        lambda = SQ21$gmm$Estimate[c("y_q(conformity)", paste0("y_q", 1:length(tau2)))],
-                        beta = c(1, SQ21$gmm$Estimate[c(paste0("X", colnames(X)),
+                        tau = tau4,
+                        lambda = SQ14$gmm$Estimate[c("y_q(conformity)", paste0("y_q", 1:length(tau4)))],
+                        beta = c(1, SQ14$gmm$Estimate[c(paste0("X", colnames(X)),
                                                         paste0("GX", colnames(GX)))]),
                         structural = TRUE,
                         epsilon = res)$y - y # because y is the outcome before the increase in the intercept
@@ -136,7 +134,7 @@ fsim    <- function(outcome) {
                                                           paste0("GX", colnames(GX)))]),
                           structural = TRUE,
                           epsilon = res)$y - y # because y is the outcome before the increase in the intercept
-  saveRDS(data.frame(LIM = LIMsim, Q1 = Qsim1, Q2 = Qsim2, CES = CESsim),
+  saveRDS(data.frame(LIM = LIMsim, Q3 = Qsim3, Q4 = Qsim4, CES = CESsim),
           file = paste0(OutResPath, outcome, ".RDS"))
 }
 
@@ -158,7 +156,8 @@ dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
   SIM     <- SIM[match > 0,] #only for non-isolated because the social multiplier is one for isolated
   data.frame(outcome  = k,
              model    = rep(1:2, each = nrow(SIM)),
-             Quantile = rep(SIM$Q1, 2), 
+             Quant3   = rep(SIM$Q3, 2), 
+             Quant4   = rep(SIM$Q4, 2),
              Other    = c(SIM$LIM, CES = SIM$CES))
 })) %>% mutate(outcome = factor(outcome, levels = 1:length(depvar), labels = OUTCOME),
                model = factor(model, levels = 1:2, labels = c("Quantile vs LIM", "Quantile vs CES")))
@@ -168,7 +167,8 @@ dataplot_sampled <- dataplot %>%
   group_by(outcome, model) %>%
   sample_frac(0.05)
 
-(graph <- ggplot(dataplot_sampled, aes(x = Quantile, y = Other, colour = model, shape = model)) +
+# tau3
+(graph <- ggplot(dataplot_sampled, aes(x = Quant3, y = Other, colour = model, shape = model)) +
     geom_point(size = 1.5, alpha = 1) +
     facet_wrap(~ outcome, ncol = 2, scales = "free") +
     scale_colour_manual(values = c("#c66", "#66c")) +
@@ -187,7 +187,29 @@ dataplot_sampled <- dataplot %>%
       colour = NULL,
       shape = NULL
     ))
-ggsave("CFScatter.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7.5, height = 10)
+ggsave("CFScatter3.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7.5, height = 10)
+
+# tau3
+(graph <- ggplot(dataplot_sampled, aes(x = Quant4, y = Other, colour = model, shape = model)) +
+    geom_point(size = 1.5, alpha = 1) +
+    facet_wrap(~ outcome, ncol = 2, scales = "free") +
+    scale_colour_manual(values = c("#c66", "#66c")) +
+    scale_shape_manual(values = c(2, 4)) +
+    theme_minimal(base_size = 12, base_family = "Palatino") +
+    theme(
+      strip.text = element_text(face = "bold"),
+      axis.text.x = element_text(hjust = 1),
+      panel.spacing = unit(1, "lines"),
+      plot.title = element_text(hjust = 0.5),
+      legend.position = "bottom"
+    ) +
+    labs(
+      x = "Quantile Model",
+      y = "LIM and CES Models",
+      colour = NULL,
+      shape = NULL
+    ))
+ggsave("CFScatter4.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7.5, height = 10)
 
 # Boxplot
 # data to plot
@@ -197,11 +219,15 @@ dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
   SIM     <-  readRDS(paste0(OutResPath, depvar[k], ".RDS")) # Load results
   match   <- data$match
   SIM     <- SIM[match > 0,] #only for non-isolated because the social multiplier is one for isolated
-  sim     <- c(SIM$Q1, SIM$LIM, SIM$CES)
-  model   <- rep(1:3, each = nrow(SIM))
+  sim     <- c(SIM$Q3, SIM$Q4, SIM$LIM, SIM$CES)
+  model   <- rep(1:4, each = nrow(SIM))
   data.frame(outcome = k, model, sim)
 })) %>% mutate(outcome = factor(outcome, levels = 1:length(depvar), labels = OUTCOME),
-               model = factor(model, levels = 1:3, labels = c("Quantile", "LIM", "CES")))
+               modnum  = model,
+               model   = factor(model, levels = 1:4, 
+                                labels = c(expression(paste("Q(", d[tau], " = 3)")),
+                                           expression(paste("Q(", d[tau], " = 4)")),
+                                           "LIM", "CES")))
 
 (graph <- ggplot(dataplot, aes(x = model, y = sim)) +
     geom_boxplot(outlier.shape = NA, fill = "grey80", color = "black") +
@@ -209,14 +235,15 @@ dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
     theme_minimal(base_size = 12, base_family = "Palatino") +
     theme(
       strip.text = element_text(face = "bold"),
-      axis.text.x = element_text(hjust = 1),
+      axis.text.x = element_text(hjust = 0.5),
       panel.spacing = unit(1, "lines"),
       plot.title = element_text(hjust = 0.5)
     ) +
     labs(
       x = "Model",
       y = "Social Multiplier",
-    ))
+    ) +
+    scale_x_discrete(labels = scales::label_parse())) 
 
-ggsave("CFBox.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7, height = 7)
+ggsave("CFBox.pdf", path = OutResPath, plot = graph, device = "pdf", width = 10, height = 6)
 

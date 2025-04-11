@@ -160,8 +160,9 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
   names(Quant3) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q3.", names(Quant3))
   Ces           <- summary(Ces)$gmm$Estimate
   names(Ces)    <- paste0(ifelse(fixed.effects, "FE.", ""), "CES.", names(Ces))
-  Etest         <- Etest > 0.05
-  names(Etest)  <- paste0(ifelse(fixed.effects, "FE.", ""), "Test.ntau=", c(3, 4))
+  Etest         <- c(Etest > 0.1, Etest > 0.05)
+  names(Etest)  <- paste0(ifelse(fixed.effects, "FE.", ""), c("ET90.ntau=3", "ET90.ntau=4", 
+                          "ET95.ntau=3", "ET95.ntau=4"))
   Quant1a       <- summary(Quant1a)$gmm$Estimate
   names(Quant1a)<- paste0(ifelse(fixed.effects, "FE.", ""), "Q1a.", names(Quant1a))
   Quant1b       <- summary(Quant1b)$gmm$Estimate
@@ -253,7 +254,7 @@ tp <- Est %>% select(all_of(c(paste0("FE.Q1.y_q", 1:4), "FE.Q1.y_q(spillover)", 
                               paste0("FE.Q3.y_q", 1:4), "FE.Q3.y_q(spillover)", "FE.Q3.y_q(conformity)",
                               "FE.LIM.G(total):y", "FE.LIM.G(spillover):y", "FE.LIM.G(conformity):y", 
                               "FE.CES.rho", "FE.CES.G(total):y", "FE.CES.G(spillover):y", "FE.CES.G(conformity):y",
-                              "FE.Test.ntau=3", "FE.Test.ntau=4"))) 
+                              "FE.ET90.ntau=3", "FE.ET90.ntau=4", "FE.ET95.ntau=3", "FE.ET95.ntau=4"))) 
 tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
                                  # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 
                                  "$\\lambda_2 = ", lambda1[1], "$"),
@@ -278,7 +279,7 @@ tp <- Est %>% select(all_of(c(paste0("Q1.y_q", 1:4), "Q1.y_q(spillover)", "Q1.y_
                               paste0("Q3.y_q", 1:4), "Q3.y_q(spillover)", "Q3.y_q(conformity)", 
                               "LIM.G(total):y", "LIM.G(spillover):y", "LIM.G(conformity):y", 
                               "CES.rho", "CES.G(total):y", "CES.G(spillover):y", "CES.G(conformity):y",
-                              "FE.Test.ntau=3", "FE.Test.ntau=4"))) 
+                              "ET90.ntau=3", "ET90.ntau=4", "ET95.ntau=3", "ET95.ntau=4"))) 
 tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
                                  # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 
                                  "$\\lambda_2 = ", lambda1[1], "$"),

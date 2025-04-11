@@ -385,8 +385,8 @@ Srow   <- c(lapply(3:5, function (x) {
     c("Uniform", "Increasing", "Decreasing", ""),
     c("ET dt = 3", "ET dt = 4", ""),
     c(paste0("lbdatau", 1:x), ""))
-}), c("lbda1", "lbda2", "", "lbda", ""), 
-c("rho", "lbda1", "lbda2", "", "rho", "lbda", ""))
+}), list(c("", "", "lbda1", "lbda2", "", "lbda", ""), 
+c("", "", "rho", "lbda1", "lbda2", "", "rho", "lbda", "")))
 
 for (x in 1:5) {
   # Adding sheet
