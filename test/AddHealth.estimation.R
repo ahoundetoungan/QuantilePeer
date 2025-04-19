@@ -96,7 +96,7 @@ festim  <- function(outcome) {
                    tau = tau3,
                    type = 7, # Type 7 quantile
                    structural = TRUE)
-  SQ13    <- summary(MSQ13, diagnostics = TRUE)
+  SQ13    <- summary(MSQ13)
   
   # tau4
   MSQ14   <- qpeer(formula = y ~ X + GX, 
@@ -107,7 +107,7 @@ festim  <- function(outcome) {
                    tau = tau4,
                    type = 7, # Type 7 quantile
                    structural = TRUE)
-  SQ14    <- summary(MSQ14, diagnostics = TRUE)
+  SQ14    <- summary(MSQ14, diagnostics = TRUE) # Diagnostics for tau4 only
   
   # tau5
   MSQ15   <- qpeer(formula = y ~ X + GX, 
@@ -118,7 +118,7 @@ festim  <- function(outcome) {
                    tau = tau5,
                    type = 7, # Type 7 quantile
                    structural = TRUE)
-  SQ15    <- summary(MSQ15, diagnostics = TRUE)
+  SQ15    <- summary(MSQ15)
   
   # Encompassing tests
   # The first test checks if the model with 3 quantiles replicates the features of the model with 4 quantiles.
@@ -149,7 +149,7 @@ festim  <- function(outcome) {
                    tau = tau3,
                    type = 7, # Type 7 quantile
                    structural = TRUE)
-  SQ23    <- summary(MSQ23, diagnostics = TRUE)
+  SQ23    <- summary(MSQ23)
   
   # tau4
   MSQ24   <- qpeer(formula = y ~ X + GX, 
@@ -160,7 +160,7 @@ festim  <- function(outcome) {
                    tau = tau4,
                    type = 7, # Type 7 quantile
                    structural = TRUE)
-  SQ24    <- summary(MSQ24, diagnostics = TRUE)
+  SQ24    <- summary(MSQ24, diagnostics = TRUE) # diagnostic for tau4 only
   
   # tau5
   MSQ25   <- qpeer(formula = y ~ X + GX, 
@@ -171,7 +171,7 @@ festim  <- function(outcome) {
                    tau = tau5,
                    type = 7, # Type 7 quantile
                    structural = TRUE)
-  SQ25    <- summary(MSQ25, diagnostics = TRUE)
+  SQ25    <- summary(MSQ25)
   
   # Testing exogeneity of type 2 instruments
   TWSQ23  <- qpeer.test(MSQ13, MSQ23, which = "wald")$pvalue
@@ -207,7 +207,7 @@ festim  <- function(outcome) {
                            drop = ifelse(match > 0, 0, 1), # only isolated students
                            tau = tau3,
                            type = 7, # Type 7 quantile
-                           structural = FALSE), diagnostics = TRUE)
+                           structural = FALSE))
   
   # tau4
   nIRQ14  <- summary(qpeer(formula = y ~ X + GX, 
@@ -227,7 +227,7 @@ festim  <- function(outcome) {
                            drop = ifelse(match > 0, 0, 1), # only isolated students
                            tau = tau5,
                            type = 7, # Type 7 quantile
-                           structural = FALSE), diagnostics = TRUE)
+                           structural = FALSE))
   
   # CES
   nIRCES  <- summary(cespeer(formula = y ~ X + GX, 
@@ -284,42 +284,71 @@ fres <- function(k, pval = TRUE) {
   # Quantile model
   OUT   <- list()
   for (x in 3:5) {
-    # Structural model
-    # Z1
-    SQ1    <- get(paste0("SQ1", x))
-    SQ1    <- rbind(t(SQ1$coefficients[c(paste0("y_q", 1:x), "y_q(spillover)", "y_q(conformity)"), ecol]),
-                    t(c(SQ1$diagnostics[paste0("Weak instruments (y_q", 1:x, ")"), "p-value"], NA, NA)),
-                    t(c(SQ1$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + x))),
-                    matrix(NA, 1, 2 + x))
-    # Z1 and Z2
-    SQ2    <- get(paste0("SQ2", x))
-    SQ2    <- rbind(t(SQ2$coefficients[c(paste0("y_q", 1:x), "y_q(spillover)", "y_q(conformity)"), ecol]),
-                    t(c(SQ2$diagnostics[paste0("Weak instruments (y_q", 1:x, ")"), "p-value"], NA, NA)),
-                    t(c(SQ2$diagnostics["Hansen's J-test", "p-value"], rep(NA, 1 + x))),
-                    t(c(get(paste0("TWSQ2", x)), rep(NA, 1 + x))))
+    SQ1      <- get(paste0("SQ1", x))
+    SQ2      <- get(paste0("SQ2", x))
+    RQ1      <- get(paste0("nIRQ1", x))
+    if (x == 4) { # because diagnostics are available
+      # Structural model
+      # Z1
+      SQ1    <- rbind(t(SQ1$coefficients[c(paste0("y_q", 1:x), "y_q(spillover)", "y_q(conformity)"), ecol]),
+                      t(c(SQ1$diagnostics[paste0("Kleibergen-Paap rk Wald"), "statistic"], rep(NA, 1 + x))), 
+                      t(c(SQ1$diagnostics[paste0("Kleibergen-Paap rk Wald"), "df1"], rep(NA, 1 + x))),
+                      t(c(SQ1$diagnostics[paste0("Kleibergen-Paap rk Wald"), "p-value"], rep(NA, 1 + x))),
+                      t(c(SQ1$gmm$Jtest["p-value"], rep(NA, 1 + x))),
+                      matrix(NA, 1, 2 + x))
+      # Z1 and Z2
+      SQ2    <- rbind(t(SQ2$coefficients[c(paste0("y_q", 1:x), "y_q(spillover)", "y_q(conformity)"), ecol]),
+                      t(c(SQ2$diagnostics[paste0("Kleibergen-Paap rk Wald"), "statistic"], rep(NA, 1 + x))), 
+                      t(c(SQ2$diagnostics[paste0("Kleibergen-Paap rk Wald"), "df1"], rep(NA, 1 + x))),
+                      t(c(SQ2$diagnostics[paste0("Kleibergen-Paap rk Wald"), "p-value"], rep(NA, 1 + x))),
+                      t(c(SQ2$gmm$Jtest["p-value"], rep(NA, 1 + x))),
+                      t(c(get(paste0("TWSQ2", x)), rep(NA, 1 + x))))
+      
+      # Reduced form
+      RQ1    <- rbind(t(RQ1$coefficients[paste0("y_q", 1:x), ecol]),
+                      t(c(RQ1$diagnostics[paste0("Kleibergen-Paap rk Wald"), "statistic"], rep(NA, x - 1))), 
+                      t(c(RQ1$diagnostics[paste0("Kleibergen-Paap rk Wald"), "df1"], rep(NA, x - 1))),
+                      t(c(RQ1$diagnostics[paste0("Kleibergen-Paap rk Wald"), "p-value"], rep(NA, x - 1))),
+                      t(c(RQ1$gmm$Jtest["p-value"], rep(NA, x - 1))),
+                      matrix(NA, 1, x))
+    } else {
+      # Structural model
+      # Z1
+      SQ1    <- rbind(t(SQ1$coefficients[c(paste0("y_q", 1:x), "y_q(spillover)", "y_q(conformity)"), ecol]),
+                      matrix(NA, 3, 2 + x),
+                      t(c(SQ1$gmm$Jtest["p-value"], rep(NA, 1 + x))),
+                      matrix(NA, 1, 2 + x))
+      # Z1 and Z2
+      SQ2    <- rbind(t(SQ2$coefficients[c(paste0("y_q", 1:x), "y_q(spillover)", "y_q(conformity)"), ecol]),
+                      matrix(NA, 3, 2 + x),
+                      t(c(SQ2$gmm$Jtest["p-value"], rep(NA, 1 + x))),
+                      t(c(get(paste0("TWSQ2", x)), rep(NA, 1 + x))))
+      
+      # Reduced form
+      RQ1    <- rbind(t(RQ1$coefficients[paste0("y_q", 1:x), ecol]),
+                      matrix(NA, 3, x),
+                      t(c(RQ1$gmm$Jtest["p-value"], rep(NA, x - 1))),
+                      matrix(NA, 1, x))
+    }
+    
+
     # Monotonocity
     Tmo    <- rbind(t(get(paste0("TM1", x))),
-                    matrix(NA, 4 + pval, 3))
+                    matrix(NA, 6 + pval, 3))
     
     # Encompassing test
     Tec    <- rbind(t(TEcomp),
-                    matrix(NA, 4 + pval, 2))
+                    matrix(NA, 6 + pval, 2))
     
-    # Reduced form
-    RQ1    <- get(paste0("nIRQ1", x))
-    RQ1    <- rbind(t(RQ1$coefficients[paste0("y_q", 1:x), ecol]),
-                    t(RQ1$diagnostics[paste0("Weak instruments (y_q", 1:x, ")"), "p-value"]),
-                    t(c(RQ1$diagnostics["Hansen's J-test", "p-value"], rep(NA, x - 1))),
-                    matrix(NA, 1, x))
     # Put result together
     out           <- cbind(Id = NA, Id = NA, SQ1, Id = NA, SQ2, Id = NA, Tmo, Id = NA, Tec, Id = NA, RQ1)
     tp            <- matrix(NA, 1, ncol(out))
     out           <- as.data.frame(rbind(tp, out, tp))
     out[1, 1]     <- OUTCOME[k]
     if (pval) {
-      out[2:7, 2] <- c("Mean", "StD", "Prob", "Weak Ins.", "Sargan", "Exo Z2 Sargan")
+      out[2:9, 2] <- c("Mean", "StD", "Prob", "KP rk - Stat", "KP rk - df", "KP rk - pvalue", "Sargan", "Exo Z2 Sargan")
     } else {
-      out[2:6, 2] <- c("Mean", "StD", "Weak Ins.", "Sargan", "Exo Z2 Sargan")
+      out[2:8, 2] <- c("Mean", "StD", "KP rk - Stat", "KP rk - df", "KP rk - pvalue", "Sargan", "Exo Z2 Sargan")
     }
     OUT[[x - 2]]  <- out
   }
@@ -327,44 +356,48 @@ fres <- function(k, pval = TRUE) {
   # LIM
   # Structural model
   SLM       <- rbind(t(SLIM$coefficients[c("G(spillover):y", "G(conformity):y"), ecol]),
-                   t(c(SLIM$diagnostics["Weak instruments", "p-value"], NA)),
-                   t(c(SLIM$diagnostics["Hansen's J-test", "p-value"], NA)),
-                   matrix(NA, 1, 2))
+                     t(c(SLIM$diagnostics[paste0("Kleibergen-Paap rk Wald"), "statistic"], NA)), 
+                     t(c(SLIM$diagnostics[paste0("Kleibergen-Paap rk Wald"), "df1"], NA)),
+                     t(c(SLIM$diagnostics[paste0("Kleibergen-Paap rk Wald"), "p-value"], NA)),
+                     t(c(SLIM$diagnostics["Hansen J", "p-value"], NA)),
+                     matrix(NA, 1, 2))
   
   # Reduced form
   RLM       <- rbind(t(nIRLIM$coefficients["G:y", ecol, drop = FALSE]),
-                   nIRLIM$diagnostics["Weak instruments", "p-value"],
-                   nIRLIM$diagnostics["Hansen's J-test", "p-value"],
-                   matrix(NA, 1, 1))
+                     nIRLIM$diagnostics[paste0("Kleibergen-Paap rk Wald"), "statistic"], 
+                     SLIM$diagnostics[paste0("Kleibergen-Paap rk Wald"), "df1"],
+                     SLIM$diagnostics[paste0("Kleibergen-Paap rk Wald"), "p-value"],
+                     nIRLIM$diagnostics["Hansen J", "p-value"],
+                     matrix(NA, 1, 1))
   
   out           <- cbind(Id = NA, Id = NA, SLM, Id = NA, RLM)
   tp            <- matrix(NA, 1, ncol(out))
   out           <- as.data.frame(rbind(tp, out, tp))
   out[1, 1]     <- OUTCOME[k]
   if (pval) {
-    out[2:7, 2] <- c("Mean", "StD", "Prob", "Weak Ins.", "Sargan", "Exo Z2 Sargan")
+    out[2:9, 2] <- c("Mean", "StD", "Prob", "KP rk - Stat", "KP rk - df", "KP rk - pvalue", "Sargan", "Exo Z2 Sargan")
   } else {
-    out[2:6, 2] <- c("Mean", "StD", "Weak Ins.", "Sargan", "Exo Z2 Sargan")
+    out[2:8, 2] <- c("Mean", "StD", "KP rk - Stat", "KP rk - df", "KP rk - pvalue", "Sargan", "Exo Z2 Sargan")
   }
   OUT[[4]]      <- out
   
   # CES
   # Structural model
   SCE       <- rbind(t(SCES$coefficients[c("rho", "G(spillover):y", "G(conformity):y"), ecol]),
-                   matrix(NA, 3, 3))
+                   matrix(NA, 5, 3))
   
   # Reduced form
   RCE       <- rbind(t(nIRCES$coefficients[c("rho", "G:y"), ecol]),
-                     matrix(NA, 3, 2))
+                     matrix(NA, 5, 2))
   
   out           <- cbind(Id = NA, Id = NA, SCE, Id = NA, RCE)
   tp            <- matrix(NA, 1, ncol(out))
   out           <- as.data.frame(rbind(tp, out, tp))
   out[1, 1]     <- OUTCOME[k]
   if (pval) {
-    out[2:7, 2] <- c("Mean", "StD", "Prob", "Weak Ins.", "Sargan", "Exo Z2 Sargan")
+    out[2:9, 2] <- c("Mean", "StD", "Prob", "KP rk - Stat", "KP rk - df", "KP rk - pvalue", "Sargan", "Exo Z2 Sargan")
   } else {
-    out[2:6, 2] <- c("Mean", "StD", "Weak Ins.", "Sargan", "Exo Z2 Sargan")
+    out[2:8, 2] <- c("Mean", "StD", "KP rk - Stat", "KP rk - df", "KP rk - pvalue", "Sargan", "Exo Z2 Sargan")
   }
   OUT[[5]]      <- out
   OUT
