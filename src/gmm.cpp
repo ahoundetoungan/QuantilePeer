@@ -3,6 +3,7 @@
 //#define NDEBUG
 // #include <RcppNumerical.h>
 #include <RcppEigen.h>
+#include <unsupported/Eigen/KroneckerProduct>
 // 
 // typedef Eigen::Map<Eigen::MatrixXd> MapMatr;
 // typedef Eigen::Map<Eigen::VectorXd> MapVect;
@@ -546,7 +547,124 @@ Rcpp::List fFstatARMA(const arma::mat& y,
   return Rcpp::List::create(_["F"] = F, _["df1"] = df1, _["df2"] = df2, _["ru"] = e);
 }
 
-// This function add spillover effects to fStructParam which only have total effects and conformity
+// Computes sqrt of matrices
+Eigen::MatrixXd matrixSqrt(const Eigen::MatrixXd& A) {
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(A);
+  Eigen::VectorXd sqrt_evals = es.eigenvalues().array().sqrt();
+  return es.eigenvectors() * sqrt_evals.asDiagonal() * es.eigenvectors().transpose();
+}
+
+// This function computes KP stat
+//[[Rcpp::export]]
+Rcpp::List fKPstat(const Eigen::MatrixXd& qy_,
+                   const Eigen::MatrixXd& X,
+                   const Eigen::MatrixXd& Z_,
+                   const arma::uvec& index,
+                   const Eigen::MatrixXd& igroup,
+                   const int& HAC = 0) {
+  // cout<<qy_.cols()<<" "<<qy_.rows()<<endl;
+  // cout<<X.cols()<<" "<<X.rows()<<endl;
+  // cout<<Z_.cols()<<" "<<Z_.rows()<<endl;
+  Eigen::MatrixXd iXX((X.transpose() * X).inverse());
+  Eigen::MatrixXd qy(qy_ - X * iXX * X.transpose() * qy_);
+  Eigen::MatrixXd Z(Z_(Eigen::all, index) - X * iXX * X.transpose() * Z_(Eigen::all, index));
+  // Eigen::MatrixXd qy(qy_);
+  // Eigen::MatrixXd Z(Z_);
+  int n(qy.rows()), ntau(qy.cols()), l(Z.cols()), ngroup(igroup.rows());
+  Eigen::MatrixXd ZZ(Z.transpose() * Z);
+  Eigen::MatrixXd iZZ(ZZ.inverse());
+  Eigen::MatrixXd Zqy(Z.transpose() * qy);
+  
+  // estimator
+  Eigen::MatrixXd Pi(Zqy.transpose() * iZZ);
+  Eigen::VectorXd pi(Pi.reshaped(l * ntau, 1)); // Eigen::KroneckerProduct(Eigen::MatrixXd::Identity(l, l), Zqy.transpose()) * ZZ.inverse().reshaped(l*l, 1)
+  
+  // vec(Ze)
+  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(l * ntau, l * ntau));
+  for (int s1(0); s1 < l; ++ s1) {
+    for (int s2(0); s2 < ntau; ++ s2) {
+      R(s1 * ntau + s2, s2 * l + s1) = 1;
+    }
+  }
+  
+  Eigen::MatrixXd eps(qy - Z * Pi.transpose());
+  Eigen::MatrixXd vecZe(n, l*ntau);
+  for (int s(0); s < ntau; ++ s) {
+    vecZe.block(0, s*l, n, l) = (Z.array().colwise()*eps.col(s).array()).matrix();
+  }
+  
+  // Variance of vec(Ze), covqy and covz
+  Eigen::MatrixXd VvecZe(Eigen::MatrixXd::Zero(l*ntau, l*ntau)),
+  Eee(Eigen::MatrixXd::Zero(ntau, ntau)),
+  Ezz(Eigen::MatrixXd::Zero(l, l));
+  if (HAC <= 1) {
+    VvecZe = vecZe.transpose() * vecZe;
+    Eee    = eps.transpose() * eps;
+    Ezz    = Z.transpose() * Z;
+  } else if (HAC == 2) {
+    for (int r(0); r < ngroup; ++ r) {
+      int n1(igroup(r, 0)), n2(igroup(r, 1));
+      Eigen::VectorXd tp(vecZe(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix());
+      VvecZe += tp * tp.transpose();
+      tp      = eps(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix();
+      Eee    += tp * tp.transpose();
+      tp      = Z(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix();
+      Ezz    += tp * tp.transpose();
+    }
+  }
+  
+  // Variance of pi
+  Eigen::MatrixXd H(R * Eigen::KroneckerProduct(Eigen::MatrixXd::Identity(ntau, ntau), iZZ));
+  Eigen::MatrixXd varpi(H * VvecZe * H.transpose()); // O(1/n)
+  
+  // normalisation
+  Eigen::LLT<Eigen::MatrixXd> tpF(ZZ * Ezz.colPivHouseholderQr().solve(ZZ)), tpG(Eee.inverse());
+  Eigen::MatrixXd F(tpF.matrixL()); // O(sqrt(n))
+  Eigen::MatrixXd G(tpG.matrixL().transpose()); // O(1/sqrt(n))
+  F *= sqrt(ngroup); // O(n)
+  
+  // Theta and its variance
+  Eigen::MatrixXd Theta(G * Pi * F.transpose());
+  Eigen::VectorXd theta(Theta.reshaped(l*ntau, 1));
+  Eigen::MatrixXd FG(Eigen::KroneckerProduct(F, G));
+  Eigen::MatrixXd vartheta(FG * varpi * FG.transpose());
+  // cout << vartheta << endl;
+  
+  // SDV decomposition of Theta
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(Theta, Eigen::ComputeFullU | Eigen::ComputeFullV);
+  Eigen::MatrixXd U = svd.matrixU(); //ntau * ntau
+  Eigen::VectorXd d = svd.singularValues();
+  Eigen::MatrixXd ddiag = d.asDiagonal();
+  Eigen::MatrixXd D(ntau, l);
+  D << ddiag, Eigen::MatrixXd::Zero(ntau, l - ntau); //l*ntau
+  Eigen::MatrixXd V = svd.matrixV(); //ntau * ntau
+  
+  //U12, U22, V12, V22
+  int q(ntau - 1);
+  Eigen::MatrixXd U12(U.block(0, q, q, ntau - q));
+  Eigen::MatrixXd U22(U.block(q, q, ntau - q, ntau - q));
+  Eigen::MatrixXd V12(V.block(0, q, q, l - q));
+  Eigen::MatrixXd V22(V.block(q, q, l - q, l - q));
+  
+  // Aqper and Bqper
+  Eigen::MatrixXd U12U22(ntau, ntau - q), V12V22(l, l - q);
+  U12U22 << U12, U22;
+  V12V22 << V12, V22;
+  
+  Eigen::MatrixXd Aper(U12U22 * U22.colPivHouseholderQr().solve(matrixSqrt(U22 * U22.transpose())));
+  Eigen::MatrixXd Bper((V12V22 * V22.colPivHouseholderQr().solve(matrixSqrt(V22 * V22.transpose()))).transpose());
+  
+  // lambda and its varianve
+  Eigen::MatrixXd BAper(Eigen::KroneckerProduct(Bper, Aper.transpose()));
+  Eigen::VectorXd lambda (BAper * theta);
+  Eigen::MatrixXd varlambda (BAper * vartheta * BAper.transpose());
+  
+  // statistic
+  double stat((lambda.transpose() * varlambda.colPivHouseholderQr().solve(lambda))(0, 0));
+  return Rcpp::List::create(_["stat"] = stat, _["df"] = (ntau - q)*(l - q));
+}
+
+// This function adds spillover effects to fStructParam which only have total effects and conformity
 //[[Rcpp::export]]
 Rcpp::List fStructParamFull(const arma::vec& param,
                             const arma::mat& covp,
@@ -615,3 +733,74 @@ Rcpp::List fParamFull(const arma::vec& param,
   arma::mat covt(R*covp*R.t());
   return Rcpp::List::create(_["theta"] = theta, _["Vpa"] = covt);
 }
+
+// DC test adapted to many variables, But does not make sense,
+// Rcpp::List fDCstat(const Eigen::MatrixXd& qy,
+//                    const Eigen::MatrixXd& Z,
+//                    const Eigen::MatrixXd& igroup,
+//                    const int& ngroup,
+//                    const int& HAC = 0) {
+//   int n(qy.rows()), ntau(qy.cols()), l(Z.cols());
+//   Eigen::MatrixXd ZZ(Z.transpose() * Z);
+//   Eigen::MatrixXd Zqy(Z.transpose() * qy);
+//   Eigen::MatrixXd eps(qy - Z * ZZ.colPivHouseholderQr().solve(Zqy));
+//   
+//   // vec(Ze)
+//   Eigen::MatrixXd vecZe(n, l*ntau);
+//   for (int s(0); s < ntau; ++ s) {
+//     vecZe.block(0, s*l, n, l) = (Z.array().colwise()*eps.col(s).array()).matrix();
+//   }
+//   
+//   // Variance of vec(Ze)
+//   Eigen::MatrixXd VvecZe(Eigen::MatrixXd::Zero(l*ntau, l*ntau));
+//   if (HAC <= 1) {
+//     VvecZe =vecZe.transpose()*vecZe;
+//   } else if (HAC == 2) {
+//     for (int r(0); r < ngroup; ++ r) {
+//       int n1(igroup(r, 0)), n2(igroup(r, 1));
+//       Eigen::VectorXd tp(vecZe(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix());
+//       VvecZe += tp*tp.transpose();
+//     }
+//   }
+//   
+//   // stat
+//   Eigen::VectorXd vecZqy(Zqy.reshaped(l*ntau, 1));
+//   double stat = (vecZqy.transpose() * VvecZe.selfadjointView<Eigen::Lower>().ldlt().solve(vecZqy))(0, 0) / ntau;
+//   
+//   // critical values
+//   Eigen::VectorXd CV30(30), CV20(30), CV10(30), CV05(30);
+//   CV30 << 12.05, 9.57, 8.53, 7.92, 7.51, 7.21, 6.98, 6.80, 6.65, 6.52,
+//           6.41, 6.32, 6.24, 6.16, 6.10, 6.04, 5.99, 5.94, 5.89, 5.85,
+//           5.81, 5.78, 5.74, 5.71, 5.68, 5.66, 5.63, 5.61, 5.58, 5.56;
+//   
+//   CV20 << 15.06, 12.17, 10.95, 10.23, 9.75, 9.40, 9.14, 8.92, 8.74, 8.59,
+//           8.47, 8.36, 8.26, 8.17, 8.10, 8.03, 7.96, 7.91, 7.85, 7.80,
+//           7.76, 7.72, 7.68, 7.64, 7.61, 7.57, 7.54, 7.51, 7.49, 7.46;
+//   
+//   CV10 << 23.11, 19.29, 17.67, 16.72, 16.08, 15.62, 15.26, 14.97, 14.73, 14.53,
+//           14.36, 14.21, 14.08, 13.96, 13.86, 13.77, 13.68, 13.60, 13.53, 13.46,
+//           13.40, 13.35, 13.29, 13.24, 13.20, 13.15, 13.11, 13.07, 13.04, 13.00;
+//   
+//   CV05 << 37.42, 32.32, 30.13, 28.85, 27.98, 27.35, 26.86, 26.47, 26.15, 25.87,
+//           25.64, 25.44, 25.26, 25.10, 24.96, 24.83, 24.71, 24.60, 24.50, 24.41,
+//           24.33, 24.25, 24.18, 24.11, 24.05, 23.98, 23.93, 23.87, 23.82, 23.77;
+//   
+//   if (ntau <= 30) {
+//     Eigen::VectorXd CV(4);
+//     CV << CV30[ntau - 1], CV20[ntau - 1], CV10[ntau - 1], CV05[ntau - 1];
+//     return Rcpp::List::create(
+//       _["stat"] = stat,
+//       _["cv"] = CV,
+//       _["cv_names"] = Rcpp::CharacterVector::create("Bias tolerance 30%", "  20%", "  10%", "  5%")
+//     );
+//   } else {
+//     Rcpp::CharacterVector CV = Rcpp::CharacterVector::create(
+//       "< 5.56", "< 7.46", "< 13.00", "< 23.77"
+//     );
+//     return Rcpp::List::create(
+//       _["stat"] = stat,
+//       _["cv"] = CV,
+//       _["cv_names"] = Rcpp::CharacterVector::create("Bias tolerance 30%", "  20%", "  10%", "  5%")
+//     );
+//   }
+// }

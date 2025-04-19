@@ -153,6 +153,10 @@ fFstatARMA <- function(y, X, index, igroup, ngroup, HAC = 0L) {
     .Call(`_QuantilePeer_fFstatARMA`, y, X, index, igroup, ngroup, HAC)
 }
 
+fKPstat <- function(qy_, X, Z_, index, igroup, HAC = 0L) {
+    .Call(`_QuantilePeer_fKPstat`, qy_, X, Z_, index, igroup, HAC)
+}
+
 fStructParamFull <- function(param, covp, ntau, Kx1, Kx2, quantile, ces = FALSE) {
     .Call(`_QuantilePeer_fStructParamFull`, param, covp, ntau, Kx1, Kx2, quantile, ces)
 }

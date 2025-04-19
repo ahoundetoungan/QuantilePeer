@@ -49,8 +49,8 @@ Rcpp::List Cov2ThetaRed(const Eigen::MatrixXd& X1,
                              const Eigen::ArrayXi& cumsn, //common to both models
                              const int& HAC = 0, //common to both models
                              const bool& full = false) { 
-  int ntau1(qy1.cols()), ntau2(qy2.cols()), ntau(ntau1 + ntau2), Kins1(Z1.cols()), Kins2(Z2.cols()), 
-  Kins(Kins1 + Kins2), n(X1.rows()), K1(X1.cols()), K2(X2.cols()), K(K1 + K2), 
+  int ntau1(qy1.cols()), ntau2(qy2.cols()), Kins1(Z1.cols()), Kins2(Z2.cols()), 
+  Kins(Kins1 + Kins2), n(X1.rows()), K1(X1.cols()), K2(X2.cols()), 
   Kv1(K1 + ntau1), Kv2(K2 + ntau2), Kv(Kv1 + Kv2);
   
   Eigen::MatrixXd V1(n, Kv1), V2(n, Kv2);

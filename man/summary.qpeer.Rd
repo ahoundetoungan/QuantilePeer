@@ -66,6 +66,7 @@ A list containing:
 \item{model.info}{A list with information about the model, such as the number of subnets, number of observations, and other key details.}
 \item{coefficients}{A summary of the estimates, standard errors, and p-values.}
 \item{diagnostics}{A summary of the diagnostic tests for the instrumental-variable regression if requested.}
+\item{KP.cv}{Critical values for the Kleibergen–Paap Wald test (5\% level).}
 \item{gmm}{A list of GMM estimation results, including parameter estimates, the covariance matrix, and related statistics.}
 }
 \description{

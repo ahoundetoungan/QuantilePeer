@@ -58,8 +58,8 @@ festim  <- function(outcome) {
   tau5    <- seq(0, 1, 1/4) # Five quantiles
   
   # First type of instruments
-  Z1      <- qpeer.inst(formula = ~ X + GX, Glist = G, tau = seq(0, 1, 0.1), 
-                        max.distance = 2, checkrank = TRUE, type = 7)$instruments 
+  Z1      <- cbind(qpeer.inst(formula = ~ X + GX, Glist = G, tau = seq(0, 1, 1/9), 
+                              max.distance = 2, checkrank = TRUE, type = 7)$instruments)
   # Second type of instruments with tau3
   Z23     <- qpeer.inst(formula = y ~ X + GX, Glist = G, tau = tau3,
                         max.distance = 2, checkrank = TRUE, type = 7)$instruments
@@ -70,7 +70,7 @@ festim  <- function(outcome) {
   Z25     <- qpeer.inst(formula = y ~ X + GX, Glist = G, tau = tau5,
                         max.distance = 2, checkrank = TRUE, type = 7)$instruments
   X       <- cbind(X, nmatch = nmatch, match = match) # Adding additional variables
-  # Exogenous prediction of y for te CES
+  # Exogenous prediction of y for the CES
   Zces    <- fitted(lm(y ~ X + GX + as.factor(data$SCID)))
   Zces[Zces <= 0] <- min(Zces[Zces > 0]) # Because z cannot be <= 0 for the CES-based model
   

@@ -217,8 +217,11 @@ summary.linpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, d
     stop("The covariance matrix is not estimated.")
   }
   diagn          <- NULL
+  cvKP           <- NULL
   if (diagnostic || diagnostics) {
     diagn        <- fdiagnostic(object, nendo = "Gy")
+    cvKP         <- diagn$cvKP
+    diagn        <- diagn$diag
   }
   
   if (fullparameters & object$model.info$structural) {
@@ -236,7 +239,7 @@ summary.linpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, d
   }
   coef           <- fcoef(Estimate = object$gmm$Estimate, cov = object$gmm$cov)
   out            <- c(object["model.info"], 
-                      list(coefficients = coef, diagnostics = diagn),
+                      list(coefficients = coef, diagnostics = diagn, KP.cv = cvKP),
                       object["gmm"], list(...))
   class(out)     <- "summary.linpeer"
   out
@@ -274,8 +277,9 @@ print.summary.linpeer <- function(x, ...) {
     cat("\nDiagnostic tests:\n")
     fprintcoeft(coef) 
   }
-  cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n\n")
-  cat("HAC: ", hete, sep = "")
+  cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n")
+  
+  cat("\nHAC: ", hete, sep = "")
   if (x$model.info$structural) {
     if (!is.null(sig1)) {
       if (!is.null(sig2)) {

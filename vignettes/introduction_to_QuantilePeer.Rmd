@@ -174,19 +174,19 @@ summary(QtR1, diagnostic = TRUE)
 
 QtR2 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1 + Z21, Glist = G, 
               tau = tau)
-summary(QtR2, diagnostic = TRUE)
+summary(QtR2)
 
 QtR3 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, 
               tau = tau)
-summary(QtR3, diagnostic = TRUE)
+summary(QtR3)
 
 QtR4 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + Z21, Glist = G, 
              tau = tau)
-summary(QtR4, diagnostic = TRUE)
+summary(QtR4)
 ```
 Note that the \texttt{formula} argument does not include the quantiles of peer outcomes, but only the outcome and the exogenous variables. The quantiles are computed internally by the function based on the levels specified in the \texttt{tau} argument. Additionally, the \texttt{excluded.instruments} argument should not contain any instruments that are already included as explanatory variables.
 
-The output of the \texttt{qpeer} function is an object of class \texttt{qpeer}, to which one can apply the \texttt{summary} method. An important argument of the \texttt{summary} method is \texttt{diagnostics}, a logical value indicating whether diagnostic tests for the instrumental variable regression should be performed. These tests include an F-test of the first-stage regression for weak instruments, a Wu–Hausman test for endogeneity, and Hansen’s J-test for overidentifying restrictions (when the number of instruments exceeds the number of regressors).
+The output of the \texttt{qpeer} function is an object of class \texttt{qpeer}, to which the \texttt{summary} method can be applied. An important argument of the \texttt{summary} method is \texttt{diagnostics}, a logical value indicating whether diagnostic tests for the instrumental variable regression should be performed. These tests include an F-test and the rank test of \citet{kleibergen2006generalized} for weak instruments, the Wu–Hausman test for endogeneity, and Hansen’s J-test for overidentifying restrictions (when the number of instruments exceeds the number of endogenous regressors). The diagnostic test results are displayed for the first estimation shown above.
 
 The reduced-form estimation for \texttt{y2} is likely to be inconsistent, since the reduced-form model assumes that preferences exhibit either spillover or conformity, but not both, whereas \texttt{y2} is generated from a structural model that includes both effects. The following code replicates the estimations using the structural specification.
 
@@ -198,15 +198,15 @@ summary(QtS1, diagnostic = TRUE)
 
 QtS2 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1 + Z21, Glist = G, 
               tau = tau, structural = TRUE)
-summary(QtS2, diagnostic = TRUE)
+summary(QtS2)
 
 QtS3 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, 
               tau = tau, structural = TRUE)
-summary(QtS3, diagnostic = TRUE)
+summary(QtS3)
 
 QtS4 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + Z22, Glist = G, 
               tau = tau, structural = TRUE)
-summary(QtS4, diagnostic = TRUE)
+summary(QtS4)
 ```
 In the new results, the estimates appear reliable. For the dependent variable \texttt{y1}, the conformity parameter is not significant, as the data were simulated under the assumption of complementarity.
 
@@ -223,12 +223,12 @@ The \texttt{HAC} argument specifies the assumed covariance structure of the erro
 QtR5  <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, 
                tau = tau, structural = FALSE, estimator = "gmm.optimal", 
                HAC = "cluster", fixed.effects = "separate")
-summary(QtR5, diagnostic = TRUE)
+summary(QtR5)
 
 QtS5 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, 
               tau = tau, structural = TRUE, estimator = "gmm.optimal", 
               HAC = "cluster", fixed.effects = "separate")
-summary(QtS5, diagnostic = TRUE)
+summary(QtS5)
 ```
 
 ## Specification tests

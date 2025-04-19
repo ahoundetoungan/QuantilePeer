@@ -35,6 +35,7 @@ ddvalues   <- c(0.22175143, 0.09047220, 0.10325461, 0.11262459, 0.11128805, 0.10
 
 # tau
 tau        <- seq(0, 1, 1/3)
+ntau       <- length(tau)
 
 # Function: Takes lambda, simulates data, estimates the model, and returns estimates.
 # lambda is the vector of peer effect parameters
@@ -150,23 +151,42 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
   Etest    <- c(qpeer.test(Quant1a, Quant1, which = "encompassing")$pvalue, # testing where 4 quantiles is better than 2 quantiles
                 qpeer.test(Quant1, Quant1b, which = "encompassing")$pvalue) # testing where 5 quantiles is better than 4 quantiles
   
-  LIM           <- summary(LIM)$gmm$Estimate
+  LIM           <- summary(LIM, diagnostic = TRUE)
+  LIM           <- c(LIM$gmm$Estimate, KPstat = LIM$diagnostics[2, 3], Jpvalue = LIM$diagnostics[4, 4])
   names(LIM)    <- paste0(ifelse(fixed.effects, "FE.", ""), "LIM.", names(LIM))
-  Quant1        <- summary(Quant1)$gmm$Estimate
+  
+  Quant1        <- summary(Quant1, diagnostic = TRUE)
+  Quant1        <- c(Quant1$gmm$Estimate, KPstat = Quant1$diagnostics[ntau + 1, 3], 
+                     Jpvalue = Quant1$diagnostics[ntau + 3, 4])
   names(Quant1) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q1.", names(Quant1))
-  Quant2        <- summary(Quant2)$gmm$Estimate
+  
+  Quant2        <- summary(Quant2, diagnostic = TRUE)
+  Quant2        <- c(Quant2$gmm$Estimate, KPstat = Quant2$diagnostics[ntau + 1, 3], 
+                     Jpvalue = Quant2$diagnostics[ntau + 3, 4])
   names(Quant2) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q2.", names(Quant2))
-  Quant3        <- summary(Quant3)$gmm$Estimate
+  
+  Quant3        <- summary(Quant3, diagnostic = TRUE)
+  Quant3        <- c(Quant3$gmm$Estimate, KPstat = Quant3$diagnostics[ntau + 1, 3], 
+                     Jpvalue = Quant3$diagnostics[ntau + 3, 4])
   names(Quant3) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q3.", names(Quant3))
+  
   Ces           <- summary(Ces)$gmm$Estimate
   names(Ces)    <- paste0(ifelse(fixed.effects, "FE.", ""), "CES.", names(Ces))
+  
   Etest         <- c(Etest > 0.1, Etest > 0.05)
   names(Etest)  <- paste0(ifelse(fixed.effects, "FE.", ""), c("ET90.ntau=3", "ET90.ntau=4", 
                           "ET95.ntau=3", "ET95.ntau=4"))
-  Quant1a       <- summary(Quant1a)$gmm$Estimate
+  
+  Quant1a       <- summary(Quant1a)
+  Quant1a       <- c(Quant1a$gmm$Estimate, KPstat = Quant1a$diagnostics[ntau, 3], 
+                     Jpvalue = Quant1a$diagnostics[ntau + 2, 4])
   names(Quant1a)<- paste0(ifelse(fixed.effects, "FE.", ""), "Q1a.", names(Quant1a))
-  Quant1b       <- summary(Quant1b)$gmm$Estimate
+  
+  Quant1b       <- summary(Quant1b)
+  Quant1b       <- c(Quant1b$gmm$Estimate, KPstat = Quant1b$diagnostics[ntau + 2, 3], 
+                     Jpvalue = Quant1b$diagnostics[ntau + 4, 4])
   names(Quant1b)<- paste0(ifelse(fixed.effects, "FE.", ""), "Q1b.", names(Quant1b))
+  
   c(LIM, Quant1, Quant2, Quant3, Ces, Etest, Quant1a, Quant1b)
 }
 
@@ -254,7 +274,8 @@ tp <- Est %>% select(all_of(c(paste0("FE.Q1.y_q", 1:4), "FE.Q1.y_q(spillover)", 
                               paste0("FE.Q3.y_q", 1:4), "FE.Q3.y_q(spillover)", "FE.Q3.y_q(conformity)",
                               "FE.LIM.G(total):y", "FE.LIM.G(spillover):y", "FE.LIM.G(conformity):y", 
                               "FE.CES.rho", "FE.CES.G(total):y", "FE.CES.G(spillover):y", "FE.CES.G(conformity):y",
-                              "FE.ET90.ntau=3", "FE.ET90.ntau=4", "FE.ET95.ntau=3", "FE.ET95.ntau=4"))) 
+                              "FE.ET90.ntau=3", "FE.ET90.ntau=4", "FE.ET95.ntau=3", "FE.ET95.ntau=4",
+                              "FE.Q1.KPstat", "FE.Q1.Jpvalue", "FE.Q3.KPstat", "FE.Q3.Jpvalue"))) 
 tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
                                  # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 
                                  "$\\lambda_2 = ", lambda1[1], "$"),
@@ -279,7 +300,8 @@ tp <- Est %>% select(all_of(c(paste0("Q1.y_q", 1:4), "Q1.y_q(spillover)", "Q1.y_
                               paste0("Q3.y_q", 1:4), "Q3.y_q(spillover)", "Q3.y_q(conformity)", 
                               "LIM.G(total):y", "LIM.G(spillover):y", "LIM.G(conformity):y", 
                               "CES.rho", "CES.G(total):y", "CES.G(spillover):y", "CES.G(conformity):y",
-                              "ET90.ntau=3", "ET90.ntau=4", "ET95.ntau=3", "ET95.ntau=4"))) 
+                              "ET90.ntau=3", "ET90.ntau=4", "ET95.ntau=3", "ET95.ntau=4",
+                              "Q1.KPstat", "Q1.Jpvalue", "Q3.KPstat", "Q3.Jpvalue"))) 
 tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
                                  # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 
                                  "$\\lambda_2 = ", lambda1[1], "$"),

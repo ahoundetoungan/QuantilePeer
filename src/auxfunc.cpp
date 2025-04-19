@@ -86,12 +86,8 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
                            const std::string& FE) {
   if (struc) {
     arma::vec xb(X.cols(idX1)*theta.elem(idX1 + ntau + 1));
-    if (idX2.n_elem == 0) {
-      X = xb;
-    } else {
-      X = arma::join_rows(xb, X.cols(idX2));
-    }
-    ins = arma::join_rows(xb, ins);
+    ins = arma::join_rows(ins, xb);
+    X   = arma::join_rows(X.cols(idX2), xb);
   }
   
   if (FE == "join") {

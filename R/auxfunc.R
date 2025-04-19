@@ -194,43 +194,48 @@ fdiagnostic  <- function(object, nendo) {
   }
   
   out      <- NULL
+  cvKP     <- NULL
   if (object$model.info$estimator %in% c("JIVE", "JIVE2")) {
     ## Weak instrument test
     tpF    <- fFstat(y = endo, X = ins, index = index, igroup = igr, ngroup = M, HAC = HACnum)
+    tpKP   <- fKPstat(qy_ = endo, X = X, Z = ins, index = index, igroup = igr, HAC = HACnum)
     ## Endogeneity test
     
     
-    out    <- cbind(df1        = c(rep(tpF$df1, ntau), object$gmm$Jtest["df"]),
-                    df2        = c(rep(tpF$df2, ntau), NA),
-                    statistic  = c(tpF$F, object$gmm$Jtest["statistic"]),
+    out    <- cbind(df1        = c(rep(tpF$df1, ntau), tpKP$df, object$gmm$Jtest["df"]),
+                    df2        = c(rep(tpF$df2, ntau), NA, NA),
+                    statistic  = c(tpF$F, tpKP$stat, object$gmm$Jtest["statistic"]),
                     "p-value"  = object$gmm$Jtest["p-value"])
-    out[-ntau - 1, 4] <- pf(out[-ntau - 1, 3], out[-ntau - 1, 1], out[-ntau - 1, 2], lower.tail = FALSE)
+    out[-ntau - 2, 4] <- pf(out[-ntau - 2, 3], out[-ntau - 2, 1], out[-ntau - 2, 2], lower.tail = FALSE)
+    out[ntau + 1, 4]  <- pchisq(out[ntau + 1, 3], out[ntau + 1, 1], lower.tail = FALSE)
     rn            <- "Weak many instruments"
     if (ntau > 1) {
       rn          <- paste0(rn, " (", cnendo, ")")
     }
-    rn            <- c(rn, "Hansen's J-test")
+    rn            <- c(rn, "Kleibergen-Paap rk Wald", "Hansen's J-test")
     rownames(out) <- rn
   } else {
     ## Weak instrument test
     tpF    <- fFstat(y = endo, X = ins, index = index, igroup = igr, ngroup = M, HAC = HACnum)
+    tpKP   <- fKPstat(qy_ = endo, X = X, Z = ins, index = index, igroup = igr, HAC = HACnum)
     
     ## Endogeneity test
     tpend  <- fFstat(y = y, X = cbind(tpF$ru, endo, X), index = (0:(ntau - 1)), igroup = igr, ngroup = M, HAC = HACnum)
     
-    out    <- cbind(df1        = c(rep(tpF$df1, ntau) , tpend$df1, object$gmm$Jtest["df"]),
-                    df2        = c(rep(tpF$df2, ntau), tpend$df2, NA),
-                    statistic  = c(tpF$F, tpend$F, object$gmm$Jtest["statistic"]),
+    out    <- cbind(df1        = c(rep(tpF$df1, ntau), tpKP$df, tpend$df1, object$gmm$Jtest["df"]),
+                    df2        = c(rep(tpF$df2, ntau), NA, tpend$df2, NA),
+                    statistic  = c(tpF$F, tpKP$stat, tpend$F, object$gmm$Jtest["statistic"]),
                     "p-value"  = object$gmm$Jtest["p-value"])
-    out[-ntau - 2, 4] <- pf(out[-ntau - 2, 3], out[-ntau - 2, 1], out[-ntau - 2, 2], lower.tail = FALSE)
+    out[-ntau - 3, 4] <- pf(out[-ntau - 3, 3], out[-ntau - 3, 1], out[-ntau - 3, 2], lower.tail = FALSE)
+    out[ntau + 1, 4]  <- pchisq(out[ntau + 1, 3], out[ntau + 1, 1], lower.tail = FALSE)
     rn            <- "Weak instruments"
     if (ntau > 1) {
       rn          <- paste0(rn, " (", cnendo, ")")
     }
-    rn            <- c(rn, "Wu-Hausman", "Hansen's J-test")
+    rn            <- c(rn, "Kleibergen-Paap rk Wald", "Wu-Hausman", "Hansen J")
     rownames(out) <- rn
   }
-  out
+  list(diag = out, cvKP = cvKP)
 }
 
 ## Create data to start optimization

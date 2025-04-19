@@ -395,6 +395,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
 #'     \item{model.info}{A list with information about the model, such as the number of subnets, number of observations, and other key details.}
 #'     \item{coefficients}{A summary of the estimates, standard errors, and p-values.}
 #'     \item{diagnostics}{A summary of the diagnostic tests for the instrumental-variable regression if requested.}
+#'     \item{KP.cv}{Critical values for the Kleibergen–Paap Wald test (5% level).}
 #'     \item{gmm}{A list of GMM estimation results, including parameter estimates, the covariance matrix, and related statistics.}
 #' @importFrom stats pchisq
 #' @importFrom stats pnorm
@@ -405,8 +406,11 @@ summary.qpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, dia
     stop("The covariance matrix is not estimated.")
   }
   diagn          <- NULL
+  cvKP           <- NULL
   if (diagnostic || diagnostics) {
     diagn        <- fdiagnostic(object, nendo = "qy")
+    cvKP         <- diagn$cvKP
+    diagn        <- diagn$diag
   }
   if (fullparameters) {
     yname        <- object$model.info$yname
@@ -433,7 +437,7 @@ summary.qpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, dia
   
   coef           <- fcoef(Estimate = object$gmm$Estimate, cov = object$gmm$cov)
   out            <- c(object["model.info"], 
-                      list(coefficients = coef, diagnostics = diagn),
+                      list(coefficients = coef, diagnostics = diagn, KP.cv = cvKP),
                       object["gmm"], list(...))
   class(out)     <- "summary.qpeer"
   out
@@ -476,8 +480,9 @@ print.summary.qpeer <- function(x, ...) {
     cat("\nDiagnostic tests:\n")
     fprintcoeft(coef) 
   }
-  cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n\n")
-  cat("HAC: ", hete, sep = "")
+  cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n")
+  
+  cat("\nHAC: ", hete, sep = "")
   if (x$model.info$structural) {
     if (!is.null(sig1)) {
       if (!is.null(sig2)) {

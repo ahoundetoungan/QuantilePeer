@@ -224,13 +224,16 @@ summary.genpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, d
     stop("The covariance matrix is not estimated.")
   }
   diagn          <- NULL
+  cvKP           <- NULL
   if (diagnostic || diagnostics) {
     diagn        <- fdiagnostic(object, nendo = "endogenous.variables")
+    cvKP         <- diagn$cvKP
+    diagn        <- diagn$diag
   }
   
   coef           <- fcoef(Estimate = object$gmm$Estimate, cov = object$gmm$cov)
   out            <- c(object["model.info"], 
-                      list(coefficients = coef, diagnostics = diagn),
+                      list(coefficients = coef, diagnostics = diagn, KP.cv = cvKP),
                       object["gmm"], list(...))
   class(out)     <- "summary.genpeer"
   out
@@ -269,8 +272,9 @@ print.summary.genpeer <- function(x, ...) {
     cat("\nDiagnostic tests:\n")
     fprintcoeft(coef) 
   }
-  cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n\n")
-  cat("HAC: ", hete, sep = "")
+  cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n")
+  
+  cat("\nHAC: ", hete, sep = "")
   if (x$model.info$structural) {
     if (!is.null(sig1)) {
       if (!is.null(sig2)) {

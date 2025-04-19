@@ -850,6 +850,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fKPstat
+Rcpp::List fKPstat(const Eigen::MatrixXd& qy_, const Eigen::MatrixXd& X, const Eigen::MatrixXd& Z_, const arma::uvec& index, const Eigen::MatrixXd& igroup, const int& HAC);
+RcppExport SEXP _QuantilePeer_fKPstat(SEXP qy_SEXP, SEXP XSEXP, SEXP Z_SEXP, SEXP indexSEXP, SEXP igroupSEXP, SEXP HACSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type qy_(qy_SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Z_(Z_SEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type index(indexSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type igroup(igroupSEXP);
+    Rcpp::traits::input_parameter< const int& >::type HAC(HACSEXP);
+    rcpp_result_gen = Rcpp::wrap(fKPstat(qy_, X, Z_, index, igroup, HAC));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fStructParamFull
 Rcpp::List fStructParamFull(const arma::vec& param, const arma::mat& covp, const int& ntau, const int& Kx1, const int& Kx2, const int& quantile, const int& ces);
 RcppExport SEXP _QuantilePeer_fStructParamFull(SEXP paramSEXP, SEXP covpSEXP, SEXP ntauSEXP, SEXP Kx1SEXP, SEXP Kx2SEXP, SEXP quantileSEXP, SEXP cesSEXP) {
@@ -1070,6 +1086,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_QuantilePeer_fFstathomoARMA", (DL_FUNC) &_QuantilePeer_fFstathomoARMA, 3},
     {"_QuantilePeer_fFstat", (DL_FUNC) &_QuantilePeer_fFstat, 6},
     {"_QuantilePeer_fFstatARMA", (DL_FUNC) &_QuantilePeer_fFstatARMA, 6},
+    {"_QuantilePeer_fKPstat", (DL_FUNC) &_QuantilePeer_fKPstat, 6},
     {"_QuantilePeer_fStructParamFull", (DL_FUNC) &_QuantilePeer_fStructParamFull, 7},
     {"_QuantilePeer_fParamFull", (DL_FUNC) &_QuantilePeer_fParamFull, 5},
     {"_QuantilePeer_Cov2ThetaRed", (DL_FUNC) &_QuantilePeer_Cov2ThetaRed, 18},
