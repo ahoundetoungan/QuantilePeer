@@ -1024,7 +1024,7 @@ print.qpeer.test <- function(x, ...) {
     cat("  lambda_tau:", x$lambda1, "\n")
     cat("  Null hypothesis: lambda_tau is", x$which, "\n")
     cat("  Statistic:", x$statistic)
-    cat("  -- p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
+    cat(" -- p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
   } else if (x$which %in% c("wald", "sargan")) {
     cat("Testing instrument validity (", ifelse(x$which == "wald", "Wald", "J-Sargan"), " Test)", "\n\n", sep = "")
     cat("Quantile peer effects:\n")
@@ -1032,12 +1032,12 @@ print.qpeer.test <- function(x, ...) {
     cat("  Model 2 (Z2):", x$lambda2, "\n")
     cat("  Null hypothesis: Z2 is exogenous\n")
     cat("  Statistic:", x$statistic)
-    cat("  --  p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
+    cat(" --  p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
   } else if (x$which == "encompassing") {
     cat("Encompassing Test\n")
     cat("  Null hypothesis: Model 1 is not worse\n")
     cat("  Statistic:", x$statistic)
-    cat("  -- p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
+    cat(" -- p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
   }
   invisible(x)
 }
