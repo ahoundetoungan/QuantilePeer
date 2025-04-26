@@ -128,17 +128,17 @@ festim  <- function(outcome) {
                "Test.ntau=4.5" = qpeer.test(MSQ14, MSQ15, which = "encompassing")$test["KP Wald rank", "p-value"])
   
   # Testing Monotonicity
-  TM13    <- c(U = qpeer.test(MSQ13, which = "uniform")$pvalue, 
-               I = qpeer.test(MSQ13, which = "increasing")$pvalue, 
-               D = qpeer.test(MSQ13, which = "decreasing")$pvalue)
+  TM13    <- c(U = qpeer.test(MSQ13, which = "uniform")$test["p-value"], 
+               I = qpeer.test(MSQ13, which = "increasing")$test["p-value"], 
+               D = qpeer.test(MSQ13, which = "decreasing")$test["p-value"])
   
-  TM14    <- c(U = qpeer.test(MSQ14, which = "uniform")$pvalue, 
-               I = qpeer.test(MSQ14, which = "increasing")$pvalue, 
-               D = qpeer.test(MSQ14, which = "decreasing")$pvalue)
+  TM14    <- c(U = qpeer.test(MSQ14, which = "uniform")$test["p-value"], 
+               I = qpeer.test(MSQ14, which = "increasing")$test["p-value"], 
+               D = qpeer.test(MSQ14, which = "decreasing")$test["p-value"])
   
-  TM15    <- c(U = qpeer.test(MSQ15, which = "uniform")$pvalue, 
-               I = qpeer.test(MSQ15, which = "increasing")$pvalue, 
-               D = qpeer.test(MSQ15, which = "decreasing")$pvalue)
+  TM15    <- c(U = qpeer.test(MSQ15, which = "uniform")$test["p-value"], 
+               I = qpeer.test(MSQ15, which = "increasing")$test["p-value"], 
+               D = qpeer.test(MSQ15, which = "decreasing")$test["p-value"])
   
   # Adding supplementary instruments (type 2 instruments)
   # tau3
@@ -175,9 +175,9 @@ festim  <- function(outcome) {
   SQ25    <- summary(MSQ25)
   
   # Testing exogeneity of type 2 instruments
-  TWSQ23  <- qpeer.test(MSQ13, MSQ23, which = "wald")$pvalue
-  TWSQ24  <- qpeer.test(MSQ14, MSQ24, which = "wald")$pvalue
-  TWSQ25  <- qpeer.test(MSQ15, MSQ25, which = "wald")$pvalue
+  TWSQ23  <- qpeer.test(MSQ13, MSQ23, which = "wald")$test["p-value"]
+  TWSQ24  <- qpeer.test(MSQ14, MSQ24, which = "wald")$test["p-value"]
+  TWSQ25  <- qpeer.test(MSQ15, MSQ25, which = "wald")$test["p-value"]
   
   # CES
   SCES    <- summary(cespeer(formula = y ~ X + GX, 

@@ -765,7 +765,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @importFrom stats qchisq
 #' @importFrom stats uniroot
 #' @export
-qpeer.test <- function(model1, model2 = NULL, which, full = TRUE,
+qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
                        boot = 1e4, maxit = 1e6, eps_f = 1e-9, eps_g = 1e-9) {
   which  <- tolower(which[1])
   stopifnot(which %in% c("increasing", "decreasing", "uniform", "wald", "sargan", "encompassing"))
@@ -839,7 +839,8 @@ qpeer.test <- function(model1, model2 = NULL, which, full = TRUE,
       R    <- R - cbind(0, R[, 1:(ntau - 1)])
       stat <- c(t(R %*%  lt1) %*% solve(R %*% CThe %*% t(R), R %*%  lt1))
       df   <- ntau - 1
-      pval <- 1 - pchisq(stat, df)
+      pval <- pchisq(stat, df, lower.tail = FALSE)
+      Tval <- c("statistic" = stat, "df" = df, "p-value" = pval)
     } else {
       tp   <- NULL
       ts   <- t(chol(CThe)) %*% matrix(rnorm(ntau * boot), ntau, boot) +  lt1

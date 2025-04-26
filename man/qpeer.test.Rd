@@ -8,7 +8,7 @@ qpeer.test(
   model1,
   model2 = NULL,
   which,
-  full = TRUE,
+  full = FALSE,
   boot = 10000,
   maxit = 1e+06,
   eps_f = 1e-09,

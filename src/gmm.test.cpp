@@ -486,12 +486,25 @@ Rcpp::List fEncompassingStrucKP(const Eigen::MatrixXd& X1,
     }
   }
   
+  // R matrix
+  int Kdelta(ntau2);
+  if (full) {
+    Kdelta = 1 + ntau2 + K22;
+  }
+  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(Kdelta, 1 + ntau2 + K22));
+  if (full) {
+    R(Eigen::all, Eigen::seqN(0, Kdelta)) = Eigen::MatrixXd::Identity(Kdelta, Kdelta);
+  } else {
+    R(Eigen::all, Eigen::seqN(1, Kdelta)) = Eigen::MatrixXd::Identity(Kdelta, Kdelta);
+  }
+  
   // delta
-  Eigen::VectorXd delta(H * Z22.transpose() * e21);
-  int Kdelta(delta.size());
+  Eigen::MatrixXd RH(R * H);
+  Eigen::VectorXd delta(RH * Z22.transpose() * e21);
   
   // variance
-  Eigen::MatrixXd Vardelta(H * VZ2e1 * H.transpose());
+  Eigen::MatrixXd Vardelta(RH * VZ2e1 * RH.transpose());
+  
   
   // Normalization
   Eigen::LLT<Eigen::MatrixXd> tpOmega(Vardelta);
@@ -584,12 +597,20 @@ Rcpp::List fEncompassingRedKP(const Eigen::MatrixXd& X1,
     }
   }
   
+  // R matrix
+  int Kdelta(ntau2);
+  if (full) {
+    Kdelta = ntau2 + K2;
+  }
+  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(Kdelta, ntau2 + K2));
+  R(Eigen::all, Eigen::seqN(0, Kdelta)) = Eigen::MatrixXd::Identity(Kdelta, Kdelta);
+  
   // delta
-  Eigen::VectorXd delta(H * Z2.transpose() * e1);
-  int Kdelta(delta.size());
+  Eigen::MatrixXd RH(R * H);
+  Eigen::VectorXd delta(RH * Z2.transpose() * e1);
   
   // variance
-  Eigen::MatrixXd Vardelta(H * VZ2e1 * H.transpose());
+  Eigen::MatrixXd Vardelta(RH * VZ2e1 * RH.transpose());
   
   // Normalization
   Eigen::LLT<Eigen::MatrixXd> tpOmega(Vardelta);
