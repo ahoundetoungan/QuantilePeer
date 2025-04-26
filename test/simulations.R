@@ -148,8 +148,9 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
               fixed.effects = fixed.effects)
   
   # Encompassing test
-  Etest    <- c(qpeer.test(Quant1a, Quant1, which = "encompassing")$pvalue, # testing where 4 quantiles is better than 2 quantiles
-                qpeer.test(Quant1, Quant1b, which = "encompassing")$pvalue) # testing where 5 quantiles is better than 4 quantiles
+  Etest    <- c(qpeer.test(Quant1a, Quant1, which = "encompassing")$test["KP Wald rank", "p-value"], # testing where 4 quantiles is better than 3 quantiles
+                qpeer.test(Quant1, Quant1a, which = "encompassing")$test["KP Wald rank", "p-value"], # testing where 3 quantiles is better than 4 quantiles
+                qpeer.test(Quant1, Quant1b, which = "encompassing")$test["KP Wald rank", "p-value"]) # testing where 5 quantiles is better than 4 quantiles
   
   LIM           <- summary(LIM, diagnostic = TRUE)
   LIM           <- c(LIM$gmm$Estimate, KPstat = LIM$diagnostics[2, 3], Jpvalue = LIM$diagnostics[4, 4])
@@ -174,8 +175,8 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
   names(Ces)    <- paste0(ifelse(fixed.effects, "FE.", ""), "CES.", names(Ces))
   
   Etest         <- c(Etest > 0.1, Etest > 0.05)
-  names(Etest)  <- paste0(ifelse(fixed.effects, "FE.", ""), c("ET90.ntau=3", "ET90.ntau=4", 
-                          "ET95.ntau=3", "ET95.ntau=4"))
+  names(Etest)  <- paste0(ifelse(fixed.effects, "FE.", ""), c("ET90.ntau=3.4", "ET90.ntau=4.3", "ET90.ntau=4.5", 
+                                                              "ET95.ntau=3.4", "ET95.ntau=4.3", "ET95.ntau=4.5"))
   
   Quant1a       <- summary(Quant1a)
   Quant1a       <- c(Quant1a$gmm$Estimate, KPstat = Quant1a$diagnostics[ntau, 3], 
@@ -274,7 +275,8 @@ tp <- Est %>% select(all_of(c(paste0("FE.Q1.y_q", 1:4), "FE.Q1.y_q(spillover)", 
                               paste0("FE.Q3.y_q", 1:4), "FE.Q3.y_q(spillover)", "FE.Q3.y_q(conformity)",
                               "FE.LIM.G(total):y", "FE.LIM.G(spillover):y", "FE.LIM.G(conformity):y", 
                               "FE.CES.rho", "FE.CES.G(total):y", "FE.CES.G(spillover):y", "FE.CES.G(conformity):y",
-                              "FE.ET90.ntau=3", "FE.ET90.ntau=4", "FE.ET95.ntau=3", "FE.ET95.ntau=4",
+                              "FE.ET90.ntau=3.4", "FE.ET90.ntau=4.3", "FE.ET90.ntau=4.5", 
+                              "FE.ET95.ntau=3.4", "FE.ET95.ntau=4.3", "FE.ET95.ntau=4.5", 
                               "FE.Q1.KPstat", "FE.Q1.Jpvalue", "FE.Q3.KPstat", "FE.Q3.Jpvalue"))) 
 tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
                                  # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 
@@ -300,7 +302,8 @@ tp <- Est %>% select(all_of(c(paste0("Q1.y_q", 1:4), "Q1.y_q(spillover)", "Q1.y_
                               paste0("Q3.y_q", 1:4), "Q3.y_q(spillover)", "Q3.y_q(conformity)", 
                               "LIM.G(total):y", "LIM.G(spillover):y", "LIM.G(conformity):y", 
                               "CES.rho", "CES.G(total):y", "CES.G(spillover):y", "CES.G(conformity):y",
-                              "ET90.ntau=3", "ET90.ntau=4", "ET95.ntau=3", "ET95.ntau=4",
+                              "ET90.ntau=3.4", "ET90.ntau=4.3", "ET90.ntau=4.5", 
+                              "ET95.ntau=3.4", "ET95.ntau=4.3", "ET95.ntau=4.5", 
                               "Q1.KPstat", "Q1.Jpvalue", "Q3.KPstat", "Q3.Jpvalue"))) 
 tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
                                  # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 

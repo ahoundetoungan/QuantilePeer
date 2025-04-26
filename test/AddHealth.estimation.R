@@ -123,8 +123,9 @@ festim  <- function(outcome) {
   # Encompassing tests
   # The first test checks if the model with 3 quantiles replicates the features of the model with 4 quantiles.
   # The second test checks if the model with 4 quantiles replicates the features of the model with 5 quantiles.
-  TEcomp  <- c("Test.ntau=3" = qpeer.test(MSQ13, MSQ14, which = "encompassing")$pvalue,
-               "Test.ntau=4" = qpeer.test(MSQ14, MSQ15, which = "encompassing")$pvalue)
+  TEcomp  <- c("Test.ntau=3.4" = qpeer.test(MSQ13, MSQ14, which = "encompassing")$test["KP Wald rank", "p-value"],
+               "Test.ntau=4.3" = qpeer.test(MSQ14, MSQ13, which = "encompassing")$test["KP Wald rank", "p-value"],
+               "Test.ntau=4.5" = qpeer.test(MSQ14, MSQ15, which = "encompassing")$test["KP Wald rank", "p-value"])
   
   # Testing Monotonicity
   TM13    <- c(U = qpeer.test(MSQ13, which = "uniform")$pvalue, 
@@ -416,7 +417,7 @@ shnam  <- c("3 quantiles", "4 quantiles", "5 quantiles", "LIM", "CES")
 Srow   <- c(lapply(3:5, function (x) {
   c("", "", rep(c(paste0("lbdatau", 1:x), "lbda1", "lbda2", ""), 2),
     c("Uniform", "Increasing", "Decreasing", ""),
-    c("ET dt = 3", "ET dt = 4", ""),
+    c("ETest 3.4", "ETest 4.3", "Etest 4.5", ""),
     c(paste0("lbdatau", 1:x), ""))
 }), list(c("", "", "lbda1", "lbda2", "", "lbda", ""), 
 c("", "", "rho", "lbda1", "lbda2", "", "rho", "lbda", "")))

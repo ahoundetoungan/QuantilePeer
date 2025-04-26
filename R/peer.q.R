@@ -765,7 +765,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' @importFrom stats qchisq
 #' @importFrom stats uniroot
 #' @export
-qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
+qpeer.test <- function(model1, model2 = NULL, which, full = TRUE,
                        boot = 1e4, maxit = 1e6, eps_f = 1e-9, eps_g = 1e-9) {
   which  <- tolower(which[1])
   stopifnot(which %in% c("increasing", "decreasing", "uniform", "wald", "sargan", "encompassing"))
@@ -809,10 +809,8 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
   tau1   <- model1$model.info$tau
   tau2   <- model2$model.info$tau
   
-  stat   <- NULL
-  pval   <- NULL
+  Tval   <- NULL
   op     <- NULL
-  df     <- NULL
   lt1    <- NULL
   lt2    <- NULL
   dtheta <- NULL
@@ -858,6 +856,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
         qq[qq == Inf] <- 1e10
         mean(qq*Pi) - stat
       }, interval = c(0, 1), tol = eps_f)$root
+      Tval  <- c("statistic" = stat, "p-value" = pval)
     }
   } else if (which %in% c("wald", "cox", "encompassing")) {
     stopifnot(class(model1) %in% c("qpeer", "linpeer", "genpeer"))
@@ -949,6 +948,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
       stat    <- c(CTT$stat)
       df      <- c(CTT$df)
       pval    <- pchisq(stat, df, lower.tail = FALSE)
+      Tval    <- c("statistic" = stat, "df" = df, "p-value" = pval)
       lt1     <- c(CTT$theta1)
       lt2     <- c(CTT$theta2)
     } else if (which == "encompassing") {
@@ -964,24 +964,42 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
         Kest21<- ifelse(FEnum == 0, K21 + ntau1 + 1, K21 + ntau1 + MnIs)
         Kest12<- ifelse(FEnum == 0, K12, K12 + MIs)
         Kest22<- ifelse(FEnum == 0, K22 + ntau2 + 1, K22 + ntau2 + MnIs)
-        CTT   <- fEncompassingStruc(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1,
-                                    idX11 = idX11, idX21 = idX21, Kest11 = Kest11, Kest21 = Kest21,
-                                    X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22, e2 = e2, theta2 = theta2,
-                                    idX12 = idX12, idX22 = idX22, Kest12 = Kest12, Kest22 = Kest22,
-                                    nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
+        CTT   <- list(F = fEncompassingStruc(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1,
+                                             idX11 = idX11, idX21 = idX21, Kest11 = Kest11, Kest21 = Kest21,
+                                             X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22, e2 = e2, theta2 = theta2,
+                                             idX12 = idX12, idX22 = idX22, Kest12 = Kest12, Kest22 = Kest22,
+                                             nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full), 
+                      
+                      KP = fEncompassingStrucKP(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1,
+                                                idX11 = idX11, idX21 = idX21, Kest11 = Kest11, Kest21 = Kest21,
+                                                X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22, e2 = e2, theta2 = theta2,
+                                                idX12 = idX12, idX22 = idX22, Kest12 = Kest12, Kest22 = Kest22,
+                                                nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full))
       } else {
         K1    <- length(theta1)
         K2    <- length(theta2)
         Kest1 <- ifelse(FEnum == 0, K1, ifelse(FEnum == 1, K1 + ngr1, K1 + MIs + MnIs))
         Kest2 <- ifelse(FEnum == 0, K2, ifelse(FEnum == 1, K2 + ngr1, K2 + MIs + MnIs))
-        CTT   <- fEncompassingRed(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
+        CTT   <- list(F = fEncompassingRed(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
                                   X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
-                                  ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
+                                  ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full),
+                      KP = fEncompassingRedKP(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
+                                            X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
+                                            ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full))
       }
-      stat    <- c(CTT$stat)
-      df      <- c(CTT$df)
-      pval    <- pchisq(stat, df, lower.tail = FALSE)
-      dtheta  <- c(CTT$diff)
+      Fstat   <- c(CTT$F$stat)
+      Fdf1    <- c(CTT$F$df1)
+      Fdf2    <- c(CTT$F$df2)
+      Fpval   <- pf(Fstat, Fdf1, Fdf2, lower.tail = FALSE)
+      KPstat  <- c(CTT$KP$stat)
+      KPdf    <- c(CTT$KP$df)
+      KPpval  <- pchisq(KPstat, KPdf, lower.tail = FALSE)
+      Tval    <- cbind("statistic" = c(Fstat, KPstat), 
+                       "df1"       = c(Fdf1, KPdf), 
+                       "df2"       = c(Fdf2, NA), 
+                       "p-value"   = c(Fpval, KPpval))
+      rownames(Tval) <- c("robust F", "KP Wald rank")
+      dtheta         <- c(CTT$diff)
     } else if (which == "cox") { #TO not available yet
     }
     
@@ -998,15 +1016,15 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
     }
     stat   <- model2$gmm$Jtest[1] - model1$gmm$Jtest[1]
     pval   <- pchisq(stat, df, lower.tail = FALSE)
+    Tval  <- c("statistic" = stat, "df" = df, "p-value" = pval)
     struc  <- model1$model.info$structural
     ntau   <- model1$model.info$ntau
     lt1    <- model1$gmm$Estimate[1:(ntau + struc)]
     lt2    <- model2$gmm$Estimate[1:(ntau + struc)]
   }
-names(stat) <- names(pval) <- names(df) <- NULL
-out         <- list("statistic" = stat, "pvalue" = pval, 
+out         <- list("test" = Tval, 
                     "lambda1" = lt1, "lambda2" = lt2,
-                    df = df, which = which, boot = boot)
+                    which = which, boot = boot)
 class(out)  <- "qpeer.test"
 out
 }
@@ -1023,21 +1041,23 @@ print.qpeer.test <- function(x, ...) {
     cat("Quantile peer effects:\n")
     cat("  lambda_tau:", x$lambda1, "\n")
     cat("  Null hypothesis: lambda_tau is", x$which, "\n")
-    cat("  Statistic:", x$statistic)
-    cat(" -- p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
+    cat("  Statistic:", x$test["statistic"])
+    cat(" -- p-value:", ifelse(x$test["p-value"] < 2e-16, "< 2e-16", format(x$test["p-value"], digits = 4)), "\n")
   } else if (x$which %in% c("wald", "sargan")) {
     cat("Testing instrument validity (", ifelse(x$which == "wald", "Wald", "J-Sargan"), " Test)", "\n\n", sep = "")
     cat("Quantile peer effects:\n")
     cat("  Model 1 (Z1):", x$lambda1, "\n")
     cat("  Model 2 (Z2):", x$lambda2, "\n")
     cat("  Null hypothesis: Z2 is exogenous\n")
-    cat("  Statistic:", x$statistic)
-    cat(" --  p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
+    cat("  Statistic:", x$test["statistic"])
+    cat(" -- p-value:", ifelse(x$test["p-value"] < 2e-16, "< 2e-16", format(x$test["p-value"], digits = 4)), "\n")
   } else if (x$which == "encompassing") {
     cat("Encompassing Test\n")
     cat("  Null hypothesis: Model 1 is not worse\n")
-    cat("  Statistic:", x$statistic)
-    cat(" -- p-value:", ifelse(x$pvalue < 2e-16, "< 2e-16", format(x$pvalue, digits = 4)), "\n")
+    cat("  Robust F statistic:", x$test["robust F", "statistic"])
+    cat(" -- p-value:", ifelse(x$test["robust F", "p-value"] < 2e-16, "< 2e-16", format(x$test["robust F", "p-value"], digits = 4)), "\n")
+    cat("  KP Wald rank statistic:", x$test["KP Wald rank", "statistic"])
+    cat(" -- p-value:", ifelse(x$test["KP Wald rank", "p-value"] < 2e-16, "< 2e-16", format(x$test["KP Wald rank", "p-value"], digits = 4)), "\n")
   }
   invisible(x)
 }

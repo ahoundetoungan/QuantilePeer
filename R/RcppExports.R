@@ -177,6 +177,14 @@ fTestMonotone <- function(thetahat, Sigma, a, thetasimu, Boot = 1e4L, maxit = 1e
     .Call(`_QuantilePeer_fTestMonotone`, thetahat, Sigma, a, thetasimu, Boot, maxit, eps_f, eps_g)
 }
 
+fEncompassingStrucKP <- function(X1, qy1, Z1, W11, W21, e1, theta1, idX11, idX21, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, idX12, idX22, Kest12, Kest22, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_fEncompassingStrucKP`, X1, qy1, Z1, W11, W21, e1, theta1, idX11, idX21, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, idX12, idX22, Kest12, Kest22, nIs, Is, ngroup, cumsn, HAC, full)
+}
+
+fEncompassingRedKP <- function(X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_fEncompassingRedKP`, X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC, full)
+}
+
 fEncompassingStruc <- function(X1, qy1, Z1, W11, W21, e1, theta1, idX11, idX21, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, idX12, idX22, Kest12, Kest22, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
     .Call(`_QuantilePeer_fEncompassingStruc`, X1, qy1, Z1, W11, W21, e1, theta1, idX11, idX21, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, idX12, idX22, Kest12, Kest22, nIs, Is, ngroup, cumsn, HAC, full)
 }
