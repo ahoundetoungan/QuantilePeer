@@ -859,7 +859,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
       }, interval = c(0, 1), tol = eps_f)$root
       Tval  <- c("statistic" = stat, "p-value" = pval)
     }
-  } else if (which %in% c("wald", "cox", "encompassing")) {
+  } else if (which %in% c("wald", "sargan", "encompassing")) {
     stopifnot(class(model1) %in% c("qpeer", "linpeer", "genpeer"))
     stopifnot(class(model2) %in% c("qpeer", "linpeer", "genpeer"))
     if (is.null(model1$gmm$cov) | is.null(model2$gmm$cov)) {
@@ -913,7 +913,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
     MIs    <- sum(sapply(LIs, function(s) length(s) > 0))
     MnIs   <- sum(sapply(LnIs, function(s) length(s) > 0))
     
-    if (which == "wald") {
+    if (which %in% c("wald", "sargan")) {
       tp     <- (length(qy1) == length(qy2)) &&
         (length(X1) == length(X2)) &&
         (length(W11) == length(W12)) &&
@@ -931,20 +931,22 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
       CTT    <- NULL
       ntau   <- length(tau1)
       if (struc1) {
-        K1   <- length(idX11)
-        K2   <- length(idX21)
+        FUN   <- ifelse(which == "wald", Cov2ThetaStruc, validZ2SarganStruc)
+        K1    <- length(idX11)
+        K2    <- length(idX21)
         Kest1 <- ifelse(FEnum == 0, K1, K1 + MIs)
         Kest2 <- ifelse(FEnum == 0, K2 + ntau + 1, K2 + ntau + MnIs)
-        CTT   <- Cov2ThetaStruc(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1, 
-                                Kest11 = Kest1, Kest21 = Kest2, X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22,
-                                e2 = e2, theta2 = theta2, Kest12 = Kest1, Kest22 = Kest2, idX1 = idX11, idX2 = idX21, 
-                                nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
+        CTT   <- FUN(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1, 
+                     Kest11 = Kest1, Kest21 = Kest2, X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22,
+                     e2 = e2, theta2 = theta2, Kest12 = Kest1, Kest22 = Kest2, idX1 = idX11, idX2 = idX21, 
+                     nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
       } else {
+        FUN   <- ifelse(which == "wald", Cov2ThetaRed, validZ2SarganRed)
         K     <- length(theta1)
         Kest  <- ifelse(FEnum == 0, K, ifelse(FEnum == 1, K + ngr1, K + MIs + MnIs))
-        CTT   <- Cov2ThetaRed(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest,
-                              X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest, 
-                              ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
+        CTT   <- FUN(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest,
+                     X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest, 
+                     ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
       }
       stat    <- c(CTT$stat)
       df      <- c(CTT$df)
@@ -982,11 +984,11 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
         Kest1 <- ifelse(FEnum == 0, K1, ifelse(FEnum == 1, K1 + ngr1, K1 + MIs + MnIs))
         Kest2 <- ifelse(FEnum == 0, K2, ifelse(FEnum == 1, K2 + ngr1, K2 + MIs + MnIs))
         CTT   <- list(F = fEncompassingRed(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
-                                  X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
-                                  ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full),
+                                           X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
+                                           ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full),
                       KP = fEncompassingRedKP(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
-                                            X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
-                                            ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full))
+                                              X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
+                                              ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full))
       }
       Fstat   <- c(CTT$F$stat)
       Fdf1    <- c(CTT$F$df1)
@@ -1001,33 +1003,13 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
                        "p-value"   = c(Fpval, KPpval))
       rownames(Tval) <- c("robust F", "KP Wald rank")
       dtheta         <- c(CTT$diff)
-    } else if (which == "cox") { #TO not available yet
-    }
-    
-  } else if (which == "sargan") {
-    stopifnot(class(model1) %in% c("qpeer", "linpeer", "genpeer"))
-    stopifnot(class(model2) %in% c("qpeer", "linpeer", "genpeer"))
-    if (!(tolower(model1$model.info$estimator) %in% c("iv", "gmm.optimal", "gmm.identity") &&
-          tolower(model2$model.info$estimator) %in% c("iv", "gmm.optimal", "gmm.identity"))) {
-      stop("This test is only valid for IV and GMM estimators.")
-    }
-    df     <- model2$gmm$Jtest[2] - model1$gmm$Jtest[2]
-    if (df <= 0) {
-      stop("sargan test required instruments in model2 to neast instruments in model1")
-    }
-    stat   <- model2$gmm$Jtest[1] - model1$gmm$Jtest[1]
-    pval   <- pchisq(stat, df, lower.tail = FALSE)
-    Tval  <- c("statistic" = stat, "df" = df, "p-value" = pval)
-    struc  <- model1$model.info$structural
-    ntau   <- model1$model.info$ntau
-    lt1    <- model1$gmm$Estimate[1:(ntau + struc)]
-    lt2    <- model2$gmm$Estimate[1:(ntau + struc)]
-  }
-out         <- list("test" = Tval, 
-                    "lambda1" = lt1, "lambda2" = lt2,
-                    which = which, boot = boot)
-class(out)  <- "qpeer.test"
-out
+    } 
+  } 
+  out         <- list("test" = Tval, 
+                      "lambda1" = lt1, "lambda2" = lt2,
+                      which = which, boot = boot)
+  class(out)  <- "qpeer.test"
+  out
 }
 
 #' @title Printing Specification Tests for Peer Effects Models

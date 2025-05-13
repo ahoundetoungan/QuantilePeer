@@ -173,6 +173,14 @@ Cov2ThetaStruc <- function(X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2
     .Call(`_QuantilePeer_Cov2ThetaStruc`, X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, Kest12, Kest22, idX1, idX2, nIs, Is, ngroup, cumsn, HAC, full)
 }
 
+validZ2SarganRed <- function(X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_validZ2SarganRed`, X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC, full)
+}
+
+validZ2SarganStruc <- function(X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, Kest12, Kest22, idX1, idX2, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_validZ2SarganStruc`, X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, Kest12, Kest22, idX1, idX2, nIs, Is, ngroup, cumsn, HAC, full)
+}
+
 fTestMonotone <- function(thetahat, Sigma, a, thetasimu, Boot = 1e4L, maxit = 1e6L, eps_f = 1e-9, eps_g = 1e-9) {
     .Call(`_QuantilePeer_fTestMonotone`, thetahat, Sigma, a, thetasimu, Boot, maxit, eps_f, eps_g)
 }

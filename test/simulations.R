@@ -2,8 +2,15 @@
 ##############################################################################################################
 ########################### Quantile Peer Effect Models by Aristide Houndetoungan ############################
 ##############################################################################################################
-# Last updated: 2025-04-03
-# Monte Carlo Simulations (Table 5.1)
+
+# Last updated: 2025-05-12
+
+# This script reproduces the Monte Carlo simulations (Tables 5.1 and 5.2).
+# Estimation results will be exported to a single Excel file (`Simulation.xlsx`)
+# located in `OutResPath`. The Excel file contains the following sheets:
+#  - Table 5.1 (reproduces Table 5.1),
+#  - Table 5.2 (reproduces Table 5.2),
+#  - Full results (not included in the paper).
 
 rm(list = ls())
 library(QuantilePeer)
@@ -81,7 +88,7 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
   # linear model: G^2X
   GGX      <- peer.avg(Gnorm, GX) #GX where G is row-normalized
   # Quantile model
-  Z1       <- qpeer.inst(formula = ~ X + GX, Glist = G, tau = seq(0, 1, 0.1), 
+  Z1       <- qpeer.inst(formula = ~ X + GX, Glist = G, tau = seq(0, 1, 1/9), 
                          max.distance = 2, checkrank = TRUE)$instruments 
   Z2       <- qpeer.inst(formula = y ~ X + GX, Glist = G, tau = tau, 
                          max.distance = 2, checkrank = TRUE)$instruments 
@@ -147,48 +154,64 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
               tau = seq(0, 1, 1/4),
               fixed.effects = fixed.effects)
   
+  # Validity of Z2 instruments
+  valins   <-  c(Q2 = qpeer.test(Quant1, Quant2, which = "sargan")$test["p-value"],
+                 Q3 = qpeer.test(Quant1, Quant3, which = "sargan")$test["p-value"])
+  
   # Encompassing test
   Etest    <- c(qpeer.test(Quant1a, Quant1, which = "encompassing")$test["KP Wald rank", "p-value"], # testing where 4 quantiles is better than 3 quantiles
                 qpeer.test(Quant1, Quant1a, which = "encompassing")$test["KP Wald rank", "p-value"], # testing where 3 quantiles is better than 4 quantiles
                 qpeer.test(Quant1, Quant1b, which = "encompassing")$test["KP Wald rank", "p-value"]) # testing where 5 quantiles is better than 4 quantiles
   
   LIM           <- summary(LIM, diagnostic = TRUE)
-  LIM           <- c(LIM$gmm$Estimate, KPstat = LIM$diagnostics[2, 3], Jpvalue = LIM$diagnostics[4, 4])
+  LIM           <- c(LIM$gmm$Estimate, KPstat = LIM$diagnostics[2, 3], Jpvalue = LIM$diagnostics[4, 4],
+                     Jpvalue90 = LIM$diagnostics[4, 4] > 0.1, Jpvalue95 = LIM$diagnostics[4, 4] > 0.05)
   names(LIM)    <- paste0(ifelse(fixed.effects, "FE.", ""), "LIM.", names(LIM))
   
   Quant1        <- summary(Quant1, diagnostic = TRUE)
   Quant1        <- c(Quant1$gmm$Estimate, KPstat = Quant1$diagnostics[ntau + 1, 3], 
-                     Jpvalue = Quant1$diagnostics[ntau + 3, 4])
+                     Jpvalue = Quant1$diagnostics[ntau + 3, 4], Jpvalue90 = Quant1$diagnostics[ntau + 3, 4] > 0.1,
+                     Jpvalue95 = Quant1$diagnostics[ntau + 3, 4] > 0.05)
   names(Quant1) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q1.", names(Quant1))
   
   Quant2        <- summary(Quant2, diagnostic = TRUE)
   Quant2        <- c(Quant2$gmm$Estimate, KPstat = Quant2$diagnostics[ntau + 1, 3], 
-                     Jpvalue = Quant2$diagnostics[ntau + 3, 4])
+                     Jpvalue = Quant2$diagnostics[ntau + 3, 4], Jpvalue90 = Quant2$diagnostics[ntau + 3, 4] > 0.1,
+                     Jpvalue95 = Quant2$diagnostics[ntau + 3, 4] > 0.05)
   names(Quant2) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q2.", names(Quant2))
   
   Quant3        <- summary(Quant3, diagnostic = TRUE)
   Quant3        <- c(Quant3$gmm$Estimate, KPstat = Quant3$diagnostics[ntau + 1, 3], 
-                     Jpvalue = Quant3$diagnostics[ntau + 3, 4])
+                     Jpvalue = Quant3$diagnostics[ntau + 3, 4], Jpvalue90 = Quant3$diagnostics[ntau + 3, 4] > 0.1, 
+                     Jpvalue95 = Quant3$diagnostics[ntau + 3, 4] > 0.05)
   names(Quant3) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q3.", names(Quant3))
   
   Ces           <- summary(Ces)$gmm$Estimate
   names(Ces)    <- paste0(ifelse(fixed.effects, "FE.", ""), "CES.", names(Ces))
   
-  Etest         <- c(Etest > 0.1, Etest > 0.05)
-  names(Etest)  <- paste0(ifelse(fixed.effects, "FE.", ""), c("ET90.ntau=3.4", "ET90.ntau=4.3", "ET90.ntau=4.5", 
+  valins        <- c(valins, valins > 0.1, valins > 0.05)
+  names(valins) <- paste0(ifelse(fixed.effects, "FE.", ""), c("Val.Q2", "Val.Q3",
+                                                              "Val90.Q2", "Val90.Q3", 
+                                                              "Val95.Q2", "Val95.Q3"))
+    
+  Etest         <- c(Etest, Etest > 0.1, Etest > 0.05)
+  names(Etest)  <- paste0(ifelse(fixed.effects, "FE.", ""), c("ET.ntau=3.4", "ET.ntau=4.3", "ET.ntau=4.5",
+                                                              "ET90.ntau=3.4", "ET90.ntau=4.3", "ET90.ntau=4.5", 
                                                               "ET95.ntau=3.4", "ET95.ntau=4.3", "ET95.ntau=4.5"))
   
   Quant1a       <- summary(Quant1a)
   Quant1a       <- c(Quant1a$gmm$Estimate, KPstat = Quant1a$diagnostics[ntau, 3], 
-                     Jpvalue = Quant1a$diagnostics[ntau + 2, 4])
+                     Jpvalue = Quant1a$diagnostics[ntau + 2, 4], Jpvalue90 = Quant1a$diagnostics[ntau + 2, 4] > 0.1, 
+                     Jpvalue95 = Quant1a$diagnostics[ntau + 2, 4] > 0.05)
   names(Quant1a)<- paste0(ifelse(fixed.effects, "FE.", ""), "Q1a.", names(Quant1a))
   
   Quant1b       <- summary(Quant1b)
   Quant1b       <- c(Quant1b$gmm$Estimate, KPstat = Quant1b$diagnostics[ntau + 2, 3], 
-                     Jpvalue = Quant1b$diagnostics[ntau + 4, 4])
+                     Jpvalue = Quant1b$diagnostics[ntau + 4, 4], Jpvalue90 = Quant1b$diagnostics[ntau + 4, 4] > 0.1,
+                     Jpvalue95 = Quant1b$diagnostics[ntau + 4, 4] > 0.05)
   names(Quant1b)<- paste0(ifelse(fixed.effects, "FE.", ""), "Q1b.", names(Quant1b))
   
-  c(LIM, Quant1, Quant2, Quant3, Ces, Etest, Quant1a, Quant1b)
+  c(LIM, Quant1, Quant2, Quant3, Ces, valins, Etest, Quant1a, Quant1b)
 }
 
 # Number of simulations
@@ -231,7 +254,7 @@ lambda6    <- 0.55
 Est61      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda6, FALSE, TRUE), mc.cores = 10))
 Est62      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda6, TRUE, TRUE), mc.cores = 10))
 
-save(Est11, Est12, Est21, Est22, Est31, Est32, Est41, Est42, Est51, Est52, Est61, Est62, 
+save(Est11, Est12, Est21, Est22, Est31, Est32, Est41, Est42, Est51, Est52, Est61, Est62,
      file = paste0(OutResPath, "/Simulations.Rda"))
 
 # Summary
@@ -268,44 +291,16 @@ Est          <- Est %>% add_row(tp, .before = 11) %>%
 wb <- createWorkbook()
 
 # Add a worksheet
-# This sheet will present results with fixed effects, Quant1, Quant3, LIM, CES 
-# This reproduces the table in the paper
-addWorksheet(wb, "FixedEffects") 
-tp <- Est %>% select(all_of(c(paste0("FE.Q1.y_q", 1:4), "FE.Q1.y_q(spillover)", "FE.Q1.y_q(conformity)",
-                              paste0("FE.Q3.y_q", 1:4), "FE.Q3.y_q(spillover)", "FE.Q3.y_q(conformity)",
-                              "FE.LIM.G(total):y", "FE.LIM.G(spillover):y", "FE.LIM.G(conformity):y", 
-                              "FE.CES.rho", "FE.CES.G(total):y", "FE.CES.G(spillover):y", "FE.CES.G(conformity):y",
-                              "FE.ET90.ntau=3.4", "FE.ET90.ntau=4.3", "FE.ET90.ntau=4.5", 
-                              "FE.ET95.ntau=3.4", "FE.ET95.ntau=4.3", "FE.ET95.ntau=4.5", 
-                              "FE.Q1.KPstat", "FE.Q1.Jpvalue", "FE.Q3.KPstat", "FE.Q3.Jpvalue"))) 
-tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
-                                 # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 
-                                 "$\\lambda_2 = ", lambda1[1], "$"),
-                          paste0("DGP B: $\\boldsymbol\\lambda = (", paste0(lambda2[-1], collapse = ", "), ")$, ", 
-                                 # "$\\lambda_1 = ", sum(lambda2[-1]) - lambda2[1], "$, ", 
-                                 "$\\lambda_2 = ", lambda2[1], "$"),
-                          paste0("DGP C: $\\boldsymbol\\lambda = (", paste0(lambda3[-1], collapse = ", "), ")$, ", 
-                                 # "$\\lambda_1 = ", sum(lambda3[-1]) - lambda3[1], "$, ", 
-                                 "$\\lambda_2 = ", lambda3[1], "$"),
-                          paste0("DGP D: $\\boldsymbol\\lambda = (", paste0(lambda4[-1], collapse = ", "), ")$, ", 
-                                 # "$\\lambda_1 = ", sum(lambda4[-1]) - lambda4[1], "$, ", 
-                                 "$\\lambda_2 = ", lambda4[1], "$"),
-                          paste0("DGP E: $\\boldsymbol\\lambda = (", paste0(lambda5[-1], collapse = ", "), ")$, ", 
-                                 # "$\\lambda_1 = ", sum(lambda5[-1]) - lambda5[1], "$, ", 
-                                 "$\\lambda_2 = ", lambda5[1], "$"),
-                          paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
-writeData(wb, "FixedEffects", tp, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
+addWorksheet(wb, "Table 5.1") 
+addWorksheet(wb, "Table 5.2") 
+addWorksheet(wb, "Full results")
 
-# Add a new sheet for result without fixed effects
-addWorksheet(wb, "NoFixedEffects") 
-tp <- Est %>% select(all_of(c(paste0("Q1.y_q", 1:4), "Q1.y_q(spillover)", "Q1.y_q(conformity)",
-                              paste0("Q3.y_q", 1:4), "Q3.y_q(spillover)", "Q3.y_q(conformity)", 
-                              "LIM.G(total):y", "LIM.G(spillover):y", "LIM.G(conformity):y", 
-                              "CES.rho", "CES.G(total):y", "CES.G(spillover):y", "CES.G(conformity):y",
-                              "ET90.ntau=3.4", "ET90.ntau=4.3", "ET90.ntau=4.5", 
-                              "ET95.ntau=3.4", "ET95.ntau=4.3", "ET95.ntau=4.5", 
-                              "Q1.KPstat", "Q1.Jpvalue", "Q3.KPstat", "Q3.Jpvalue"))) 
-tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
+# Table 5.1
+T5.1 <- Est %>% select(all_of(c(paste0("FE.Q1.y_q", 1:4), "FE.Q1.y_q(conformity)",
+                              paste0("FE.Q3.y_q", 1:4), "FE.Q3.y_q(conformity)",
+                              "FE.LIM.G(total):y", "FE.LIM.G(conformity):y", 
+                              "FE.CES.rho", "FE.CES.G(total):y", "FE.CES.G(conformity):y")))
+T5.1[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
                                  # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 
                                  "$\\lambda_2 = ", lambda1[1], "$"),
                           paste0("DGP B: $\\boldsymbol\\lambda = (", paste0(lambda2[-1], collapse = ", "), ")$, ", 
@@ -321,10 +316,48 @@ tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lamb
                                  # "$\\lambda_1 = ", sum(lambda5[-1]) - lambda5[1], "$, ", 
                                  "$\\lambda_2 = ", lambda5[1], "$"),
                           paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
-writeData(wb, "NoFixedEffects", tp, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
+T5.1 <- cbind(T5.1[,c("FE.Q1.y_q1", "FE.Q1.y_q2", "FE.Q1.y_q3", "FE.Q1.y_q4", "FE.Q1.y_q(conformity)")], "V1" = NA,
+              T5.1[,c("FE.Q3.y_q1", "FE.Q3.y_q2", "FE.Q3.y_q3", "FE.Q3.y_q4", "FE.Q3.y_q(conformity)")], "V2" = NA,
+              T5.1[,c("FE.LIM.G(total):y", "FE.LIM.G(conformity):y")], "V2" = NA,
+              T5.1[,c("FE.CES.rho", "FE.CES.G(total):y", "FE.CES.G(conformity):y")])
+# write
+writeData(wb, "Table 5.1", T5.1, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
+# first row
+fr    <- c(rep(c(paste("ld_q", 1:4), "ld2", ""), 2), "ld", "ld2", "", "rho", "ld", "ld2")
+for (i in 1:length(fr)) {
+  writeData(wb, "Table 5.1", fr[i], startRow = 1, startCol = i)
+}
+# Merge cells
+for (i in seq(1, nrow(T5.1), 3) + 1) {
+  mergeCells(wb, "Table 5.1", cols = 1:ncol(T5.1), rows = i)
+}
+# Formatting
+addStyle(wb, "Table 5.1", style = createStyle(halign = "center"), 
+         rows = 1:(nrow(T5.1) + 1), cols = 1:ncol(T5.1), gridExpand = TRUE)
+
+# Table 5.2
+T5.2 <- Est %>% select(all_of(c("FE.ET.ntau=3.4", "FE.ET.ntau=4.3", "FE.ET.ntau=4.5", # Encompassing tests
+                                "FE.Q1.KPstat", "FE.Q3.KPstat", # KP stat
+                                "FE.Val.Q3"))) # Validity of Z2
+T5.2[seq(1, 16, 3), 1] <- c("DGP A", "DGP B", "DGP C", "DGP D", "DGP E", "DGP F (LIM model)")
+T5.2 <- cbind(T5.2[,c("FE.ET.ntau=3.4", "FE.ET.ntau=4.3", "FE.ET.ntau=4.5")], "V1" = NA,
+              T5.2[,c("FE.Q1.KPstat", "FE.Q3.KPstat", "FE.Val.Q3")])
+# write
+writeData(wb, "Table 5.2", T5.2, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
+# first row
+fr    <- c(LETTERS[1:3], "", "KP Z1", "KP Z1, Z2", "Validity Z2")
+for (i in 1:length(fr)) {
+  writeData(wb, "Table 5.2", fr[i], startRow = 1, startCol = i)
+}
+# Merge cells
+for (i in seq(1, nrow(T5.2), 3) + 1) {
+  mergeCells(wb, "Table 5.2", cols = 1:ncol(T5.2), rows = i)
+}
+# Formatting
+addStyle(wb, "Table 5.2", style = createStyle(halign = "center"), 
+         rows = 1:(nrow(T5.2) + 1), cols = 1:ncol(T5.2), gridExpand = TRUE)
 
 # Full results
-addWorksheet(wb, "Full") 
 tp <- Est
 tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1[-1], collapse = ", "), ")$, ", 
                                  # "$\\lambda_1 = ", sum(lambda1[-1]) - lambda1[1], "$, ", 
@@ -342,9 +375,7 @@ tp[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lamb
                                  # "$\\lambda_1 = ", sum(lambda5[-1]) - lambda5[1], "$, ", 
                                  "$\\lambda_2 = ", lambda5[1], "$"),
                           paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$, $\\lambda_2 = 0$"))
-writeData(wb, "Full", tp, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
-
+writeData(wb, "Full results", tp, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 
 # Save the workbook
 saveWorkbook(wb, paste0(OutResPath, "/simulations.xlsx"), overwrite = TRUE)
-

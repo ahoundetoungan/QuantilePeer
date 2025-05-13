@@ -10,23 +10,26 @@ using namespace arma;
 using namespace std;
 
 // generalized inverse
-Eigen::MatrixXd ginv(const Eigen::MatrixXd& A, double tol = 1e-8) {
+Eigen::MatrixXd ginv(const Eigen::MatrixXd& A) {
   Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
   
   const Eigen::VectorXd& singularValues = svd.singularValues();
   Eigen::VectorXd singularValuesInv = singularValues;
   
-  for (int i = 0; i < singularValues.size(); ++i) {
-    if (singularValues(i) > tol)
-      singularValuesInv(i) = 1.0 / singularValues(i);
-    else
-      singularValuesInv(i) = 0.0;
-  }
-  
-  Eigen::MatrixXd Dplus = singularValuesInv.asDiagonal();
-  Eigen::MatrixXd Ainv = svd.matrixV() * Dplus * svd.matrixU().transpose();
-  
-  return Ainv;
+  // Compute robust tolerance
+  double tol = std::numeric_limits<double>::epsilon()
+    * std::max(A.rows(), A.cols())
+    * singularValues(0);  // σ_max
+    
+    for (int i = 0; i < singularValues.size(); ++i) {
+      if (singularValues(i) > tol)
+        singularValuesInv(i) = 1.0 / singularValues(i);
+      else
+        singularValuesInv(i) = 0.0;
+    }
+    
+    Eigen::MatrixXd Dplus = singularValuesInv.asDiagonal();
+    return svd.matrixV() * Dplus * svd.matrixU().transpose();
 }
 
 
@@ -41,23 +44,23 @@ Eigen::MatrixXd matrixSqrt2(const Eigen::MatrixXd& A) {
 // Covariance matrix of two theta using two different sets of instruments, reduced form
 //[[Rcpp::export]]
 Rcpp::List Cov2ThetaRed(const Eigen::MatrixXd& X1,
-                             const Eigen::MatrixXd& qy1,
-                             const Eigen::MatrixXd& Z1,
-                             const Eigen::MatrixXd& W1,
-                             const Eigen::ArrayXd& e1,
-                             const Eigen::VectorXd theta1,
-                             const int& Kest1,
-                             const Eigen::MatrixXd& X2,
-                             const Eigen::MatrixXd& qy2,
-                             const Eigen::MatrixXd& Z2,
-                             const Eigen::MatrixXd& W2,
-                             const Eigen::ArrayXd& e2,
-                             const Eigen::VectorXd theta2,
-                             const int& Kest2,
-                             const int& ngroup, //common to both models
-                             const Eigen::ArrayXi& cumsn, //common to both models
-                             const int& HAC = 0, //common to both models
-                             const bool& full = false) { 
+                        const Eigen::MatrixXd& qy1,
+                        const Eigen::MatrixXd& Z1,
+                        const Eigen::MatrixXd& W1,
+                        const Eigen::ArrayXd& e1,
+                        const Eigen::VectorXd theta1,
+                        const int& Kest1,
+                        const Eigen::MatrixXd& X2,
+                        const Eigen::MatrixXd& qy2,
+                        const Eigen::MatrixXd& Z2,
+                        const Eigen::MatrixXd& W2,
+                        const Eigen::ArrayXd& e2,
+                        const Eigen::VectorXd theta2,
+                        const int& Kest2,
+                        const int& ngroup, //common to both models
+                        const Eigen::ArrayXi& cumsn, //common to both models
+                        const int& HAC = 0, //common to both models
+                        const bool& full = false) { 
   int ntau1(qy1.cols()), ntau2(qy2.cols()), Kins1(Z1.cols()), Kins2(Z2.cols()), 
   Kins(Kins1 + Kins2), n(X1.rows()), K1(X1.cols()), K2(X2.cols()), 
   Kv1(K1 + ntau1), Kv2(K2 + ntau2), Kv(Kv1 + Kv2);
@@ -77,15 +80,12 @@ Rcpp::List Cov2ThetaRed(const Eigen::MatrixXd& X1,
   // variance of Ze
   Eigen::MatrixXd VZe(Eigen::MatrixXd::Zero(Kins, Kins));
   if (HAC == 0) {
-    double s2((e1.square().sum() + e2.square().sum())/(n - Kest1 - Kest2));
+    double s2((e1.square().sum() + e2.square().sum())/(2*n - Kest1 - Kest2));
     Eigen::MatrixXd ZZ1(Z1.transpose()*Z1), ZZ2(Z2.transpose()*Z2), Z1Z2(Z1.transpose()*Z2);
     VZe.block(0, 0, Kins1, Kins1)         = s2*ZZ1;
     VZe.block(0, Kins1, Kins1, Kins2)     = s2*Z1Z2;
     VZe.block(Kins1, 0, Kins2, Kins1)     = s2*Z1Z2.transpose();
     VZe.block(Kins1, Kins1, Kins2, Kins2) = s2*ZZ2;
-    // cout<<s21<<endl;
-    // cout<<s22<<endl;
-    // cout<<s1s2<<endl;
   }
   if (HAC == 1) {
     Eigen::MatrixXd Ze(n, Kins1 + Kins2);
@@ -118,7 +118,7 @@ Rcpp::List Cov2ThetaRed(const Eigen::MatrixXd& X1,
   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(df, Kv));
   R(Eigen::all, Eigen::seqN(0, df))   = Eigen::MatrixXd::Identity(df, df);
   R(Eigen::all, Eigen::seqN(Kv1, df)) = -Eigen::MatrixXd::Identity(df, df);
-
+  
   // test statistic
   Eigen::VectorXd Rtheta(R*theta);
   Eigen::MatrixXd RiHdF(R*iHdF);
@@ -134,31 +134,31 @@ Rcpp::List Cov2ThetaRed(const Eigen::MatrixXd& X1,
 // Covariance matrix of two theta using two different sets of instruments, Structural form
 //[[Rcpp::export]]
 Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& X1,
-                               const Eigen::MatrixXd& qy1,
-                               const Eigen::MatrixXd& Z1,
-                               const Eigen::MatrixXd& W11,
-                               const Eigen::MatrixXd& W21,
-                               const Eigen::ArrayXd& e1,
-                               const Eigen::VectorXd theta1,
-                               const int& Kest11,
-                               const int& Kest21,
-                               const Eigen::MatrixXd& X2,
-                               const Eigen::MatrixXd& qy2,
-                               const Eigen::MatrixXd& Z2,
-                               const Eigen::MatrixXd& W12,
-                               const Eigen::MatrixXd& W22,
-                               const Eigen::ArrayXd& e2,
-                               const Eigen::VectorXd theta2,
-                               const int& Kest12,
-                               const int& Kest22,
-                               const Eigen::ArrayXi& idX1, //common to both models
-                               const Eigen::ArrayXi& idX2, //common to both models
-                               const Eigen::ArrayXi& nIs, //common to both models
-                               const Eigen::ArrayXi& Is, //common to both models
-                               const int& ngroup, //common to both models
-                               const Eigen::ArrayXi& cumsn, //common to both models
-                               const int& HAC = 0, //common to both models
-                               const bool& full = false) {
+                          const Eigen::MatrixXd& qy1,
+                          const Eigen::MatrixXd& Z1,
+                          const Eigen::MatrixXd& W11,
+                          const Eigen::MatrixXd& W21,
+                          const Eigen::ArrayXd& e1,
+                          const Eigen::VectorXd theta1,
+                          const int& Kest11,
+                          const int& Kest21,
+                          const Eigen::MatrixXd& X2,
+                          const Eigen::MatrixXd& qy2,
+                          const Eigen::MatrixXd& Z2,
+                          const Eigen::MatrixXd& W12,
+                          const Eigen::MatrixXd& W22,
+                          const Eigen::ArrayXd& e2,
+                          const Eigen::VectorXd theta2,
+                          const int& Kest12,
+                          const int& Kest22,
+                          const Eigen::ArrayXi& idX1, //common to both models
+                          const Eigen::ArrayXi& idX2, //common to both models
+                          const Eigen::ArrayXi& nIs, //common to both models
+                          const Eigen::ArrayXi& Is, //common to both models
+                          const int& ngroup, //common to both models
+                          const Eigen::ArrayXi& cumsn, //common to both models
+                          const int& HAC = 0, //common to both models
+                          const bool& full = false) {
   int Kins1(Z1.cols()), Kins2(Z2.cols()), Kins(Kins1 + Kins2), n(X1.rows()), K1(idX1.size()), K2(idX2.size()), K(K1 + K2),
   ntau(qy1.cols()), n_iso(Is.size()), n_niso(n - n_iso);
   
@@ -206,8 +206,8 @@ Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& X1,
   // cout<<K1<<endl;
   // cout<<Kins<<endl;
   if (HAC == 0) {
-    double s21((e11.square().sum() + e12.square().sum())/(n_iso - Kest11 - Kest12));
-    double s22((e21.square().sum() + e22.square().sum())/(n_niso - Kest21 - Kest22));
+    double s21((e11.square().sum() + e12.square().sum())/(2*n_iso - Kest11 - Kest12));
+    double s22((e21.square().sum() + e22.square().sum())/(2*n_niso - Kest21 - Kest22));
     Eigen::MatrixXd X11X12(X11.transpose()*X12), Z21Z22(Z21.transpose()*Z22);
     VF.block(0, 0, K1, K1) = s21*XX11;
     VF.block(0, K1 + Kins1 + 1, K1, K1) = s21*X11X12;
@@ -314,11 +314,139 @@ Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& X1,
   
   return Rcpp::List::create(_["stat"]   = stat, 
                             _["df"]     = df, 
-                            _["theta1"] = theta1.head(ntau + 1),
-                            _["theta2"] = theta2.head(ntau + 1));
+                            _["theta1"] = theta1(Eigen::seqN(1, ntau)),
+                            _["theta2"] = theta2(Eigen::seqN(1, ntau)));
 }
 
-// Optimization
+// This function implement test for validity of Z2 using the fact that Z1 is valid
+//[[Rcpp::export]]
+Rcpp::List validZ2SarganRed(const Eigen::MatrixXd& X1,
+                            const Eigen::MatrixXd& qy1,
+                            const Eigen::MatrixXd& Z1,
+                            const Eigen::MatrixXd& W1,
+                            const Eigen::ArrayXd& e1,
+                            const Eigen::VectorXd theta1,
+                            const int& Kest1,
+                            const Eigen::MatrixXd& X2,
+                            const Eigen::MatrixXd& qy2,
+                            const Eigen::MatrixXd& Z2,
+                            const Eigen::MatrixXd& W2,
+                            const Eigen::ArrayXd& e2,
+                            const Eigen::VectorXd theta2,
+                            const int& Kest2,
+                            const int& ngroup, //common to both models
+                            const Eigen::ArrayXi& cumsn, //common to both models
+                            const int& HAC = 0, //common to both models
+                            const bool& full = false) {
+  int ntau1(qy1.cols()), ntau2(qy2.cols()), Kins2(Z2.cols()), n(X1.rows());
+  Eigen::MatrixXd H(Z2 - Z1*(Z1.transpose() * Z1).colPivHouseholderQr().solve(Z1.transpose() * Z2));
+  Eigen::FullPivLU<Eigen::MatrixXd> lu(H);
+  int df(lu.rank());
+  
+  // variance of He
+  Eigen::MatrixXd VHe(Eigen::MatrixXd::Zero(Kins2, Kins2));
+  if (HAC == 0) {
+    double s2(e1.square().sum()/(n - Kest1));
+    VHe = s2 * (H.transpose() * H);
+  }
+  if (HAC == 1) {
+    Eigen::MatrixXd He(n, Kins2);
+    He << (H.array().colwise()*e1).matrix();
+    VHe    = He.transpose()*He;
+  }
+  if (HAC == 2) {
+    Eigen::ArrayXXd He(n, Kins2);
+    He << H.array().colwise()*e1;
+    for (int r(0); r < ngroup; ++ r) {
+      int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
+      Eigen::VectorXd tp(He(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix());
+      VHe += tp*tp.transpose();
+    }
+  }
+  
+  Eigen::VectorXd He(H.transpose() * e1.matrix());
+  double stat((He.transpose() * ginv(VHe) * He)(0, 0));
+  return Rcpp::List::create(_["stat"]   = stat, 
+                            _["df"]     = df, 
+                            _["theta1"] = theta1.head(ntau1),
+                            _["theta2"] = theta2.head(ntau2));
+}
+
+
+//[[Rcpp::export]]
+Rcpp::List validZ2SarganStruc(const Eigen::MatrixXd& X1,
+                              const Eigen::MatrixXd& qy1,
+                              const Eigen::MatrixXd& Z1,
+                              const Eigen::MatrixXd& W11,
+                              const Eigen::MatrixXd& W21,
+                              const Eigen::ArrayXd& e1,
+                              const Eigen::VectorXd theta1,
+                              const int& Kest11,
+                              const int& Kest21,
+                              const Eigen::MatrixXd& X2,
+                              const Eigen::MatrixXd& qy2,
+                              const Eigen::MatrixXd& Z2,
+                              const Eigen::MatrixXd& W12,
+                              const Eigen::MatrixXd& W22,
+                              const Eigen::ArrayXd& e2,
+                              const Eigen::VectorXd theta2,
+                              const int& Kest12,
+                              const int& Kest22,
+                              const Eigen::ArrayXi& idX1, //common to both models
+                              const Eigen::ArrayXi& idX2, //common to both models
+                              const Eigen::ArrayXi& nIs, //common to both models
+                              const Eigen::ArrayXi& Is, //common to both models
+                              const int& ngroup, //common to both models
+                              const Eigen::ArrayXi& cumsn, //common to both models
+                              const int& HAC = 0, //common to both models
+                              const bool& full = false) {
+  int Kins1(Z1.cols()), Kins2(Z2.cols()), n(X1.rows()), ntau(qy1.cols()), n_iso(Is.size()), n_niso(n - n_iso);
+
+  // First stage
+  Eigen::VectorXd b1(theta1(1 + ntau + idX1)), b2(theta2(1 + ntau + idX1));
+  
+  // Instruments
+  Eigen::VectorXd Xb1(X1(Eigen::all, idX1)*b1), Xb21(Xb1(nIs));
+  Eigen::VectorXd Xb2(X2(Eigen::all, idX1)*b2), Xb22(Xb2(nIs));
+  Eigen::MatrixXd Z21(n_niso, 1 + Kins1);
+  Z21 << Xb21, Z1(nIs, Eigen::all);
+  Eigen::MatrixXd Z22(n_niso, 1 + Kins2);
+  Z22 << Xb22, Z2(nIs, Eigen::all);
+  
+  Eigen::MatrixXd H(Z22 - Z21*(Z21.transpose() * Z21).colPivHouseholderQr().solve(Z21.transpose() * Z22));
+  Eigen::FullPivLU<Eigen::MatrixXd> lu(H);
+  int df(lu.rank());
+  
+  // variance of He
+  Eigen::MatrixXd VHe(Eigen::MatrixXd::Zero(Kins2 + 1, Kins2 + 1));
+  if (HAC == 0) {
+    double s2(e1(nIs).square().sum()/(n_niso - Kest21));
+    VHe = s2 * (H.transpose() * H);
+  }
+  if (HAC == 1) {
+    Eigen::MatrixXd He((H.array().colwise() * e1(nIs)).matrix());
+    VHe    = He.transpose()*He;
+  }
+  if (HAC == 2) {
+    Eigen::ArrayXXd He(Eigen::MatrixXd::Zero(n, Kins2 + 1));
+    He(nIs, Eigen::all) << H.array().colwise() * e1(nIs);
+    for (int r(0); r < ngroup; ++ r) {
+      int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
+      Eigen::VectorXd tp(He(Eigen::seq(n1, n2), Eigen::all).colwise().sum().matrix());
+      VHe += tp*tp.transpose();
+    }
+  }
+  
+  Eigen::VectorXd He(H.transpose() * e1(nIs).matrix());
+  double stat((He.transpose() * ginv(VHe) * He)(0, 0));
+  return Rcpp::List::create(_["stat"]   = stat, 
+                            _["df"]     = df, 
+                            _["theta1"] = theta1(Eigen::seqN(1, ntau)),
+                            _["theta2"] = theta2(Eigen::seqN(1, ntau)));
+}
+
+
+// Optimization for monotonicity test
 class OptimTest: public MFuncGrad
 {
 private:
@@ -409,33 +537,33 @@ Rcpp::List fTestMonotone(const Eigen::VectorXd& thetahat,
 // Encompassing test, KP test
 //[[Rcpp::export]]
 Rcpp::List fEncompassingStrucKP(const Eigen::MatrixXd& X1,
-                              const Eigen::MatrixXd& qy1,
-                              const Eigen::MatrixXd& Z1,
-                              const Eigen::MatrixXd& W11,
-                              const Eigen::MatrixXd& W21,
-                              const Eigen::VectorXd& e1,
-                              const Eigen::VectorXd theta1,
-                              const Eigen::ArrayXi& idX11,
-                              const Eigen::ArrayXi& idX21,
-                              const int& Kest11,
-                              const int& Kest21,
-                              const Eigen::MatrixXd& X2,
-                              const Eigen::MatrixXd& qy2,
-                              const Eigen::MatrixXd& Z2,
-                              const Eigen::MatrixXd& W12,
-                              const Eigen::MatrixXd& W22,
-                              const Eigen::VectorXd& e2,
-                              const Eigen::VectorXd theta2,
-                              const Eigen::ArrayXi& idX12,
-                              const Eigen::ArrayXi& idX22,
-                              const int& Kest12,
-                              const int& Kest22,
-                              const Eigen::ArrayXi& nIs, //common to both models
-                              const Eigen::ArrayXi& Is, //common to both models
-                              const int& ngroup, //common to both models
-                              const Eigen::ArrayXi& cumsn, //common to both models
-                              const int& HAC = 0, //common to both models
-                              const bool& full = false) {
+                                const Eigen::MatrixXd& qy1,
+                                const Eigen::MatrixXd& Z1,
+                                const Eigen::MatrixXd& W11,
+                                const Eigen::MatrixXd& W21,
+                                const Eigen::VectorXd& e1,
+                                const Eigen::VectorXd theta1,
+                                const Eigen::ArrayXi& idX11,
+                                const Eigen::ArrayXi& idX21,
+                                const int& Kest11,
+                                const int& Kest21,
+                                const Eigen::MatrixXd& X2,
+                                const Eigen::MatrixXd& qy2,
+                                const Eigen::MatrixXd& Z2,
+                                const Eigen::MatrixXd& W12,
+                                const Eigen::MatrixXd& W22,
+                                const Eigen::VectorXd& e2,
+                                const Eigen::VectorXd theta2,
+                                const Eigen::ArrayXi& idX12,
+                                const Eigen::ArrayXi& idX22,
+                                const int& Kest12,
+                                const int& Kest22,
+                                const Eigen::ArrayXi& nIs, //common to both models
+                                const Eigen::ArrayXi& Is, //common to both models
+                                const int& ngroup, //common to both models
+                                const Eigen::ArrayXi& cumsn, //common to both models
+                                const int& HAC = 0, //common to both models
+                                const bool& full = false) {
   int Kins1(Z1.cols()), Kins2(Z2.cols()), n(X1.rows()), K21(idX21.size()),
   K22(idX22.size()), ntau1(qy1.cols()), ntau2(qy2.cols()), n_iso(Is.size()), n_niso(n - n_iso);
   
@@ -535,8 +663,8 @@ Rcpp::List fEncompassingStrucKP(const Eigen::MatrixXd& X1,
   // Aqper and Bqper
   Eigen::MatrixXd Aper(matrixSqrt2(U * U.transpose()));
   Eigen::MatrixXd Bper((matrixSqrt2(V * V.transpose())).transpose());
-
-
+  
+  
   // lambda and its varianve
   Eigen::MatrixXd BAper(Eigen::KroneckerProduct(Bper, Aper.transpose()));
   Eigen::VectorXd lambda (BAper * deltatilde);
@@ -550,23 +678,23 @@ Rcpp::List fEncompassingStrucKP(const Eigen::MatrixXd& X1,
 
 //[[Rcpp::export]]
 Rcpp::List fEncompassingRedKP(const Eigen::MatrixXd& X1,
-                            const Eigen::MatrixXd& qy1,
-                            const Eigen::MatrixXd& Z1,
-                            const Eigen::MatrixXd& W1,
-                            const Eigen::VectorXd& e1,
-                            const Eigen::VectorXd theta1,
-                            const int& Kest1,
-                            const Eigen::MatrixXd& X2,
-                            const Eigen::MatrixXd& qy2,
-                            const Eigen::MatrixXd& Z2,
-                            const Eigen::MatrixXd& W2,
-                            const Eigen::VectorXd& e2,
-                            const Eigen::VectorXd theta2,
-                            const int& Kest2,
-                            const int& ngroup, //common to both models
-                            const Eigen::ArrayXi& cumsn, //common to both models
-                            const int& HAC = 0, //common to both models
-                            const bool& full = false) {
+                              const Eigen::MatrixXd& qy1,
+                              const Eigen::MatrixXd& Z1,
+                              const Eigen::MatrixXd& W1,
+                              const Eigen::VectorXd& e1,
+                              const Eigen::VectorXd theta1,
+                              const int& Kest1,
+                              const Eigen::MatrixXd& X2,
+                              const Eigen::MatrixXd& qy2,
+                              const Eigen::MatrixXd& Z2,
+                              const Eigen::MatrixXd& W2,
+                              const Eigen::VectorXd& e2,
+                              const Eigen::VectorXd theta2,
+                              const int& Kest2,
+                              const int& ngroup, //common to both models
+                              const Eigen::ArrayXi& cumsn, //common to both models
+                              const int& HAC = 0, //common to both models
+                              const bool& full = false) {
   int Kins2(Z2.cols()), n(X1.rows()), K1(X1.cols()), K2(X2.cols()),
   ntau1(qy1.cols()), ntau2(qy2.cols());
   
@@ -654,33 +782,33 @@ Rcpp::List fEncompassingRedKP(const Eigen::MatrixXd& X1,
 // Encompassing test, without projection onto Z1
 //[[Rcpp::export]]
 Rcpp::List fEncompassingStruc(const Eigen::MatrixXd& X1,
-                               const Eigen::MatrixXd& qy1,
-                               const Eigen::MatrixXd& Z1,
-                               const Eigen::MatrixXd& W11,
-                               const Eigen::MatrixXd& W21,
-                               const Eigen::VectorXd& e1,
-                               const Eigen::VectorXd theta1,
-                               const Eigen::ArrayXi& idX11,
-                               const Eigen::ArrayXi& idX21,
-                               const int& Kest11,
-                               const int& Kest21,
-                               const Eigen::MatrixXd& X2,
-                               const Eigen::MatrixXd& qy2,
-                               const Eigen::MatrixXd& Z2,
-                               const Eigen::MatrixXd& W12,
-                               const Eigen::MatrixXd& W22,
-                               const Eigen::VectorXd& e2,
-                               const Eigen::VectorXd theta2,
-                               const Eigen::ArrayXi& idX12,
-                               const Eigen::ArrayXi& idX22,
-                               const int& Kest12,
-                               const int& Kest22,
-                               const Eigen::ArrayXi& nIs, //common to both models
-                               const Eigen::ArrayXi& Is, //common to both models
-                               const int& ngroup, //common to both models
-                               const Eigen::ArrayXi& cumsn, //common to both models
-                               const int& HAC = 0, //common to both models
-                               const bool& full = false) {
+                              const Eigen::MatrixXd& qy1,
+                              const Eigen::MatrixXd& Z1,
+                              const Eigen::MatrixXd& W11,
+                              const Eigen::MatrixXd& W21,
+                              const Eigen::VectorXd& e1,
+                              const Eigen::VectorXd theta1,
+                              const Eigen::ArrayXi& idX11,
+                              const Eigen::ArrayXi& idX21,
+                              const int& Kest11,
+                              const int& Kest21,
+                              const Eigen::MatrixXd& X2,
+                              const Eigen::MatrixXd& qy2,
+                              const Eigen::MatrixXd& Z2,
+                              const Eigen::MatrixXd& W12,
+                              const Eigen::MatrixXd& W22,
+                              const Eigen::VectorXd& e2,
+                              const Eigen::VectorXd theta2,
+                              const Eigen::ArrayXi& idX12,
+                              const Eigen::ArrayXi& idX22,
+                              const int& Kest12,
+                              const int& Kest22,
+                              const Eigen::ArrayXi& nIs, //common to both models
+                              const Eigen::ArrayXi& Is, //common to both models
+                              const int& ngroup, //common to both models
+                              const Eigen::ArrayXi& cumsn, //common to both models
+                              const int& HAC = 0, //common to both models
+                              const bool& full = false) {
   int Kins1(Z1.cols()), Kins2(Z2.cols()), n(X1.rows()), K21(idX21.size()),
   K22(idX22.size()), ntau1(qy1.cols()), ntau2(qy2.cols()), n_iso(Is.size()), n_niso(n - n_iso);
   
@@ -760,23 +888,23 @@ Rcpp::List fEncompassingStruc(const Eigen::MatrixXd& X1,
 
 //[[Rcpp::export]]
 Rcpp::List fEncompassingRed(const Eigen::MatrixXd& X1,
-                             const Eigen::MatrixXd& qy1,
-                             const Eigen::MatrixXd& Z1,
-                             const Eigen::MatrixXd& W1,
-                             const Eigen::VectorXd& e1,
-                             const Eigen::VectorXd theta1,
-                             const int& Kest1,
-                             const Eigen::MatrixXd& X2,
-                             const Eigen::MatrixXd& qy2,
-                             const Eigen::MatrixXd& Z2,
-                             const Eigen::MatrixXd& W2,
-                             const Eigen::VectorXd& e2,
-                             const Eigen::VectorXd theta2,
-                             const int& Kest2,
-                             const int& ngroup, //common to both models
-                             const Eigen::ArrayXi& cumsn, //common to both models
-                             const int& HAC = 0, //common to both models
-                             const bool& full = false) {
+                            const Eigen::MatrixXd& qy1,
+                            const Eigen::MatrixXd& Z1,
+                            const Eigen::MatrixXd& W1,
+                            const Eigen::VectorXd& e1,
+                            const Eigen::VectorXd theta1,
+                            const int& Kest1,
+                            const Eigen::MatrixXd& X2,
+                            const Eigen::MatrixXd& qy2,
+                            const Eigen::MatrixXd& Z2,
+                            const Eigen::MatrixXd& W2,
+                            const Eigen::VectorXd& e2,
+                            const Eigen::VectorXd theta2,
+                            const int& Kest2,
+                            const int& ngroup, //common to both models
+                            const Eigen::ArrayXi& cumsn, //common to both models
+                            const int& HAC = 0, //common to both models
+                            const bool& full = false) {
   int Kins2(Z2.cols()), n(X1.rows()), K1(X1.cols()), K2(X2.cols()),
   ntau1(qy1.cols()), ntau2(qy2.cols());
   
@@ -833,33 +961,33 @@ Rcpp::List fEncompassingRed(const Eigen::MatrixXd& X1,
 // Encompassing test with projection onto Z
 //[[Rcpp::export]]
 Rcpp::List fEncompassingStruc2(const Eigen::MatrixXd& X1,
-                              const Eigen::MatrixXd& qy1,
-                              const Eigen::MatrixXd& Z1,
-                              const Eigen::MatrixXd& W11,
-                              const Eigen::MatrixXd& W21,
-                              const Eigen::VectorXd& e1,
-                              const Eigen::VectorXd theta1,
-                              const Eigen::ArrayXi& idX11,
-                              const Eigen::ArrayXi& idX21,
-                              const int& Kest11,
-                              const int& Kest21,
-                              const Eigen::MatrixXd& X2,
-                              const Eigen::MatrixXd& qy2,
-                              const Eigen::MatrixXd& Z2,
-                              const Eigen::MatrixXd& W12,
-                              const Eigen::MatrixXd& W22,
-                              const Eigen::VectorXd& e2,
-                              const Eigen::VectorXd theta2,
-                              const Eigen::ArrayXi& idX12,
-                              const Eigen::ArrayXi& idX22,
-                              const int& Kest12,
-                              const int& Kest22,
-                              const Eigen::ArrayXi& nIs, //common to both models
-                              const Eigen::ArrayXi& Is, //common to both models
-                              const int& ngroup, //common to both models
-                              const Eigen::ArrayXi& cumsn, //common to both models
-                              const int& HAC = 0, //common to both models
-                              const bool& full = false) {
+                               const Eigen::MatrixXd& qy1,
+                               const Eigen::MatrixXd& Z1,
+                               const Eigen::MatrixXd& W11,
+                               const Eigen::MatrixXd& W21,
+                               const Eigen::VectorXd& e1,
+                               const Eigen::VectorXd theta1,
+                               const Eigen::ArrayXi& idX11,
+                               const Eigen::ArrayXi& idX21,
+                               const int& Kest11,
+                               const int& Kest21,
+                               const Eigen::MatrixXd& X2,
+                               const Eigen::MatrixXd& qy2,
+                               const Eigen::MatrixXd& Z2,
+                               const Eigen::MatrixXd& W12,
+                               const Eigen::MatrixXd& W22,
+                               const Eigen::VectorXd& e2,
+                               const Eigen::VectorXd theta2,
+                               const Eigen::ArrayXi& idX12,
+                               const Eigen::ArrayXi& idX22,
+                               const int& Kest12,
+                               const int& Kest22,
+                               const Eigen::ArrayXi& nIs, //common to both models
+                               const Eigen::ArrayXi& Is, //common to both models
+                               const int& ngroup, //common to both models
+                               const Eigen::ArrayXi& cumsn, //common to both models
+                               const int& HAC = 0, //common to both models
+                               const bool& full = false) {
   int Kins1(Z1.cols()), Kins2(Z2.cols()), n(X1.rows()), K21(idX21.size()), 
   K22(idX22.size()), ntau1(qy1.cols()), ntau2(qy2.cols()), n_iso(Is.size()), n_niso(n - n_iso);
   
@@ -937,23 +1065,23 @@ Rcpp::List fEncompassingStruc2(const Eigen::MatrixXd& X1,
 
 //[[Rcpp::export]]
 Rcpp::List fEncompassingRed2(const Eigen::MatrixXd& X1,
-                              const Eigen::MatrixXd& qy1,
-                              const Eigen::MatrixXd& Z1,
-                              const Eigen::MatrixXd& W1,
-                              const Eigen::VectorXd& e1,
-                              const Eigen::VectorXd theta1,
-                              const int& Kest1,
-                              const Eigen::MatrixXd& X2,
-                              const Eigen::MatrixXd& qy2,
-                              const Eigen::MatrixXd& Z2,
-                              const Eigen::MatrixXd& W2,
-                              const Eigen::VectorXd& e2,
-                              const Eigen::VectorXd theta2,
-                              const int& Kest2,
-                              const int& ngroup, //common to both models
-                              const Eigen::ArrayXi& cumsn, //common to both models
-                              const int& HAC = 0, //common to both models
-                              const bool& full = false) {
+                             const Eigen::MatrixXd& qy1,
+                             const Eigen::MatrixXd& Z1,
+                             const Eigen::MatrixXd& W1,
+                             const Eigen::VectorXd& e1,
+                             const Eigen::VectorXd theta1,
+                             const int& Kest1,
+                             const Eigen::MatrixXd& X2,
+                             const Eigen::MatrixXd& qy2,
+                             const Eigen::MatrixXd& Z2,
+                             const Eigen::MatrixXd& W2,
+                             const Eigen::VectorXd& e2,
+                             const Eigen::VectorXd theta2,
+                             const int& Kest2,
+                             const int& ngroup, //common to both models
+                             const Eigen::ArrayXi& cumsn, //common to both models
+                             const int& HAC = 0, //common to both models
+                             const bool& full = false) {
   int Kins2(Z2.cols()), n(X1.rows()), K1(X1.cols()), K2(X2.cols()), 
   ntau1(qy1.cols()), ntau2(qy2.cols());
   
@@ -1002,3 +1130,5 @@ Rcpp::List fEncompassingRed2(const Eigen::MatrixXd& X1,
   
   return Rcpp::List::create(_["stat"] = stat, _["df"] = df, _["diff"] = HZ1e1);
 }
+
+

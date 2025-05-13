@@ -6,10 +6,10 @@
 # Last updated: 2025-02-25
 
 ## This script imports raw Add Health data and prepares them for estimation.
-## The outputs of this script include an .Rda file for each outcome.
-## Each .Rda file includes a data set (y and X variables) and the network matrix G.
-## Add Health data are imported from the path InDataPath.
-## The .Rda files will be saved at the path OutDataPath.
+## The output is an .Rda file per outcome.
+## Each .Rda file contains a dataset (y and X variables) and the network matrix G.
+## The Add Health data are imported from the path `InDataPath`.
+## The .Rda files are saved to the path `OutDataPath`.
 
 rm(list = ls())
 library(dplyr)

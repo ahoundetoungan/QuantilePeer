@@ -5,7 +5,8 @@
 
 # Last updated: 2025-04-03
 
-# This script replicates the counterfactual analysis (Figure 6.1)
+# This script reproduces the counterfactual analysis (Figure 6.1)
+
 rm(list = ls()) 
 library(dplyr)
 library(QuantilePeer)
