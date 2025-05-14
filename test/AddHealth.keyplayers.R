@@ -26,6 +26,9 @@ depvar  <- c("gpa", "academiceffort", "nclubs", "futureperception", "trouble", "
 
 # The following function takes an outcome and compute the impact of an increase in the intercept.
 fsim    <- function(outcome) {
+  if (file.exists(paste0(OutResPath, outcome, ".txt"))) {
+    file.remove(paste0(OutResPath, outcome, ".txt"))
+  }
   sink(file = paste0(OutResPath, outcome, ".txt"))
   cat("Outcome: ", outcome, "\n", sep = "")
   ########################################################
@@ -108,6 +111,7 @@ fsim    <- function(outcome) {
                                  beta = c(SQ13$gmm$Estimate[c(paste0("X", colnames(X)),
                                                               paste0("GX", colnames(GX)))]),
                                  structural = TRUE,
+                                 init = y[(ncum[s] + 1):ncum[s + 1]],
                                  epsilon = res[(ncum[s] + 1):ncum[s + 1]])$y)
     
     # tau4
@@ -131,6 +135,7 @@ fsim    <- function(outcome) {
                                  beta = c(SQ14$gmm$Estimate[c(paste0("X", colnames(X)),
                                                               paste0("GX", colnames(GX)))]),
                                  structural = TRUE,
+                                 init = y[(ncum[s] + 1):ncum[s + 1]],
                                  epsilon = res[(ncum[s] + 1):ncum[s + 1]])$y)
     
     #### CES model
@@ -154,6 +159,7 @@ fsim    <- function(outcome) {
                                    beta = c(SCES$gmm$Estimate[c(paste0("X", colnames(X)),
                                                                 paste0("GX", colnames(GX)))]),
                                    structural = TRUE,
+                                   init = y[(ncum[s] + 1):ncum[s + 1]],
                                    epsilon = res[(ncum[s] + 1):ncum[s + 1]])$y, na.rm = TRUE)
     
     KPlayer[i,] <- c(KPLIM, KPQ3, KPQ4, KPCES)
