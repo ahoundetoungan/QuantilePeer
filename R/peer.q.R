@@ -524,6 +524,7 @@ print.qpeer <- function(x, ...) {
 #' @param maxit The maximum number of iterations for the Fixed Point Iteration Method.
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 #' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `sim.qpeer` is called.
+#' @param init An optional initial guess for the equilibrium.
 #' @param tol The tolerance value used in the Fixed Point Iteration Method to compute the outcome `y`. The process stops if the \eqn{\ell_1}-distance 
 #' between two consecutive values of `y` is less than `tol`.
 #' @param details A logical value indicating whether to save the indices and weights of the two peers whose weighted average determines the quantile.
@@ -561,7 +562,7 @@ print.qpeer <- function(x, ...) {
 #' @importFrom utils head
 #' @importFrom utils tail
 #' @export
-qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structural = FALSE, 
+qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structural = FALSE, init, 
                       type = 7, tol = 1e-10, maxit = 500, details = TRUE, data){
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
@@ -641,7 +642,17 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
   # Solving the game
   talpha   <- X %*% b + eps
   if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - ltst)
-  y        <- rep(0, n)
+  
+  ## init
+  if (missing(init)) {
+    init   <- rep(0, n)
+  }
+  if (length(init) == 1){
+    init   <- rep(init, n)
+  } else if (length(init) != n) {
+    stop("`init` is not an n-vector.")
+  }
+  y        <- unlist(init)
   t        <- fNashE(y = y, G = Glist, d = dg, talpha = talpha, lambdatau = lt, igroup = igr, 
                      nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type, 
                      tol = tol, maxit = maxit)

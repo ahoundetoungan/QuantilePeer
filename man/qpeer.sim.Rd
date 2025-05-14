@@ -13,6 +13,7 @@ qpeer.sim(
   beta,
   epsilon,
   structural = FALSE,
+  init,
   type = 7,
   tol = 1e-10,
   maxit = 500,
@@ -39,6 +40,8 @@ The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately us
 \item{epsilon}{A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in the Details section of \code{\link{qpeer}}).}
 
 \item{structural}{A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see the Details section of \code{\link{qpeer}}).}
+
+\item{init}{An optional initial guess for the equilibrium.}
 
 \item{type}{An integer between 1 and 9 selecting one of the nine quantile algorithms used to compute peer quantiles (see the \link[stats]{quantile} function).}
 
