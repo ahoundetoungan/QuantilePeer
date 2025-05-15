@@ -821,10 +821,9 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
   tau2   <- model2$model.info$tau
   
   Tval   <- NULL
-  op     <- NULL
-  lt1    <- NULL
-  lt2    <- NULL
+  delta  <- NULL
   dtheta <- NULL
+  lt1    <- NULL
   if (which %in% c("increasing", "decreasing", "uniform")) {
     stopifnot(class(model1) == "qpeer")
     
@@ -838,7 +837,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
     }
     
     struc <- model1$model.info$structural
-    lt1  <- model1$gmm$Estimate[(struc + 1):(struc + ntau)]
+    lt1   <- model1$gmm$Estimate[(struc + 1):(struc + ntau)]
     
     if (is.null(model1$gmm$cov)) {
       stop("The covariance matrix has not been estimated.")
@@ -963,8 +962,13 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
       df      <- c(CTT$df)
       pval    <- pchisq(stat, df, lower.tail = FALSE)
       Tval    <- c("statistic" = stat, "df" = df, "p-value" = pval)
-      lt1     <- c(CTT$theta1)
-      lt2     <- c(CTT$theta2)
+      
+      if (which == "wald") {
+        dtheta         <- list(Estimate = c(CTT$dtheta), cov = CTT$Vdtheta)
+        names(dtheta$Estimate) <- names(theta2)[CTT$itheta]
+        colnames(dtheta$cov)   <- rownames(dtheta$cov) <- names(theta2)[CTT$itheta]
+        dtheta         <- fcoef(Estimate = dtheta$Estimate, cov = dtheta$cov)
+      }
     } else if (which == "encompassing") {
       ntau1   <- length(tau1)
       ntau2   <- length(tau2)
@@ -1013,11 +1017,13 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
                        "df2"       = c(Fdf2, NA), 
                        "p-value"   = c(Fpval, KPpval))
       rownames(Tval) <- c("robust F", "KP Wald rank")
-      dtheta         <- c(CTT$diff)
+      delta          <- list(Estimate = c(CTT$F$delta), cov = CTT$F$Vdelta)
+      names(delta$Estimate) <- names(theta2)[CTT$F$itheta]
+      colnames(delta$cov)   <- rownames(delta$cov) <- names(theta2)[CTT$F$itheta]
+      delta         <- fcoef(Estimate = delta$Estimate, cov = delta$cov)
     } 
   } 
-  out         <- list("test" = Tval, 
-                      "lambda1" = lt1, "lambda2" = lt2,
+  out         <- list("test" = Tval, "lambda" = lt1, "diff.theta" = dtheta, "delta" = delta,
                       which = which, boot = boot)
   class(out)  <- "qpeer.test"
   out
@@ -1038,16 +1044,23 @@ print.qpeer.test <- function(x, ...) {
     cat("  Statistic:", x$test["statistic"])
     cat(" -- p-value:", ifelse(x$test["p-value"] < 2e-16, "< 2e-16", format(x$test["p-value"], digits = 4)), "\n")
   } else if (x$which %in% c("wald", "sargan")) {
-    cat("Testing instrument validity (", ifelse(x$which == "wald", "Wald", "J-Sargan"), " Test)", "\n\n", sep = "")
-    cat("Quantile peer effects:\n")
-    cat("  Model 1 (Z1):", x$lambda1, "\n")
-    cat("  Model 2 (Z2):", x$lambda2, "\n")
-    cat("  Null hypothesis: Z2 is exogenous\n")
+    cat("Testing instrument validity (", ifelse(x$which == "wald", "Wald", "J-Sargan"), " Test)", "\n", sep = "")
+    if (x$which == "wald") {
+      cat("\nCoefficient differences:\n")
+      fprintcoeft(x$diff.theta)
+      cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n\n")
+    }
+    cat("Null hypothesis: Z2 is exogenous\n")
     cat("  Statistic:", x$test["statistic"])
     cat(" -- p-value:", ifelse(x$test["p-value"] < 2e-16, "< 2e-16", format(x$test["p-value"], digits = 4)), "\n")
   } else if (x$which == "encompassing") {
     cat("Encompassing Test\n")
-    cat("  Null hypothesis: Model 1 is not worse\n")
+    
+    cat("\nCoefficients for delta:\n")
+    fprintcoeft(x$delta)
+    cat("---\nSignif. codes:  0 \u2018***\u2019 0.001 \u2018**\u2019 0.01 \u2018*\u2019 0.05 \u2018.\u2019 0.1 \u2018 \u2019 1\n\n")
+    
+    cat("Null hypothesis: Model 1 is not worse\n")
     cat("  Robust F statistic:", x$test["robust F", "statistic"])
     cat(" -- p-value:", ifelse(x$test["robust F", "p-value"] < 2e-16, "< 2e-16", format(x$test["robust F", "p-value"], digits = 4)), "\n")
     cat("  KP Wald rank statistic:", x$test["KP Wald rank", "statistic"])

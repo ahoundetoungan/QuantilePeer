@@ -268,7 +268,7 @@ In the following code, the null hypothesis is that the model with four quantile 
 ```{r}
 qpeer.test(model1 = QtS5, model2 = QtS6, which = "encompassing")
 ``` 
-Here, the null hypothesis is not rejected. However, this does not directly imply that the other model is well specified. The model should also be compared with alternative specifications that include, for example, five or six quantile levels. Indeed, encompassing tests only compare two models and do not imply that one of them is correctly specified. Of course, in this example, we know that the model with four quantile levels is well specified because we know the data-generating process. Therefore, the model with four quantile levels cannot be rejected, in general, against other well-specified competing models.
+Here, the null hypothesis is not rejected. However, this does not directly imply that the other model with four quantiles is well specified. The model should also be compared with alternative specifications that include, for example, five or six quantile levels. Indeed, encompassing tests only compare two models and do not imply that one of them is correctly specified. Of course, in this example, we know that the model with four quantile levels is well specified because we know the data-generating process. Therefore, the model with four quantile levels cannot be rejected, in general, against other well-specified competing models.
 
 # CES-based peer effect models
 \label{sec:ces}
