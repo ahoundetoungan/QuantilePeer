@@ -198,7 +198,7 @@ fdiagnostic  <- function(object, nendo) {
   if (object$model.info$estimator %in% c("JIVE", "JIVE2")) {
     ## Weak instrument test
     tpF    <- fFstat(y = endo, X = ins, index = index, igroup = igr, ngroup = M, HAC = HACnum)
-    tpKP   <- fKPstat(qy_ = endo, X = X, Z = ins, index = index, igroup = igr, HAC = HACnum)
+    tpKP   <- fKPstat(qy_ = endo, X = X, Z_ = ins, index = index, igroup = igr, HAC = HACnum)
     ## Endogeneity test
     
     
@@ -217,7 +217,7 @@ fdiagnostic  <- function(object, nendo) {
   } else {
     ## Weak instrument test
     tpF    <- fFstat(y = endo, X = ins, index = index, igroup = igr, ngroup = M, HAC = HACnum)
-    tpKP   <- fKPstat(qy_ = endo, X = X, Z = ins, index = index, igroup = igr, HAC = HACnum)
+    tpKP   <- fKPstat(qy_ = endo, X = X, Z_ = ins, index = index, igroup = igr, HAC = HACnum)
     
     ## Endogeneity test
     tpend  <- fFstat(y = y, X = cbind(tpF$ru, endo, X), index = (0:(ntau - 1)), igroup = igr, ngroup = M, HAC = HACnum)
