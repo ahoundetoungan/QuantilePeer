@@ -336,16 +336,19 @@ addStyle(wb, "Table 5.1", style = createStyle(halign = "center"),
          rows = 1:(nrow(T5.1) + 1), cols = 1:ncol(T5.1), gridExpand = TRUE)
 
 # Table 5.2
-T5.2 <- Est %>% select(all_of(c("FE.ET.ntau=3.4", "FE.ET.ntau=4.3", "FE.ET.ntau=4.5", # Encompassing tests
+T5.2 <- Est %>% select(all_of(c("FE.ET90.ntau=3.4", "FE.ET95.ntau=3.4", "FE.ET90.ntau=4.5", "FE.ET95.ntau=4.5", # Encompassing tests
                                 "FE.Q1.KPstat", "FE.Q3.KPstat", # KP stat
-                                "FE.Val.Q3"))) # Validity of Z2
+                                "FE.Q3.Jpvalue90", "FE.Q3.Jpvalue95"))) %>% # Validity of Z2
+  mutate(across(.cols = -c(FE.Q1.KPstat, FE.Q3.KPstat),
+                .fns = ~ ifelse((row_number() - 1) %% 3 == 2, NA, .)))
 T5.2[seq(1, 16, 3), 1] <- c("DGP A", "DGP B", "DGP C", "DGP D", "DGP E", "DGP F (LIM model)")
-T5.2 <- cbind(T5.2[,c("FE.ET.ntau=3.4", "FE.ET.ntau=4.3", "FE.ET.ntau=4.5")], "V1" = NA,
-              T5.2[,c("FE.Q1.KPstat", "FE.Q3.KPstat", "FE.Val.Q3")])
+T5.2 <- cbind(T5.2[,c("FE.ET90.ntau=3.4", "FE.ET95.ntau=3.4", 
+                      "FE.ET90.ntau=4.5", "FE.ET95.ntau=4.5")], "V1" = NA,
+              T5.2[,c("FE.Q1.KPstat", "FE.Q3.KPstat", "FE.Q3.Jpvalue90", "FE.Q3.Jpvalue95")])
 # write
 writeData(wb, "Table 5.2", T5.2, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 # first row
-fr    <- c(LETTERS[1:3], "", "KP Z1", "KP Z1, Z2", "Validity Z2")
+fr    <- c("3vs4", "3vs4", "4vs5", "4vs5", "", "KP Z1", "KP Z1, Z2", "Val Z2 5%", "Val Z2 10%")
 for (i in 1:length(fr)) {
   writeData(wb, "Table 5.2", fr[i], startRow = 1, startCol = i)
 }

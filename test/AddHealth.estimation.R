@@ -296,7 +296,7 @@ fres <- function(k) {
     t(nIRQ14$coefficients[paste0("y_q", 1:4), ecol]), # reduce form for isolated
     rbind(SQ14$diagnostics[paste0("Kleibergen-Paap rk Wald"), "statistic"], NA), # KP rank stat
     rbind(nIRQ14$gmm$Jtest["p-value"], NA), # p-value for Sargan
-    rbind(TEcomp["Test.ntau=4.5"], NA))) %>%  # Encompassing, ntau = 4 against ntau = 5  
+    rbind(t(TEcomp[c("Test.ntau=3.4", "Test.ntau=4.5")]), NA))) %>%  # Encompassing, ntau = 4 against ntau = 5  
       mutate(across(where(is.numeric), ~ ifelse(is.na(.), NA, sprintf("%.3f", .)))) %>%  # Ensures exactly 3 decimals
       mutate(across(everything(), ~ ifelse(
         is.na(.), NA,
@@ -441,7 +441,7 @@ addStyle(wb, "Table 6.1", style = createStyle(halign = "center"),
 addWorksheet(wb, "Table 6.2")
 writeData(wb, "Table 6.2", x = T6.2, startRow = 2)
 # first row
-fr    <- c(paste("ld_q", 1:4), "KP", "Sargan", "Ecompass")
+fr    <- c(paste("ld_q", 1:4), "KP", "Sargan", "Ecom 3vs4", "Ecom 4vs5")
 for (i in 1:length(fr)) {
   writeData(wb, "Table 6.2", fr[i], startRow = 2, startCol = i)
 }

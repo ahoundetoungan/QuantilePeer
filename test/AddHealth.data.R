@@ -3,7 +3,7 @@
 ########################### Quantile Peer Effect Models by Aristide Houndetoungan ############################
 ##############################################################################################################
 
-# Last updated: 2025-02-25
+# Last updated: 2025-05-16
 
 ## This script imports raw Add Health data and prepares them for estimation.
 ## The output is an .Rda file per outcome.
@@ -138,7 +138,9 @@ for (outcome in depvar) {
   va.names   <- c(exovar, outcome)
   
   # Remove observations with missing values
-  data       <- Inschool %>% filter(if_all(all_of(va.names), ~ !is.na(.)))
+  # Keep schools with at least 10 students
+  data       <- Inschool %>% filter(if_all(all_of(va.names), ~ !is.na(.))) %>%
+    group_by(SCID) %>% mutate(SchSize = n()) %>% ungroup() %>% filter(SchSize >= 10) 
   Sch        <- unique(data$SCID) # School ID
   M          <- length(Sch)       # Number of schools
   
