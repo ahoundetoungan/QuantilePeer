@@ -575,7 +575,7 @@ Rcpp::List fEncompassingStrucDelta(const Eigen::MatrixXd& X1,
   int n(X1.rows()), n_iso(Is.size()), n_niso(n - n_iso), 
   ntau1(qy1.cols()), ntau2(qy2.cols()),
   K11(idX11.size()), K12(idX12.size()), K21(idX21.size()), K22(idX22.size()), 
-  K1(K11 + K12), K2(K21 + K22), 
+  K1(K11 + K12), 
   Kins1(Z1.cols()), Kins2(Z2.cols()), Kins(Kins1 + Kins2),
   Kv1(1 + ntau1 + K21), Kv2(1 + ntau2 + K22), Kv(Kv1 + Kv2);
   
