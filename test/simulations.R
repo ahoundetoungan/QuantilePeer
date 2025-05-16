@@ -3,7 +3,7 @@
 ########################### Quantile Peer Effect Models by Aristide Houndetoungan ############################
 ##############################################################################################################
 
-# Last updated: 2025-05-12
+# Last updated: 2025-05-15
 
 # This script reproduces the Monte Carlo simulations (Tables 5.1 and 5.2).
 # Estimation results will be exported to a single Excel file (`Simulation.xlsx`)

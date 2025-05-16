@@ -986,7 +986,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
                                              idX11 = idX11, idX21 = idX21, Kest11 = Kest11, Kest21 = Kest21,
                                              X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22, e2 = e2, theta2 = theta2,
                                              idX12 = idX12, idX22 = idX22, Kest12 = Kest12, Kest22 = Kest22,
-                                             nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full), 
+                                             nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full),
                       
                       KP = fEncompassingStrucKP(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1,
                                                 idX11 = idX11, idX21 = idX21, Kest11 = Kest11, Kest21 = Kest21,
