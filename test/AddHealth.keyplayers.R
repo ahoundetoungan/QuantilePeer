@@ -57,7 +57,7 @@ fsim    <- function(outcome) {
   nvec     <- sapply(G, nrow)
   nsch     <- length(nvec)
   ncum     <- c(0, cumsum(nvec))
-  sch      <- (1:nsch)[nvec < 100]
+  sch      <- (1:nsch)[nvec < 50] # shcools with less than 50 students
   j        <- 0
   KPlayer  <- as.data.frame(matrix(NA, sum(nvec[sch]), 7))
   colnames(KPlayer) <- c("School", "indegree", "outdegree", "LIM", "Q3", "Q4", "CES")
@@ -190,108 +190,70 @@ foreach(outcome = depvar, .packages = c("dplyr", "QuantilePeer", "PartialNetwork
 # Stop cluster
 stopCluster(cl)
 
-# # Label of Outcome
-# OUTCOME <- c("Academic achievements", "Academic effort", "Extracurricular activities", "Future perception", 
-#              "Trouble at school", "Smoking", "Drinking", "Risky behaviors", "Self-esteem", "Physical exercise", "Fighting")
-# 
-# # Scatterplot
-# # data to plot
-# dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
-#   cat("Outcome: ", OUTCOME[k], "\n", sep = "")
-#   load(file = paste0(OutDataPath, depvar[k], ".Rda")) # Load saved data using with the script 0-Data.R
-#   SIM     <-  readRDS(paste0(OutResPath, depvar[k], ".RDS")) # Load results
-#   match   <- data$match
-#   SIM     <- SIM[match > 0,] #only for non-isolated because the social multiplier is one for isolated
-#   data.frame(outcome  = k,
-#              model    = rep(1:2, each = nrow(SIM)),
-#              Quant3   = rep(SIM$Q3, 2), 
-#              Quant4   = rep(SIM$Q4, 2),
-#              Other    = c(SIM$LIM, CES = SIM$CES))
-# })) %>% mutate(outcome = factor(outcome, levels = 1:length(depvar), labels = OUTCOME),
-#                model = factor(model, levels = 1:2, labels = c("Quantile vs LIM", "Quantile vs CES")))
-# 
-# # Select only 10%
-# dataplot_sampled <- dataplot %>%
-#   group_by(outcome, model) %>%
-#   sample_frac(0.05)
-# 
-# # tau3
-# (graph <- ggplot(dataplot_sampled, aes(x = Quant3, y = Other, colour = model, shape = model)) +
-#     geom_point(size = 1.5, alpha = 1) +
-#     facet_wrap(~ outcome, ncol = 2, scales = "free") +
-#     scale_colour_manual(values = c("#c66", "#66c")) +
-#     scale_shape_manual(values = c(2, 4)) +
-#     theme_minimal(base_size = 12, base_family = "Palatino") +
-#     theme(
-#       strip.text = element_text(face = "bold"),
-#       axis.text.x = element_text(hjust = 1),
-#       panel.spacing = unit(1, "lines"),
-#       plot.title = element_text(hjust = 0.5),
-#       legend.position = "bottom"
-#     ) +
-#     labs(
-#       x = "Quantile Model",
-#       y = "LIM and CES Models",
-#       colour = NULL,
-#       shape = NULL
-#     ))
-# ggsave("CFScatter3.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7.5, height = 10)
-# 
-# # tau3
-# (graph <- ggplot(dataplot_sampled, aes(x = Quant4, y = Other, colour = model, shape = model)) +
-#     geom_point(size = 1.5, alpha = 1) +
-#     facet_wrap(~ outcome, ncol = 2, scales = "free") +
-#     scale_colour_manual(values = c("#c66", "#66c")) +
-#     scale_shape_manual(values = c(2, 4)) +
-#     theme_minimal(base_size = 12, base_family = "Palatino") +
-#     theme(
-#       strip.text = element_text(face = "bold"),
-#       axis.text.x = element_text(hjust = 1),
-#       panel.spacing = unit(1, "lines"),
-#       plot.title = element_text(hjust = 0.5),
-#       legend.position = "bottom"
-#     ) +
-#     labs(
-#       x = "Quantile Model",
-#       y = "LIM and CES Models",
-#       colour = NULL,
-#       shape = NULL
-#     ))
-# ggsave("CFScatter4.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7.5, height = 10)
-# 
-# # Boxplot
-# # data to plot
-# dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
-#   cat("Outcome: ", OUTCOME[k], "\n", sep = "")
-#   load(file = paste0(OutDataPath, depvar[k], ".Rda")) # Load saved data using with the script 0-Data.R
-#   SIM     <-  readRDS(paste0(OutResPath, depvar[k], ".RDS")) # Load results
-#   match   <- data$match
-#   SIM     <- SIM[match > 0,] #only for non-isolated because the social multiplier is one for isolated
-#   sim     <- c(SIM$Q3, SIM$Q4, SIM$LIM, SIM$CES)
-#   model   <- rep(1:4, each = nrow(SIM))
-#   data.frame(outcome = k, model, sim)
-# })) %>% mutate(outcome = factor(outcome, levels = 1:length(depvar), labels = OUTCOME),
-#                modnum  = model,
-#                model   = factor(model, levels = 1:4, 
-#                                 labels = c(expression(paste("Q(", d[tau], " = 3)")),
-#                                            expression(paste("Q(", d[tau], " = 4)")),
-#                                            "LIM", "CES")))
-# 
-# (graph <- ggplot(dataplot, aes(x = model, y = sim)) +
-#     geom_boxplot(outlier.shape = NA, fill = "grey80", color = "black") +
-#     facet_wrap(~ outcome, ncol = 3, scales = "free_y") +
-#     theme_minimal(base_size = 12, base_family = "Palatino") +
-#     theme(
-#       strip.text = element_text(face = "bold"),
-#       axis.text.x = element_text(hjust = 0.5),
-#       panel.spacing = unit(1, "lines"),
-#       plot.title = element_text(hjust = 0.5)
-#     ) +
-#     labs(
-#       x = "Model",
-#       y = "Social Multiplier",
-#     ) +
-#     scale_x_discrete(labels = scales::label_parse())) 
-# 
-# ggsave("CFBox.pdf", path = OutResPath, plot = graph, device = "pdf", width = 10, height = 6)
-# 
+# Label of Outcome
+OUTCOME <- c("Academic achievements", "Academic effort", "Extracurricular activities", "Future perception",
+             "Trouble at school", "Smoking", "Drinking", "Risky behaviors", "Self-esteem", "Physical exercise", "Fighting")
+
+# Scatterplot
+# data to plot
+dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
+  cat("Outcome: ", OUTCOME[k], "\n", sep = "")
+  SIM     <-  readRDS(paste0(OutResPath, depvar[k], ".RDS")) %>%
+    group_by(School) %>% 
+    mutate(across(c("LIM", "Q3", "Q4", "CES"), ~ rank(., ties.method = "min"), 
+                  .names = "rk.{.col}")) %>% ungroup()
+  data.frame(k        = k,
+             outcome  = k,
+             model    = rep(1:2, each = nrow(SIM)),
+             Quant3   = rep(SIM$rk.Q3, 2),
+             Quant4   = rep(SIM$rk.Q4, 2),
+             Other    = c(SIM$rk.LIM, CES = SIM$rk.CES))
+})) %>% mutate(outcome = factor(outcome, levels = 1:length(depvar), labels = OUTCOME),
+               model = factor(model, levels = 1:2, labels = c("Quantile vs LIM", "Quantile vs CES")))
+
+
+# tau3
+(graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 6, 7, 9, 11)), 
+                 aes(x = Quant3, y = Other, colour = model, shape = model)) +
+    geom_point(size = 1.5, alpha = 1) +
+    facet_wrap(~ outcome, ncol = 2, scales = "free") +
+    scale_colour_manual(values = c("#c66", "#66c")) +
+    scale_shape_manual(values = c(2, 4)) +
+    theme_minimal(base_size = 12, base_family = "Palatino") +
+    theme(
+      strip.text = element_text(face = "bold"),
+      axis.text.x = element_text(hjust = 1),
+      panel.spacing = unit(1, "lines"),
+      plot.title = element_text(hjust = 0.5),
+      legend.position = "bottom"
+    ) +
+    labs(
+      x = "Quantile Model",
+      y = "LIM and CES Models",
+      colour = NULL,
+      shape = NULL
+    ))
+ggsave("CFScatter3.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7.5, height = 5)
+
+# tau4
+(graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 6, 7, 9, 11)), 
+                 aes(x = Quant4, y = Other, colour = model, shape = model)) +
+    geom_point(size = 1.5, alpha = 1) +
+    facet_wrap(~ outcome, ncol = 2, scales = "free") +
+    scale_colour_manual(values = c("#c66", "#66c")) +
+    scale_shape_manual(values = c(2, 4)) +
+    theme_minimal(base_size = 12, base_family = "Palatino") +
+    theme(
+      strip.text = element_text(face = "bold"),
+      axis.text.x = element_text(hjust = 1),
+      panel.spacing = unit(1, "lines"),
+      plot.title = element_text(hjust = 0.5),
+      legend.position = "bottom"
+    ) +
+    labs(
+      x = "Quantile Model",
+      y = "LIM and CES Models",
+      colour = NULL,
+      shape = NULL
+    ))
+ggsave("CFScatter4.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7.5, height = 5)

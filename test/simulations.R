@@ -3,7 +3,7 @@
 ########################### Quantile Peer Effect Models by Aristide Houndetoungan ############################
 ##############################################################################################################
 
-# Last updated: 2025-05-15
+# Last updated: 2025-05-16
 
 # This script reproduces the Monte Carlo simulations (Tables 5.1 and 5.2).
 # Estimation results will be exported to a single Excel file (`Simulation.xlsx`)
@@ -165,50 +165,50 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE) {
   
   LIM           <- summary(LIM, diagnostic = TRUE)
   LIM           <- c(LIM$gmm$Estimate, KPstat = LIM$diagnostics[2, 3], Jpvalue = LIM$diagnostics[4, 4],
-                     Jpvalue90 = LIM$diagnostics[4, 4] > 0.1, Jpvalue95 = LIM$diagnostics[4, 4] > 0.05)
+                     Jpvalue05 = LIM$diagnostics[4, 4] < 0.05, Jpvalue10 = LIM$diagnostics[4, 4] < 0.1)
   names(LIM)    <- paste0(ifelse(fixed.effects, "FE.", ""), "LIM.", names(LIM))
   
   Quant1        <- summary(Quant1, diagnostic = TRUE)
   Quant1        <- c(Quant1$gmm$Estimate, KPstat = Quant1$diagnostics[ntau + 1, 3], 
-                     Jpvalue = Quant1$diagnostics[ntau + 3, 4], Jpvalue90 = Quant1$diagnostics[ntau + 3, 4] > 0.1,
-                     Jpvalue95 = Quant1$diagnostics[ntau + 3, 4] > 0.05)
+                     Jpvalue = Quant1$diagnostics[ntau + 3, 4], Jpvalue05 = Quant1$diagnostics[ntau + 3, 4] < 0.05,
+                     Jpvalue10 = Quant1$diagnostics[ntau + 3, 4] < 0.1)
   names(Quant1) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q1.", names(Quant1))
   
   Quant2        <- summary(Quant2, diagnostic = TRUE)
   Quant2        <- c(Quant2$gmm$Estimate, KPstat = Quant2$diagnostics[ntau + 1, 3], 
-                     Jpvalue = Quant2$diagnostics[ntau + 3, 4], Jpvalue90 = Quant2$diagnostics[ntau + 3, 4] > 0.1,
-                     Jpvalue95 = Quant2$diagnostics[ntau + 3, 4] > 0.05)
+                     Jpvalue = Quant2$diagnostics[ntau + 3, 4], Jpvalue05 = Quant2$diagnostics[ntau + 3, 4] < 0.05,
+                     Jpvalue10 = Quant2$diagnostics[ntau + 3, 4] < 0.1)
   names(Quant2) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q2.", names(Quant2))
   
   Quant3        <- summary(Quant3, diagnostic = TRUE)
   Quant3        <- c(Quant3$gmm$Estimate, KPstat = Quant3$diagnostics[ntau + 1, 3], 
-                     Jpvalue = Quant3$diagnostics[ntau + 3, 4], Jpvalue90 = Quant3$diagnostics[ntau + 3, 4] > 0.1, 
-                     Jpvalue95 = Quant3$diagnostics[ntau + 3, 4] > 0.05)
+                     Jpvalue = Quant3$diagnostics[ntau + 3, 4], Jpvalue05 = Quant3$diagnostics[ntau + 3, 4] < 0.05, 
+                     Jpvalue10 = Quant3$diagnostics[ntau + 3, 4] < 0.1)
   names(Quant3) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q3.", names(Quant3))
   
   Ces           <- summary(Ces)$gmm$Estimate
   names(Ces)    <- paste0(ifelse(fixed.effects, "FE.", ""), "CES.", names(Ces))
   
-  valins        <- c(valins, valins > 0.1, valins > 0.05)
+  valins        <- c(valins, valins < 0.05, valins < 0.1)
   names(valins) <- paste0(ifelse(fixed.effects, "FE.", ""), c("Val.Q2", "Val.Q3",
-                                                              "Val90.Q2", "Val90.Q3", 
-                                                              "Val95.Q2", "Val95.Q3"))
+                                                              "Val05.Q2", "Val05.Q3", 
+                                                              "Val10.Q2", "Val10.Q3"))
     
-  Etest         <- c(Etest, Etest > 0.1, Etest > 0.05)
+  Etest         <- c(Etest, Etest < 0.05, Etest < 0.1)
   names(Etest)  <- paste0(ifelse(fixed.effects, "FE.", ""), c("ET.ntau=3.4", "ET.ntau=4.3", "ET.ntau=4.5",
-                                                              "ET90.ntau=3.4", "ET90.ntau=4.3", "ET90.ntau=4.5", 
-                                                              "ET95.ntau=3.4", "ET95.ntau=4.3", "ET95.ntau=4.5"))
+                                                              "ET05.ntau=3.4", "ET05.ntau=4.3", "ET05.ntau=4.5", 
+                                                              "ET10.ntau=3.4", "ET10.ntau=4.3", "ET10.ntau=4.5"))
   
   Quant1a       <- summary(Quant1a)
   Quant1a       <- c(Quant1a$gmm$Estimate, KPstat = Quant1a$diagnostics[ntau, 3], 
-                     Jpvalue = Quant1a$diagnostics[ntau + 2, 4], Jpvalue90 = Quant1a$diagnostics[ntau + 2, 4] > 0.1, 
-                     Jpvalue95 = Quant1a$diagnostics[ntau + 2, 4] > 0.05)
+                     Jpvalue = Quant1a$diagnostics[ntau + 2, 4], Jpvalue05 = Quant1a$diagnostics[ntau + 2, 4] < 0.05, 
+                     Jpvalue10 = Quant1a$diagnostics[ntau + 2, 4] < 0.1)
   names(Quant1a)<- paste0(ifelse(fixed.effects, "FE.", ""), "Q1a.", names(Quant1a))
   
   Quant1b       <- summary(Quant1b)
   Quant1b       <- c(Quant1b$gmm$Estimate, KPstat = Quant1b$diagnostics[ntau + 2, 3], 
-                     Jpvalue = Quant1b$diagnostics[ntau + 4, 4], Jpvalue90 = Quant1b$diagnostics[ntau + 4, 4] > 0.1,
-                     Jpvalue95 = Quant1b$diagnostics[ntau + 4, 4] > 0.05)
+                     Jpvalue = Quant1b$diagnostics[ntau + 4, 4], Jpvalue05 = Quant1b$diagnostics[ntau + 4, 4] < 0.05,
+                     Jpvalue10 = Quant1b$diagnostics[ntau + 4, 4] < 0.1)
   names(Quant1b)<- paste0(ifelse(fixed.effects, "FE.", ""), "Q1b.", names(Quant1b))
   
   c(LIM, Quant1, Quant2, Quant3, Ces, valins, Etest, Quant1a, Quant1b)
@@ -226,32 +226,44 @@ set.seed(2025)  # Set global seed for reproducibility
 
 # Increasing lambda
 lambda1    <- c(0.2, 0, 0.05, 0.2, 0.3)
+cat("DGP A without fixed effects\n")
 Est11      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda1, FALSE), mc.cores = 10))
+cat("DGP A with fixed effects\n")
 Est12      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda1, TRUE), mc.cores = 10))
 
 # Decreasing lambda
 lambda2    <- c(0.2, 0.3, 0.2, 0.05, 0)
+cat("DGP B without fixed effects\n")
 Est21      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda2, FALSE), mc.cores = 10))
+cat("DGP B with fixed effects\n")
 Est22      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda2, TRUE), mc.cores = 10))
 
 # Concave lambda
 lambda3    <- c(0.2, 0, 0.275, 0.275, 0)
+cat("DGP C without fixed effects\n")
 Est31      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda3, FALSE), mc.cores = 10))
+cat("DGP C with fixed effects\n")
 Est32      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda3, TRUE), mc.cores = 10))
 
 # Convex lambda
 lambda4    <- c(0.2, 0.275, 0, 0, 0.275)
+cat("DGP D without fixed effects\n")
 Est41      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda4, FALSE), mc.cores = 10))
+cat("DGP D with fixed effects\n")
 Est42      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda4, TRUE), mc.cores = 10))
 
 # Concave lambda
 lambda5    <- c(0.2, -0.05, 0.35, 0.15, 0.1)
+cat("DGP E without fixed effects\n")
 Est51      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda5, FALSE), mc.cores = 10))
+cat("DGP E with fixed effects\n")
 Est52      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda5, TRUE), mc.cores = 10))
 
 # Constant lambda with data simulated using the standard LIM model
 lambda6    <- 0.55
+cat("DGP F without fixed effects\n")
 Est61      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda6, FALSE, TRUE), mc.cores = 10))
+cat("DGP F with fixed effects\n")
 Est62      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda6, TRUE, TRUE), mc.cores = 10))
 
 save(Est11, Est12, Est21, Est22, Est31, Est32, Est41, Est42, Est51, Est52, Est61, Est62,
@@ -336,15 +348,16 @@ addStyle(wb, "Table 5.1", style = createStyle(halign = "center"),
          rows = 1:(nrow(T5.1) + 1), cols = 1:ncol(T5.1), gridExpand = TRUE)
 
 # Table 5.2
-T5.2 <- Est %>% select(all_of(c("FE.ET90.ntau=3.4", "FE.ET95.ntau=3.4", "FE.ET90.ntau=4.5", "FE.ET95.ntau=4.5", # Encompassing tests
+T5.2 <- Est %>% select(all_of(c("FE.ET05.ntau=3.4", "FE.ET10.ntau=3.4", 
+                                "FE.ET05.ntau=4.5", "FE.ET10.ntau=4.5", # Encompassing tests
                                 "FE.Q1.KPstat", "FE.Q3.KPstat", # KP stat
-                                "FE.Q3.Jpvalue90", "FE.Q3.Jpvalue95"))) %>% # Validity of Z2
+                                "FE.Q3.Jpvalue05", "FE.Q3.Jpvalue10"))) %>% # Validity of Z2
   mutate(across(.cols = -c(FE.Q1.KPstat, FE.Q3.KPstat),
                 .fns = ~ ifelse((row_number() - 1) %% 3 == 2, NA, .)))
 T5.2[seq(1, 16, 3), 1] <- c("DGP A", "DGP B", "DGP C", "DGP D", "DGP E", "DGP F (LIM model)")
-T5.2 <- cbind(T5.2[,c("FE.ET90.ntau=3.4", "FE.ET95.ntau=3.4", 
-                      "FE.ET90.ntau=4.5", "FE.ET95.ntau=4.5")], "V1" = NA,
-              T5.2[,c("FE.Q1.KPstat", "FE.Q3.KPstat", "FE.Q3.Jpvalue90", "FE.Q3.Jpvalue95")])
+T5.2 <- cbind(T5.2[,c("FE.ET05.ntau=3.4", "FE.ET10.ntau=3.4", 
+                      "FE.ET05.ntau=4.5", "FE.ET10.ntau=4.5")], "V1" = NA,
+              T5.2[,c("FE.Q1.KPstat", "FE.Q3.KPstat", "FE.Q3.Jpvalue05", "FE.Q3.Jpvalue10")])
 # write
 writeData(wb, "Table 5.2", T5.2, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 # first row
