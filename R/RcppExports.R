@@ -165,39 +165,39 @@ fParamFull <- function(param, covp, ntau, Kx1, Kx2) {
     .Call(`_QuantilePeer_fParamFull`, param, covp, ntau, Kx1, Kx2)
 }
 
-Cov2ThetaRed <- function(X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC = 0L, full = FALSE) {
-    .Call(`_QuantilePeer_Cov2ThetaRed`, X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC, full)
+Cov2ThetaRed <- function(Z1, W1, e1, theta1, Z2, W2, e2, theta2, X, qy, Kest, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_Cov2ThetaRed`, Z1, W1, e1, theta1, Z2, W2, e2, theta2, X, qy, Kest, ngroup, cumsn, HAC, full)
 }
 
-Cov2ThetaStruc <- function(X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, Kest12, Kest22, idX1, idX2, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
-    .Call(`_QuantilePeer_Cov2ThetaStruc`, X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, Kest12, Kest22, idX1, idX2, nIs, Is, ngroup, cumsn, HAC, full)
+Cov2ThetaStruc <- function(Z1, W21, e1, theta1, Z2, W22, e2, theta2, X, qy, W1, Kest1, Kest2, idX1, idX2, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_Cov2ThetaStruc`, Z1, W21, e1, theta1, Z2, W22, e2, theta2, X, qy, W1, Kest1, Kest2, idX1, idX2, nIs, Is, ngroup, cumsn, HAC, full)
 }
 
-validZ2SarganRed <- function(X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC = 0L, full = FALSE) {
-    .Call(`_QuantilePeer_validZ2SarganRed`, X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC, full)
+validZ2SarganRed <- function(Z1, W1, e1, theta1, Z2, W2, e2, theta2, X, qy, Kest, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_validZ2SarganRed`, Z1, W1, e1, theta1, Z2, W2, e2, theta2, X, qy, Kest, ngroup, cumsn, HAC, full)
 }
 
-validZ2SarganStruc <- function(X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, Kest12, Kest22, idX1, idX2, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
-    .Call(`_QuantilePeer_validZ2SarganStruc`, X1, qy1, Z1, W11, W21, e1, theta1, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, Kest12, Kest22, idX1, idX2, nIs, Is, ngroup, cumsn, HAC, full)
+validZ2SarganStruc <- function(Z1, W21, e1, theta1, Z2, W22, e2, theta2, X, qy, W1, Kest1, Kest2, idX1, idX2, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_validZ2SarganStruc`, Z1, W21, e1, theta1, Z2, W22, e2, theta2, X, qy, W1, Kest1, Kest2, idX1, idX2, nIs, Is, ngroup, cumsn, HAC, full)
 }
 
 fTestMonotone <- function(thetahat, Sigma, a, thetasimu, Boot = 1e4L, maxit = 1e6L, eps_f = 1e-9, eps_g = 1e-9) {
     .Call(`_QuantilePeer_fTestMonotone`, thetahat, Sigma, a, thetasimu, Boot, maxit, eps_f, eps_g)
 }
 
-fEncompassingStrucKP <- function(X1, qy1, Z1, W11, W21, e1, theta1, idX11, idX21, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, idX12, idX22, Kest12, Kest22, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
-    .Call(`_QuantilePeer_fEncompassingStrucKP`, X1, qy1, Z1, W11, W21, e1, theta1, idX11, idX21, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, idX12, idX22, Kest12, Kest22, nIs, Is, ngroup, cumsn, HAC, full)
+fEncompassingStrucKP <- function(qy1, Z1, W21, e1, theta1, Kest21, qy2, Z2, W22, e2, theta2, Kest22, X, W1, idX1, idX2, Kest1, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_fEncompassingStrucKP`, qy1, Z1, W21, e1, theta1, Kest21, qy2, Z2, W22, e2, theta2, Kest22, X, W1, idX1, idX2, Kest1, nIs, Is, ngroup, cumsn, HAC, full)
 }
 
-fEncompassingRedKP <- function(X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC = 0L, full = FALSE) {
-    .Call(`_QuantilePeer_fEncompassingRedKP`, X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC, full)
+fEncompassingRedKP <- function(qy1, Z1, W1, e1, theta1, Kest1, qy2, Z2, W2, e2, theta2, Kest2, X, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_fEncompassingRedKP`, qy1, Z1, W1, e1, theta1, Kest1, qy2, Z2, W2, e2, theta2, Kest2, X, ngroup, cumsn, HAC, full)
 }
 
-fEncompassingStruc <- function(X1, qy1, Z1, W11, W21, e1, theta1, idX11, idX21, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, idX12, idX22, Kest12, Kest22, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
-    .Call(`_QuantilePeer_fEncompassingStruc`, X1, qy1, Z1, W11, W21, e1, theta1, idX11, idX21, Kest11, Kest21, X2, qy2, Z2, W12, W22, e2, theta2, idX12, idX22, Kest12, Kest22, nIs, Is, ngroup, cumsn, HAC, full)
+fEncompassingStruc <- function(qy1, Z1, W21, e1, theta1, Kest21, qy2, Z2, W22, e2, theta2, Kest22, X, W1, idX1, idX2, Kest1, nIs, Is, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_fEncompassingStruc`, qy1, Z1, W21, e1, theta1, Kest21, qy2, Z2, W22, e2, theta2, Kest22, X, W1, idX1, idX2, Kest1, nIs, Is, ngroup, cumsn, HAC, full)
 }
 
-fEncompassingRed <- function(X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC = 0L, full = FALSE) {
-    .Call(`_QuantilePeer_fEncompassingRed`, X1, qy1, Z1, W1, e1, theta1, Kest1, X2, qy2, Z2, W2, e2, theta2, Kest2, ngroup, cumsn, HAC, full)
+fEncompassingRed <- function(qy1, Z1, W1, e1, theta1, Kest1, qy2, Z2, W2, e2, theta2, Kest2, X, ngroup, cumsn, HAC = 0L, full = FALSE) {
+    .Call(`_QuantilePeer_fEncompassingRed`, qy1, Z1, W1, e1, theta1, Kest1, qy2, Z2, W2, e2, theta2, Kest2, X, ngroup, cumsn, HAC, full)
 }
 

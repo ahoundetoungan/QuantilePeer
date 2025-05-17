@@ -203,6 +203,7 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   Eigen::MatrixXd H(Eigen::MatrixXd::Zero(Kx + ntau + 1, Kx1 + Kins + 1));
   H.block(0, 0, Kx1, Kx1)  = XXW1;
   H.block(Kx1, Kx1, Kx2 + ntau + 1, Kins + 1) = VZW2;
+  // cout<<H<<endl;
   
   Eigen::MatrixXd dF(Eigen::MatrixXd::Zero(Kx1 + Kins + 1, Kx + ntau + 1));
   dF.block(0, 0, Kx1, Kx1) = XX1;
@@ -246,6 +247,7 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   Eigen::MatrixXd iHdF((H*dF).inverse()); 
   Eigen::MatrixXd HVFH(H*VF*H.transpose());
   Eigen::MatrixXd Vpa(iHdF * HVFH * iHdF.transpose());
+  // cout<<Vpa<<endl;
   
   // overidentification
   Eigen::VectorXd F2(Z2.transpose()*e2.matrix());

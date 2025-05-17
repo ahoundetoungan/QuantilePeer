@@ -783,6 +783,8 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
   
   struc1 <- model1$model.info$structural
   struc2 <- model2$model.info$structural
+  y1     <- model1$data$y
+  y2     <- model1$data$y
   qy1    <- model1$data$qy
   qy2    <- model2$data$qy
   X1     <- model1$data$X
@@ -819,6 +821,8 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
   n2     <- model2$model.info$n
   tau1   <- model1$model.info$tau
   tau2   <- model2$model.info$tau
+  ntau1  <- model1$model.info$ntau
+  ntau2  <- model2$model.info$ntau
   
   Tval   <- NULL
   delta  <- NULL
@@ -831,39 +835,37 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
       stop('Testing whether peer effects are "increasing", "decreasing", or "uniform" is only possible on `model1`.')
     }
     
-    ntau <- model1$model.info$ntau
-    if (ntau == 1) {
+    if (ntau1 == 1) {
       stop("There is only one peer effect parameter.")
     }
     
-    struc <- model1$model.info$structural
-    lt1   <- model1$gmm$Estimate[(struc + 1):(struc + ntau)]
+    lt1   <- model1$gmm$Estimate[(struc1 + 1):(struc1 + ntau1)]
     
     if (is.null(model1$gmm$cov)) {
       stop("The covariance matrix has not been estimated.")
     }
     
-    CThe   <- model1$gmm$cov[(struc + 1):(struc + ntau), (struc + 1):(struc + ntau)]
+    CThe   <- model1$gmm$cov[(struc1 + 1):(struc1 + ntau1), (struc1 + 1):(struc1 + ntau1)]
     if (which == "uniform") {
-      R    <- t(diag(1, ntau, ntau - 1))
-      R    <- R - cbind(0, R[, 1:(ntau - 1)])
+      R    <- t(diag(1, ntau1, ntau1 - 1))
+      R    <- R - cbind(0, R[, 1:(ntau1 - 1)])
       stat <- c(t(R %*%  lt1) %*% solve(R %*% CThe %*% t(R), R %*%  lt1))
-      df   <- ntau - 1
+      df   <- ntau1 - 1
       pval <- pchisq(stat, df, lower.tail = FALSE)
       Tval <- c("statistic" = stat, "df" = df, "p-value" = pval)
     } else {
       tp   <- NULL
-      ts   <- t(chol(CThe)) %*% matrix(rnorm(ntau * boot), ntau, boot) +  lt1
+      ts   <- t(chol(CThe)) %*% matrix(rnorm(ntau1 * boot), ntau1, boot) +  lt1
       suppressWarnings(
-        tp <- fTestMonotone(thetahat =  lt1, Sigma = CThe, a = rep(ifelse(which == "increasing", 1, -1), ntau - 1), 
+        tp <- fTestMonotone(thetahat =  lt1, Sigma = CThe, a = rep(ifelse(which == "increasing", 1, -1), ntau1 - 1), 
                             thetasimu = ts, Boot = boot, maxit = maxit,
                             eps_f = eps_f, eps_g = eps_g)
       )
       stat <- tp$optim$minimum
       op   <- tp$optim
-      Pi   <- sapply(0:(ntau - 1), function(s) mean(tp$count == s))
+      Pi   <- sapply(0:(ntau1 - 1), function(s) mean(tp$count == s))
       pval <- uniroot(function(p){
-        qq   <- qchisq(p, df = (ntau - 1):0, lower.tail = FALSE)
+        qq   <- qchisq(p, df = (ntau1 - 1):0, lower.tail = FALSE)
         qq[qq == Inf] <- 1e10
         mean(qq*Pi) - stat
       }, interval = c(0, 1), tol = eps_f)$root
@@ -881,19 +883,38 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
       stop("This test is only valid for IV and GMM estimators.")
     }
     
-    tp     <- (struc1 == struc2) &&
+    tp     <- all(length(y1) == length(y2)) &&
+      all(dim(X1) == dim(X2)) &&
+      (struc1 == struc2) &&
+      all(dim(W11) == dim(W12)) &&
       (length(e1) == length(e2)) &&
       (HAC1 == HAC2) &&
-      all(nIs1 == nIs2) &&
-      all(Is1 == Is2) &&
+      all(length(nIs1) == length(nIs2)) &&
+      all(length(Is1) == length(Is2)) &&
+      all(length(idX11) == length(idX12)) &&
+      all(length(idX21) == length(idX22)) &&
       (ngr1 == ngr2) &&
       (FE1 == FE2) &&
-      all(nvec1 == nvec2) &&
       (n1 == n2)
-    
     if (!tp) {
       stop("`model1` and `model2` differ in data or model specification.")
     }
+    
+    tp     <- all(y1 == y2) &&
+      all(X1 == X2) &&
+      all(colnames(X1) == colnames(X2)) &&
+      all(W11 == W12) &&
+      all(nIs1 == nIs2) &&
+      all(Is1 == Is2) &&
+      all(nvec1 == nvec2) &&
+      all(idX11 == idX12) &&
+      all(idX21 == idX22) &&
+      ifelse(struc1, all(theta1[2 + ntau1 + idX11] == theta2[2 + ntau2 + idX11]), TRUE) &&
+      ifelse(struc1, all(e1[Is1 + 1] == e2[Is2 + 1]), TRUE)
+    if (!tp) {
+      stop("`model1` and `model2` differ in data or model specification.")
+    }
+    
     igr     <- matrix(c(cumsum(c(0, nvec1[-ngr1])), cumsum(nvec1) - 1), ncol = 2)
     ncs     <- c(0, cumsum(nvec1))
     LIs     <- lapply(1:ngr1, function(m) {
@@ -924,39 +945,39 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
     MnIs   <- sum(sapply(LnIs, function(s) length(s) > 0))
     
     if (which %in% c("wald", "sargan")) {
-      tp     <- (length(qy1) == length(qy2)) &&
-        (length(X1) == length(X2)) &&
-        (length(W11) == length(W12)) &&
-        (length(theta1) == length(theta2)) &&
-        (length(idX11) == length(idX12)) &&
-        (length(idX21) == length(idX22)) &&
-        all(colnames(qy1) == colnames(qy2)) &&
-        all(colnames(X1) == colnames(X2)) &&
-        all(tau1 == tau2)
+      tp     <- all(dim(qy1) == dim(qy2)) &&
+        (length(theta1) == length(theta2)) 
+      if (!tp) {
+        stop("`model1` and `model2` differ in data or model specification.")
+      }
       
+      tp     <- all(qy1 == qy2) &&
+        all(colnames(qy1) == colnames(qy2)) &&
+        all(tau1 == tau2)
       if (!tp) {
         stop("`model1` and `model2` differ in data or model specification.")
       }
       
       CTT    <- NULL
-      ntau   <- length(tau1)
       if (struc1) {
         FUN   <- ifelse(which == "wald", Cov2ThetaStruc, validZ2SarganStruc)
         K1    <- length(idX11)
         K2    <- length(idX21)
         Kest1 <- ifelse(FEnum == 0, K1, K1 + MIs)
-        Kest2 <- ifelse(FEnum == 0, K2 + ntau + 1, K2 + ntau + MnIs)
-        CTT   <- FUN(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1, 
-                     Kest11 = Kest1, Kest21 = Kest2, X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22,
-                     e2 = e2, theta2 = theta2, Kest12 = Kest1, Kest22 = Kest2, idX1 = idX11, idX2 = idX21, 
-                     nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
+        Kest2 <- ifelse(FEnum == 0, K2 + ntau1 + 1, K2 + ntau1 + MnIs)
+        CTT   <- FUN(Z1 = Z1, W21 = W21, e1 = e1, theta1 = theta1, 
+                     Z2 = Z2, W22 = W22, e2 = e2, theta2 = theta2, 
+                     X = X1, qy = qy1, W1 = W11, Kest1 = Kest1, Kest2 = Kest2, 
+                     idX1 = idX11, idX2 = idX21, nIs = nIs1, Is = Is1, ngroup = ngr1, 
+                     cumsn = ncs, HAC = HAC1, full = full)
       } else {
         FUN   <- ifelse(which == "wald", Cov2ThetaRed, validZ2SarganRed)
         K     <- length(theta1)
         Kest  <- ifelse(FEnum == 0, K, ifelse(FEnum == 1, K + ngr1, K + MIs + MnIs))
-        CTT   <- FUN(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest,
-                     X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest, 
-                     ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full)
+        CTT   <- FUN(Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, 
+                     Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, 
+                     X = X1, qy = qy1, Kest = Kest, ngroup = ngr1, 
+                     cumsn = ncs, HAC = HAC1, full = full)
       }
       stat    <- c(CTT$stat)
       df      <- c(CTT$df)
@@ -970,8 +991,6 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
         dtheta         <- fcoef(Estimate = dtheta$Estimate, cov = dtheta$cov)
       }
     } else if (which == "encompassing") {
-      ntau1   <- length(tau1)
-      ntau2   <- length(tau2)
       CTT     <- NULL
       if (struc1) {
         K11   <- length(idX11)
@@ -982,28 +1001,25 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
         Kest21<- ifelse(FEnum == 0, K21 + ntau1 + 1, K21 + ntau1 + MnIs)
         Kest12<- ifelse(FEnum == 0, K12, K12 + MIs)
         Kest22<- ifelse(FEnum == 0, K22 + ntau2 + 1, K22 + ntau2 + MnIs)
-        CTT   <- list(F = fEncompassingStruc(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1,
-                                             idX11 = idX11, idX21 = idX21, Kest11 = Kest11, Kest21 = Kest21,
-                                             X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22, e2 = e2, theta2 = theta2,
-                                             idX12 = idX12, idX22 = idX22, Kest12 = Kest12, Kest22 = Kest22,
+        CTT   <- list(F = fEncompassingStruc(qy1 = qy1, Z1 = Z1, W21 = W21, e1 = e1, theta1 = theta1, Kest21 = Kest21, 
+                                             qy2 = qy2, Z2 = Z2, W22 = W22, e2 = e2, theta2 = theta2, Kest22 = Kest22,
+                                             X = X1, W1 = W11, idX1 = idX11, idX2 = idX21, Kest1 = Kest11,
                                              nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full),
-                      
-                      KP = fEncompassingStrucKP(X1 = X1, qy1 = qy1, Z1 = Z1, W11 = W11, W21 = W21, e1 = e1, theta1 = theta1,
-                                                idX11 = idX11, idX21 = idX21, Kest11 = Kest11, Kest21 = Kest21,
-                                                X2 = X2, qy2 = qy2, Z2 = Z2, W12 = W12, W22 = W22, e2 = e2, theta2 = theta2,
-                                                idX12 = idX12, idX22 = idX22, Kest12 = Kest12, Kest22 = Kest22,
+                      KP = fEncompassingStrucKP(qy1 = qy1, Z1 = Z1, W21 = W21, e1 = e1, theta1 = theta1, Kest21 = Kest21, 
+                                                qy2 = qy2, Z2 = Z2, W22 = W22, e2 = e2, theta2 = theta2, Kest22 = Kest22,
+                                                X = X1, W1 = W11, idX1 = idX11, idX2 = idX21, Kest1 = Kest11,
                                                 nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full))
       } else {
         K1    <- length(theta1)
         K2    <- length(theta2)
         Kest1 <- ifelse(FEnum == 0, K1, ifelse(FEnum == 1, K1 + ngr1, K1 + MIs + MnIs))
         Kest2 <- ifelse(FEnum == 0, K2, ifelse(FEnum == 1, K2 + ngr1, K2 + MIs + MnIs))
-        CTT   <- list(F = fEncompassingRed(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
-                                           X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
-                                           ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full),
-                      KP = fEncompassingRedKP(X1 = X1, qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
-                                              X2 = X2, qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
-                                              ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full))
+        CTT   <- list(F = fEncompassingRed(qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
+                                           qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
+                                           X = X1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full),
+                      KP = fEncompassingRedKP(qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
+                                              qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
+                                              X = X1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full))
       }
       Fstat   <- c(CTT$F$stat)
       Fdf1    <- c(CTT$F$df1)
