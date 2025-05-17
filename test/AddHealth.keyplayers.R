@@ -201,9 +201,13 @@ dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
   SIM     <-  readRDS(paste0(OutResPath, depvar[k], ".RDS")) %>%
     group_by(School) %>% 
     mutate(across(c("LIM", "Q3", "Q4", "CES"), ~ rank(., ties.method = "min"), 
-                  .names = "rk.{.col}")) %>% ungroup()
+                  .names = "rk.{.col}")) %>% 
+    mutate(across(c("rk.LIM", "rk.Q3", "rk.Q4", "rk.CES"), ~100*(. - 0.99)/(max(.) - 0.99))) %>%
+    ungroup()
   data.frame(k        = k,
              outcome  = k,
+             indeg    = rep(SIM$indegree, 2),
+             outdeg   = rep(SIM$outdegree, 2),
              model    = rep(1:2, each = nrow(SIM)),
              Quant3   = rep(SIM$rk.Q3, 2),
              Quant4   = rep(SIM$rk.Q4, 2),
@@ -228,12 +232,12 @@ dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
       legend.position = "bottom"
     ) +
     labs(
-      x = "Quantile Model",
-      y = "LIM and CES Models",
-      colour = NULL,
+      x = "Quantile Model Rank",
+      y = "LIM and CES Model Rank",
+      color = NULL,
       shape = NULL
     ))
-ggsave("CFScatter3.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7.5, height = 5)
+ggsave("CFScatter3.pdf", path = OutResPath, plot = graph, device = "pdf", width = 6, height = 6)
 
 # tau4
 (graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 6, 7, 9, 11)), 
@@ -251,9 +255,9 @@ ggsave("CFScatter3.pdf", path = OutResPath, plot = graph, device = "pdf", width 
       legend.position = "bottom"
     ) +
     labs(
-      x = "Quantile Model",
-      y = "LIM and CES Models",
-      colour = NULL,
+      x = "Quantile Model Rank",
+      y = "LIM and CES Model Rank",
+      color = NULL,
       shape = NULL
     ))
-ggsave("CFScatter4.pdf", path = OutResPath, plot = graph, device = "pdf", width = 7.5, height = 5)
+ggsave("CFScatter4.pdf", path = OutResPath, plot = graph, device = "pdf", width = 6, height = 6)
