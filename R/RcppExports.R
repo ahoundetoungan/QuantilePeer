@@ -113,12 +113,12 @@ fcheckrankEigen <- function(X, tol = 1e-10) {
     .Call(`_QuantilePeer_fcheckrankEigen`, X, tol)
 }
 
-demean <- function(X, igroup, ngroup) {
-    .Call(`_QuantilePeer_demean`, X, igroup, ngroup)
+Demean <- function(X, igroup, ngroup) {
+    .Call(`_QuantilePeer_Demean`, X, igroup, ngroup)
 }
 
-demean_separate <- function(X, igroup, LIs, LnIs, ngroup, n) {
-    .Call(`_QuantilePeer_demean_separate`, X, igroup, LIs, LnIs, ngroup, n)
+Demean_separate <- function(X, igroup, LIs, LnIs, ngroup, n) {
+    .Call(`_QuantilePeer_Demean_separate`, X, igroup, LIs, LnIs, ngroup, n)
 }
 
 fdatadiagnostic <- function(y, endo, X, ins, theta, idX1, idX2, igroup, nIs, LIs, LnIs, n, ngroup, ntau, struc, FE) {

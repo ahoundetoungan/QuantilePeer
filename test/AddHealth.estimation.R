@@ -62,6 +62,20 @@ festim  <- function(outcome) {
   # First type of instruments
   Z1      <- cbind(qpeer.inst(formula = ~ X + GX, Glist = G, tau = seq(0, 1, 1/9), 
                               max.distance = 2, checkrank = TRUE, type = 7)$instruments)
+  
+  qy3     <- qpeer.inst(formula = y ~ 1, Glist = G, tau = tau3,
+                        max.distance = 1, checkrank = TRUE, type = 7)$qy
+  
+  qy4     <- qpeer.inst(formula = y ~ 1, Glist = G, tau = tau4,
+                        max.distance = 1, checkrank = TRUE, type = 7)$qy
+  
+  qy5     <- qpeer.inst(formula = y ~ 1, Glist = G, tau = tau5,
+                        max.distance = 1, checkrank = TRUE, type = 7)$qy
+  
+  cv.glmnet(x = cbind(X, GX, Z1), y = qy3[,1], alpha = 1, nfolds = 5)$lambda.min
+  xx = glmnet(x = cbind(X, GX, Z1), y = qy3[,1], alpha = 0.0002072)
+  coef(xx, s = 0.1)
+  
   # Second type of instruments with tau3
   Z23     <- qpeer.inst(formula = y ~ X + GX, Glist = G, tau = tau3,
                         max.distance = 2, checkrank = TRUE, type = 7)$instruments

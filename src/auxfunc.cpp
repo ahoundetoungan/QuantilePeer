@@ -29,9 +29,9 @@ Eigen::Array<bool, Eigen::Dynamic, 1> fcheckrankEigen(const Eigen::MatrixXd& X, 
   return R.diagonal().array().abs() > tol;
 }
 
-// demean
+// Demean
 //[[Rcpp::export]]
-arma::mat demean(arma::mat X,
+arma::mat Demean(arma::mat X,
                  const arma::mat& igroup,
                  const int & ngroup) {
   for (int r(0); r < ngroup; ++ r) {
@@ -41,9 +41,9 @@ arma::mat demean(arma::mat X,
   return X;
 }
 
-// demean for the structural model
+// Demean for the structural model
 //[[Rcpp::export]]
-arma::mat demean_separate(arma::mat X,
+arma::mat Demean_separate(arma::mat X,
                           const arma::mat& igroup,
                           const Rcpp::List& LIs,
                           const Rcpp::List& LnIs,
@@ -91,15 +91,15 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
   }
   
   if (FE == "join") {
-    y    = demean(y, igroup, ngroup);
-    endo = demean(endo, igroup, ngroup);
-    X    = demean(X, igroup, ngroup);
-    ins  = demean(ins, igroup, ngroup);
+    y    = Demean(y, igroup, ngroup);
+    endo = Demean(endo, igroup, ngroup);
+    X    = Demean(X, igroup, ngroup);
+    ins  = Demean(ins, igroup, ngroup);
   } else if(FE == "separate") {
-    y    = demean_separate(y, igroup, LIs, LnIs, ngroup, n);
-    endo = demean_separate(endo, igroup, LIs, LnIs, ngroup, n);
-    X    = demean_separate(X, igroup, LIs, LnIs, ngroup, n);
-    ins  = demean_separate(ins, igroup, LIs, LnIs, ngroup, n);
+    y    = Demean_separate(y, igroup, LIs, LnIs, ngroup, n);
+    endo = Demean_separate(endo, igroup, LIs, LnIs, ngroup, n);
+    X    = Demean_separate(X, igroup, LIs, LnIs, ngroup, n);
+    ins  = Demean_separate(ins, igroup, LIs, LnIs, ngroup, n);
   }
   
   arma::uvec nvecnIs(ngroup);
@@ -172,7 +172,7 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
 // 
 // 
 // //[[Rcpp::export]]
-// Eigen::MatrixXd demean(Eigen::MatrixXd& X,
+// Eigen::MatrixXd Demean(Eigen::MatrixXd& X,
 //                        const Eigen::MatrixXi& igroup,
 //                        const int & ngroup) {
 //   for (int r(0); r < ngroup; ++ r) {
@@ -182,9 +182,9 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
 //   return X;
 // }
 
-// // demean for the structural model
+// // Demean for the structural model
 // //[[Rcpp::export]]
-// Eigen::MatrixXd demean_separate(Eigen::MatrixXd& X,
+// Eigen::MatrixXd Demean_separate(Eigen::MatrixXd& X,
 //                                 const Eigen::MatrixXi& igroup,
 //                                 const LVectorXi& LIs,
 //                                 const LVectorXi& LnIs,
@@ -344,15 +344,15 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
 //   }
 //   
 //   if (FE == "join") {
-//     y    = demean(y, igroup, ngroup);
-//     endo = demean(endo, igroup, ngroup);
-//     X    = demean(X, igroup, ngroup);
-//     ins  = demean(ins, igroup, ngroup);
+//     y    = Demean(y, igroup, ngroup);
+//     endo = Demean(endo, igroup, ngroup);
+//     X    = Demean(X, igroup, ngroup);
+//     ins  = Demean(ins, igroup, ngroup);
 //   } else if(FE == "separate") {
-//     y    = demean_separate(y, igroup, Is, ngroup, n);
-//     endo = demean_separate(endo, igroup, Is, ngroup, n);
-//     X    = demean_separate(X, igroup, Is, ngroup, n);
-//     ins  = demean_separate(ins, igroup, Is, ngroup, n);
+//     y    = Demean_separate(y, igroup, Is, ngroup, n);
+//     endo = Demean_separate(endo, igroup, Is, ngroup, n);
+//     X    = Demean_separate(X, igroup, Is, ngroup, n);
+//     ins  = Demean_separate(ins, igroup, Is, ngroup, n);
 //   }
 //   
 //   arma::uvec nvecnIs(ngroup);

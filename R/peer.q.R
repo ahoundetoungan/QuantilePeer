@@ -268,15 +268,15 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   ins0       <- ins
   if (fixed.effects != "no") {
     if (fixed.effects == "join") {
-      y      <- c(demean(as.matrix(y), igroup = igr, ngroup = M))
-      qy     <- demean(qy, igroup = igr, ngroup = M)
-      X      <- demean(X, igroup = igr, ngroup = M)
-      ins    <- demean(ins, igroup = igr, ngroup = M)
+      y      <- c(Demean(as.matrix(y), igroup = igr, ngroup = M))
+      qy     <- Demean(qy, igroup = igr, ngroup = M)
+      X      <- Demean(X, igroup = igr, ngroup = M)
+      ins    <- Demean(ins, igroup = igr, ngroup = M)
     } else {
-      y      <- c(demean_separate(as.matrix(y), igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n))
-      qy     <- demean_separate(qy, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
-      X      <- demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
-      ins    <- demean_separate(ins, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+      y      <- c(Demean_separate(as.matrix(y), igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n))
+      qy     <- Demean_separate(qy, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+      X      <- Demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+      ins    <- Demean_separate(ins, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
     }
     colnames(X)   <- xname
     colnames(ins) <- zename
@@ -926,19 +926,19 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
     FEnum   <- (0:2)[FE1 == c("no", "join", "separate")]
     
     if (FE1 == "join") {
-      qy1  <- demean(qy1, igr, ngr1)
-      qy2  <- demean(qy2, igr, ngr1)
-      X1   <- demean(X1, igr, ngr1)
-      X2   <- demean(X2, igr, ngr1)
-      Z1   <- demean(Z1, igr, ngr1)
-      Z2   <- demean(Z2, igr, ngr1)
+      qy1  <- Demean(qy1, igr, ngr1)
+      qy2  <- Demean(qy2, igr, ngr1)
+      X1   <- Demean(X1, igr, ngr1)
+      X2   <- Demean(X2, igr, ngr1)
+      Z1   <- Demean(Z1, igr, ngr1)
+      Z2   <- Demean(Z2, igr, ngr1)
     } else if(FE1 == "separate") {
-      qy1  <- demean_separate(qy1, igr, LIs, LnIs, ngr1, n1)
-      qy2  <- demean_separate(qy2, igr, LIs, LnIs, ngr1, n1)
-      X1   <- demean_separate(X1, igr, LIs, LnIs, ngr1, n1)
-      X2   <- demean_separate(X2, igr, LIs, LnIs, ngr1, n1)
-      Z1   <- demean_separate(Z1, igr, LIs, LnIs, ngr1, n1)
-      Z2   <- demean_separate(Z2, igr, LIs, LnIs, ngr1, n1)
+      qy1  <- Demean_separate(qy1, igr, LIs, LnIs, ngr1, n1)
+      qy2  <- Demean_separate(qy2, igr, LIs, LnIs, ngr1, n1)
+      X1   <- Demean_separate(X1, igr, LIs, LnIs, ngr1, n1)
+      X2   <- Demean_separate(X2, igr, LIs, LnIs, ngr1, n1)
+      Z1   <- Demean_separate(Z1, igr, LIs, LnIs, ngr1, n1)
+      Z2   <- Demean_separate(Z2, igr, LIs, LnIs, ngr1, n1)
     }
     
     MIs    <- sum(sapply(LIs, function(s) length(s) > 0))

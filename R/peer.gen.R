@@ -107,15 +107,15 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   ins0       <- ins
   if (fixed.effects != "no") {
     if (fixed.effects == "join") {
-      y      <- c(demean(as.matrix(y), igroup = igr, ngroup = M))
-      endo   <- demean(endo, igroup = igr, ngroup = M)
-      X      <- demean(X, igroup = igr, ngroup = M)
-      ins    <- demean(ins, igroup = igr, ngroup = M)
+      y      <- c(Demean(as.matrix(y), igroup = igr, ngroup = M))
+      endo   <- Demean(endo, igroup = igr, ngroup = M)
+      X      <- Demean(X, igroup = igr, ngroup = M)
+      ins    <- Demean(ins, igroup = igr, ngroup = M)
     } else {
-      y      <- c(demean_separate(as.matrix(y), igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n))
-      endo   <- demean_separate(endo, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
-      X      <- demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
-      ins    <- demean_separate(ins, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+      y      <- c(Demean_separate(as.matrix(y), igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n))
+      endo   <- Demean_separate(endo, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+      X      <- Demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+      ins    <- Demean_separate(ins, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
     }
     colnames(X)   <- xname
     colnames(ins) <- zename
