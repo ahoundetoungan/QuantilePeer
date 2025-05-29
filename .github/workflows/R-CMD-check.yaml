@@ -55,6 +55,7 @@ jobs:
           extra-packages: |
             any::qpdf
             any::rcmdcheck
+            any::tinytex
 
       - name: Run R CMD check
         uses: r-lib/actions/check-r-package@v2
