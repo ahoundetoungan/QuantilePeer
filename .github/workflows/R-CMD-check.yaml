@@ -43,16 +43,28 @@ jobs:
             scheme-medium
             xcolor
             framed
+            scheme-medium
+            inconsolata
 
       - name: Install Windows TinyTeX
         if: runner.os == 'Windows'
         run: |
           Rscript -e "install.packages('tinytex'); tinytex::install_tinytex(force = TRUE)"
+          
+      - name: Install tidy (macOS only)
+        if: runner.os == 'macOS'
+        run: brew install tidy-html5
+
+      # Install HTML tidy on Linux (if needed)
+      - name: Install tidy (Linux only)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y tidy
 
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: |
+            any::V8
             any::qpdf
             any::rcmdcheck
             any::tinytex
