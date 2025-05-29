@@ -7,9 +7,9 @@
   [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
   [![R-hub](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/rhub.yaml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/rhub.yaml)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![CRAN](https://img.shields.io/badge/CRAN-not%20yet-lightgrey)
+  ![CRAN](https://img.shields.io/badge/CRAN-not%20yet-lightgrey)
   
-  [![R-universe](https://ahoundetoungan.r-universe.dev/badges/QuantilePeer)](https://ahoundetoungan.r-universe.dev/ui#package:QuantilePeer)
+  ![R-universe](https://img.shields.io/badge/R--universe-not%20yet-lightgrey)
   
   [![vignette](https://img.shields.io/badge/vignette-introduction-blue.svg)](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf)
 
