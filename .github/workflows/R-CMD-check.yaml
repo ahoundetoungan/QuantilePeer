@@ -68,7 +68,6 @@ jobs:
         if: runner.os == 'Windows'
         run: pdflatex --version
       
-          
       - name: Install tidy (macOS only)
         if: runner.os == 'macOS'
         run: brew install tidy-html5
