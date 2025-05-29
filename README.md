@@ -3,9 +3,20 @@
 **Aristide Houndetoungan**
 
 <!-- Optional Badges (update links as needed) -->
-[![R-hub](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/rhub.yaml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/rhub.yaml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![vignette](https://img.shields.io/badge/vignette-introduction-blue.svg)](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf)
+ <!-- badges: start -->
+  [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+  [![R-hub](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/rhub.yaml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/rhub.yaml)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![CRAN](https://img.shields.io/badge/CRAN-not%20yet-lightgrey)
+  
+  [![R-universe](https://ahoundetoungan.r-universe.dev/badges/QuantilePeer)](https://ahoundetoungan.r-universe.dev/ui#package:QuantilePeer)
+  
+  [![vignette](https://img.shields.io/badge/vignette-introduction-blue.svg)](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf)
+
+<!-- badges: end -->
+
+
+
 <!-- [![CRAN status](https://www.r-pkg.org/badges/version/QuantilePeer)](https://cran.r-project.org/package=QuantilePeer) -->
 <!-- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](DOI: 10.32614/CRAN.package) -->
 
