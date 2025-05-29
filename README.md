@@ -3,7 +3,7 @@
 **Aristide Houndetoungan**
 
 <!-- Optional Badges (update links as needed) -->
-[![R-CMD-check](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yaml)](https://github.com/ahoundetoungan/QuantilePeer/actions) -->
+[![R-CMD-check](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions) -->
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 <!-- [![CRAN status](https://www.r-pkg.org/badges/version/QuantilePeer)](https://cran.r-project.org/package=QuantilePeer) -->
 <!-- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](DOI: 10.32614/CRAN.package) -->
