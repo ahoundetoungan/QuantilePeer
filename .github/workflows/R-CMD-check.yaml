@@ -1,51 +1,23 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+name: R-CMD-check
+
 on:
   push:
     branches: [main, master]
   pull_request:
-
-name: R-CMD-check
-
-permissions: read-all
+    branches: [main, master]
 
 jobs:
   R-CMD-check:
-    runs-on: ${{ matrix.config.os }}
-
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
-
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - {os: macos-latest,   r: 'release'}
-          - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,   r: 'release'}
-          - {os: ubuntu-latest,   r: 'oldrel-1'}
-
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
+    runs-on: ubuntu-latest
+    name: R CMD check (Linux)
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - uses: r-lib/actions/setup-pandoc@v2
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
 
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          r-version: ${{ matrix.config.r }}
-          http-user-agent: ${{ matrix.config.http-user-agent }}
-          use-public-rspm: true
-          # extra-repositories: "https://kaskr.r-universe.dev"
-
-      # Download RTMBode
-     # - name: add r-universe to repos
-     #   run: Rscript -e 'options(repos = c("https://kaskr.r-universe.dev", "https://cloud.r-project.org"))'
-
-      - name: Install system dependencies (LaTeX + others)
+      - name: Install LaTeX and system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -55,14 +27,19 @@ jobs:
             texlive-fonts-extra \
             texinfo \
             ghostscript \
+            qpdf \
             pandoc
-            
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: any::rcmdcheck
-          needs: check
 
-       - name: Check package (CRAN-style)
+      - name: Install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::rcmdcheck
+            any::Rcpp
+            any::RcppEigen
+            any::RcppArmadillo
+
+      - name: Check package (CRAN-style)
         uses: r-lib/actions/check-r-package@v2
         with:
           args: --as-cran

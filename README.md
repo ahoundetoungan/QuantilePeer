@@ -5,7 +5,7 @@
 <!-- Optional Badges (update links as needed) -->
  <!-- badges: start -->
   [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-  [![R-CMD-check](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions)
+  [![.github/workflows/R-CMD-check.yaml](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yaml)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   ![CRAN](https://img.shields.io/badge/CRAN-not%20yet-lightgrey)
   ![R-universe](https://img.shields.io/badge/R--universe-not%20yet-lightgrey)
