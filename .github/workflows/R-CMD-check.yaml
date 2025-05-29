@@ -63,6 +63,8 @@ jobs:
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
-        with:
+         with:
+          args: --as-cran
+          build-vignettes: true
           upload-snapshots: true
-          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+          build-args: 'c("--no-manual", "--compact-vignettes=gs+qpdf")'
