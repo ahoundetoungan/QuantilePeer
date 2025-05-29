@@ -46,12 +46,12 @@ jobs:
 
       - name: Install TinyTeX (Windows)
         if: runner.os == 'Windows'
-        shell: cmd
         run: |
           Rscript -e "install.packages('tinytex')"
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
-          Rscript -e "tinytex::tlmgr_install(c('latex', 'pdftex', 'latex-bin', 'babel-english', 'xcolor', 'framed', 'inconsolata'))"
-          echo "C:\Users\runneradmin\AppData\Roaming\TinyTeX\bin\win32" >> %GITHUB_PATH%
+          Rscript -e "tinytex::tlmgr_install(c('latex-bin', 'pdftex', 'babel-english', 'xcolor', 'framed', 'inconsolata'))"
+          echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/win32" >> $env:GITHUB_PATH
+          echo "TinyTeX path: $(Get-Command pdflatex).Source"
           
       - name: Check pdflatex version (Windows)
         if: runner.os == 'Windows'
@@ -80,6 +80,6 @@ jobs:
         uses: r-lib/actions/check-r-package@v2
         with:
           args: 'c("--as-cran")'
-          build_args: 'c("--no-manual", "--compact-vignettes=gs+qpdf")'
+          build_args: 'c("--compact-vignettes=gs+qpdf")'
           upload-snapshots: true
 
