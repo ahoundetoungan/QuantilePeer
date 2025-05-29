@@ -1,4 +1,16 @@
 CXX_STD = CXX17
 
 PKG_CPPFLAGS = -DARMA_64BIT_WORD=1
-PKG_CXXFLAGS= -Iglmnetpp/include -Iglmnetpp/src -Iglmnetpp/test -DEIGEN_PERMANENTLY_DISABLE_STUPID_WARNINGS
+
+ifndef CRAN
+PKG_CXXFLAGS = -Iglmnetpp/include \
+  -Iglmnetpp/src \
+  -Iglmnetpp/test \
+  -DEIGEN_PERMANENTLY_DISABLE_STUPID_WARNINGS \
+  -Wno-ignored-attributes
+else
+PKG_CXXFLAGS = -Iglmnetpp/include \
+  -Iglmnetpp/src \
+  -Iglmnetpp/test \
+  -DEIGEN_PERMANENTLY_DISABLE_STUPID_WARNINGS
+endif
