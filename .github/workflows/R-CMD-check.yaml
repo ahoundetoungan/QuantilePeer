@@ -45,12 +45,17 @@ jobs:
             inconsolata
 
       - name: Install TinyTeX (Windows)
-        if: runner.os == 'Windows' 
+        if: runner.os == 'Windows'
+        shell: cmd
         run: |
           Rscript -e "install.packages('tinytex')"
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
           Rscript -e "tinytex::tlmgr_install(c('latex', 'pdftex', 'latex-bin', 'babel-english', 'xcolor', 'framed', 'inconsolata'))"
-          echo "C:\Users\runneradmin\AppData\Roaming\TinyTeX\bin\win32" >> $GITHUB_PATH
+          echo "C:\Users\runneradmin\AppData\Roaming\TinyTeX\bin\win32" >> %GITHUB_PATH%
+          
+      - name: Check pdflatex version (Windows)
+        if: runner.os == 'Windows'
+        run: pdflatex --version
       
           
       - name: Install tidy (macOS only)
