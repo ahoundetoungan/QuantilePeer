@@ -50,7 +50,19 @@ jobs:
           Rscript -e "install.packages('tinytex')"
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
           Rscript -e "tinytex::tlmgr_install(c('latex-bin', 'pdftex', 'babel-english', 'xcolor', 'framed', 'inconsolata'))"
-          echo "$(dirname $(find $APPDATA/TinyTeX -name tlmgr.bat))" >> $GITHUB_PATH
+          echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/win32" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Print contents of AppData (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "Listing C:/Users/runneradmin/AppData"
+          dir "C:\Users\runneradmin\AppData"
+
+      - name: Print contents of Roaming (Windows)
+       if: runner.os == 'Windows'
+       run: |
+          echo "Listing C:/Users/runneradmin/AppData/Roaming"
+          dir "C:\Users\runneradmin\AppData\Roaming"
           
       - name: Check pdflatex version (Windows)
         if: runner.os == 'Windows'
