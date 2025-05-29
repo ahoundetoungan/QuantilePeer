@@ -49,7 +49,9 @@ jobs:
         run: |
           Rscript -e "install.packages('tinytex')"
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
-          Rscript -e "tinytex::tlmgr_install(c('babel-english', 'xcolor', 'framed', 'inconsolata'))"
+          Rscript -e "tinytex::tlmgr_install(c('latex', 'pdftex', 'latex-bin', 'babel-english', 'xcolor', 'framed', 'inconsolata'))"
+          echo "::add-path::C:\\Users\\runneradmin\\AppData\\Roaming\\TinyTeX\\bin\\win32"
+      
           
       - name: Install tidy (macOS only)
         if: runner.os == 'macOS'
