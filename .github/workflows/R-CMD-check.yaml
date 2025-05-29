@@ -50,8 +50,7 @@ jobs:
           Rscript -e "install.packages('tinytex')"
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
           Rscript -e "tinytex::tlmgr_install(c('latex-bin', 'pdftex', 'babel-english', 'xcolor', 'framed', 'inconsolata'))"
-          echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/win32" >> $env:GITHUB_PATH
-          echo "TinyTeX path: $(Get-Command pdflatex).Source"
+          echo "$(dirname $(find $APPDATA/TinyTeX -name tlmgr.bat))" >> $GITHUB_PATH
           
       - name: Check pdflatex version (Windows)
         if: runner.os == 'Windows'
