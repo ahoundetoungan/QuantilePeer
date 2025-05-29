@@ -33,48 +33,32 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent || '' }}
 
-      # 🟩 Install LaTeX per OS
-      - name: Install LaTeX on Ubuntu
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            texlive \
-            texlive-latex-extra \
-            texlive-fonts-recommended \
-            texlive-fonts-extra \
-            texinfo \
-            ghostscript \
-            qpdf \
-            pandoc
+      # 🧪 Install LaTeX (macOS and Linux)
+      - name: Setup TeX Live
+        uses: teatimeguest/setup-texlive-action@v3
+        if: runner.os != 'Windows'
+        with:
+          packages: |
+            scheme-medium
+            xcolor
+            framed
 
-      - name: Install LaTeX on macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install --cask mactex-no-gui
-          sudo tlmgr update --self --all
-          echo "/Library/TeX/texbin" >> $GITHUB_PATH
-
-      - name: Install LaTeX on Windows
+      - name: Install Windows TinyTeX
         if: runner.os == 'Windows'
         run: |
-          choco install miktex.install --params "/NoAutoInstall"
-          RefreshEnv
-          miktexsetup finish
-          initexmf --update-fndb
-          initexmf --mklinks --force
-          initexmf --mkmaps
+          Rscript -e "install.packages('tinytex'); tinytex::install_tinytex(force = TRUE)"
 
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: |
             any::rcmdcheck
+            any::tinytex
             any::Rcpp
             any::RcppEigen
             any::RcppArmadillo
 
-      - name: Run R CMD check (with vignettes)
+      - name: Run R CMD check
         uses: r-lib/actions/check-r-package@v2
         with:
           args: --as-cran
