@@ -39,15 +39,15 @@ using namespace std;
 // floorP and ceilP are floor and ceil functions with the precision that
 // decimal digit longer than k are ignored.
 int floorP(const long double& x, const unsigned int& k = 10){
-  long tp1(pow(10, k));
-  long tp2(round(x*tp1));
+  long long int tp1(pow(10, k));
+  long long int tp2(round(x*tp1));
   return tp2/tp1;
 }
 
 int ceilP(const long double& x, const unsigned int& k = 10){
-  long tp1(pow(10, k));
-  long tp2(round(x*tp1));
-  long tp3(tp2/tp1);
+  long long int tp1(pow(10, k));
+  long long int tp2(round(x*tp1));
+  int tp3(tp2/tp1);
   if (tp3*tp1 < tp2) return tp3 + 1;
   return tp3;
 }
