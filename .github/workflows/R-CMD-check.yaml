@@ -34,8 +34,7 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent || '' }}
 
-      # 🧪 Install LaTeX (macOS and Linux)
-      - name: Setup TeX Live
+      - name: Setup TeX Live (macOS and Linux)
         uses: teatimeguest/setup-texlive-action@v3
         if: runner.os != 'Windows'
         with:
@@ -43,13 +42,14 @@ jobs:
             scheme-medium
             xcolor
             framed
-            scheme-medium
             inconsolata
 
-      - name: Install Windows TinyTeX
-        if: runner.os == 'Windows'
+      - name: Install TinyTeX (Windows)
+        if: runner.os == 'Windows' 
         run: |
-          Rscript -e "install.packages('tinytex'); tinytex::install_tinytex(force = TRUE)"
+          Rscript -e "install.packages('tinytex')"
+          Rscript -e "tinytex::install_tinytex(force = TRUE)"
+          Rscript -e "tinytex::tlmgr_install(c('babel-english', 'xcolor', 'framed', 'inconsolata'))"
           
       - name: Install tidy (macOS only)
         if: runner.os == 'macOS'
