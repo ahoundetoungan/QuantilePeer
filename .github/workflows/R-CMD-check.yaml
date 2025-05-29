@@ -61,7 +61,6 @@ jobs:
       - name: Run R CMD check
         uses: r-lib/actions/check-r-package@v2
         with:
-          args: "--as-cran"
           build_args: 'c("--no-manual", "--compact-vignettes=gs+qpdf")'
           upload-snapshots: true
 
