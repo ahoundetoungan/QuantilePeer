@@ -43,18 +43,13 @@ jobs:
             xcolor
             framed
             inconsolata
-            
-      # - name: Install full TeX Live (macOS and Linux)
-      #   if: runner.os != 'Windows'
-      #   uses: teatimeguest/setup-texlive-action@v3
-      #   with:
-      #     scheme: full
-            
-      - name: Install TinyTeX and LaTeX packages (Windows)
+
+      - name: Install TinyTeX (Windows)
         if: runner.os == 'Windows'
         run: |
-          Rscript -e "install.packages('tinytex'); tinytex::install_tinytex(force = TRUE)"
-          Rscript -e "tinytex::tlmgr_install(c('inconsolata', 'xcolor', 'framed', 'babel', 'etoolbox', 'titling', 'amsmath', 'fancyhdr', 'float', 'parskip', 'geometry', 'hyperref', 'lmodern', 'extcomp', 'graphics', 'hyperref', 'longtable'))"
+          Rscript -e "install.packages('tinytex')"
+          Rscript -e "tinytex::install_tinytex(force = TRUE)"
+          Rscript -e "tinytex::tlmgr_install(c('latex-bin', 'pdftex', 'babel-english', 'xcolor', 'framed', 'inconsolata'))"
           echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/windows" >> $env:GITHUB_PATH
 
       # - name: Print contents (Windows)
@@ -86,18 +81,27 @@ jobs:
             any::qpdf
             any::rcmdcheck
             any::tinytex
-
-      - name: Run R CMD check
+          
+      - name: Run R CMD check (Linux and Mac)
+        if: runner.os != 'Windows'
         uses: r-lib/actions/check-r-package@v2
         with:
           args: 'c("--as-cran")'
           build_args: 'c("--compact-vignettes=gs+qpdf")'
           upload-snapshots: true
-          
-      - name: Upload R CMD check artifacts (Windows only)
+
+      - name: Run R CMD check (Windows - skip manual)
         if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
+        uses: r-lib/actions/check-r-package@v2
         with:
-         name: rcmdcheck-logs-windows
-         path: check/QuantilePeer.Rcheck
+          args: 'c("--as-cran")'
+          build_args: 'c("--no-manual", "--compact-vignettes=gs+qpdf")'
+          upload-snapshots: true
+          
+      # - name: Upload R CMD check artifacts (Windows only)
+      #   if: runner.os == 'Windows'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #    name: rcmdcheck-logs-windows
+      #    path: check/QuantilePeer.Rcheck
 
