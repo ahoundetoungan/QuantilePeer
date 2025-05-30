@@ -88,4 +88,11 @@ jobs:
           args: 'c("--as-cran")'
           build_args: 'c("--compact-vignettes=gs+qpdf")'
           upload-snapshots: true
+          
+      - name: Upload R CMD check artifacts (Windows only)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+         name: rcmdcheck-logs-windows
+         path: check/QuantilePeer.Rcheck
 
