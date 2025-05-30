@@ -11,3 +11,4 @@
 ^scr/*\.o$
 ^\.tar\.gz$
 ^vignettes/\.pdf$
+^test$

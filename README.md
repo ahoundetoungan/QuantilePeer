@@ -10,7 +10,6 @@
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   
   [![R-CMD-check](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yml)
-  [![Run testthat](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/testthat.yml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/testthat.yml)
    
   [![Vignette](https://img.shields.io/badge/vignette-introduction-blue.svg)](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf)
 
