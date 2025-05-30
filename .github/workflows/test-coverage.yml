@@ -28,4 +28,4 @@ jobs:
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
         with:
-          token: ${{ 888d6fe0-f81b-4842-9a49-b38fa491d867 }}  # Not needed for public repos
+          token: ${{ secrets.CODECOV_TOKEN }}  # Not needed for public repos
