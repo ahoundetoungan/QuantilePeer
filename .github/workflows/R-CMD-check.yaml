@@ -43,13 +43,20 @@ jobs:
             xcolor
             framed
             inconsolata
-
-      - name: Install TinyTeX (Windows)
+            
+      # - name: Install full TeX Live (macOS and Linux)
+      #   if: runner.os != 'Windows'
+      #   uses: teatimeguest/setup-texlive-action@v3
+      #   with:
+      #     scheme: full
+            
+      - name: Install Full TinyTeX (Windows)
         if: runner.os == 'Windows'
+        shell: Rscript {0}
         run: |
-          Rscript -e "install.packages('tinytex')"
-          Rscript -e "tinytex::install_tinytex(force = TRUE)"
-          Rscript -e "tinytex::tlmgr_install(c('latex-bin', 'pdftex', 'babel-english', 'xcolor', 'framed', 'inconsolata'))"
+          install.packages("tinytex")
+          tinytex::install_tinytex(force = TRUE)
+          tinytex::tlmgr_install("--all")
           echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/windows" >> $env:GITHUB_PATH
 
       # - name: Print contents (Windows)
