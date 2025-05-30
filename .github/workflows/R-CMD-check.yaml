@@ -50,13 +50,11 @@ jobs:
       #   with:
       #     scheme: full
             
-      - name: Install Full TinyTeX (Windows)
+      - name: Install TinyTeX and LaTeX packages (Windows)
         if: runner.os == 'Windows'
-        shell: Rscript {0}
         run: |
-          install.packages("tinytex")
-          tinytex::install_tinytex(force = TRUE)
-          tinytex::tlmgr_install("--all")
+          Rscript -e "install.packages('tinytex'); tinytex::install_tinytex(force = TRUE)"
+          Rscript -e "tinytex::tlmgr_install(c('inconsolata', 'xcolor', 'framed', 'babel', 'etoolbox', 'titling', 'amsmath', 'fancyhdr', 'float', 'parskip', 'geometry', 'hyperref', 'lmodern', 'extcomp', 'graphics', 'hyperref', 'longtable'))"
           echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/windows" >> $env:GITHUB_PATH
 
       # - name: Print contents (Windows)
