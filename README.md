@@ -4,11 +4,13 @@
 
  <!-- badges: start -->
   [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-  [![.github/workflows/R-CMD-check.yaml](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yaml)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   ![CRAN](https://img.shields.io/badge/CRAN-not%20yet-lightgrey)
   ![R-universe](https://img.shields.io/badge/R--universe-not%20yet-lightgrey)
-
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  
+  [![R-CMD-check](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yml)
+  [![Run testthat tests](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/testthat.yml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/testthat.yml)
+   
   [![vignette](https://img.shields.io/badge/vignette-introduction-blue.svg)](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf)
 
 <!-- badges: end -->
