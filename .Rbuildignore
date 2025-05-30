@@ -1,6 +1,6 @@
 ^doc$
 ^Meta$
-^test$
+^Results$
 ^.github$
 ^\.gitignore$
 ^\.Rbuildignore$

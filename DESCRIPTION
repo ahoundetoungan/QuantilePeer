@@ -16,5 +16,10 @@ Imports: Rcpp (>= 1.0.0), formula.tools, Matrix, MASS
 LinkingTo: Rcpp, RcppArmadillo, RcppEigen, RcppNumerical
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
-Suggests: knitr, rmarkdown, PartialNetwork
+Suggests: 
+    knitr,
+    rmarkdown,
+    PartialNetwork,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
+Config/testthat/edition: 3

@@ -1,4 +1,4 @@
-# QuantilePeer: An R Package for Estimating Models with Quantile Peer Effects
+## QuantilePeer: An R Package for Estimating Models with Quantile Peer Effects
 
 **Aristide Houndetoungan**
 
@@ -18,13 +18,14 @@
 <!-- [![CRAN status](https://www.r-pkg.org/badges/version/QuantilePeer)](https://cran.r-project.org/package=QuantilePeer) -->
 <!-- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](DOI: 10.32614/CRAN.package) -->
 
-## Overview
+### Overview
 
-The **QuantilePeer** package implements estimation and simulation routines for quantile peer effect models introduced in [Houndetoungan (2025)](https://). Replication code for all results in the paper is available in the [`test`](https://github.com/ahoundetoungan/QuantilePeer/tree/main/test) folder.
+The **QuantilePeer** package implements estimation and simulation routines for quantile peer effect models introduced in [Houndetoungan (2025)](https://). 
+Replication code for all results in the paper is available in the [`Results`](https://github.com/ahoundetoungan/QuantilePeer/tree/main/Results) folder.
 
 The package also includes functions to simulate and estimate the CES-based peer effect model developed by [Boucher et al. (2024)](https://doi.org/10.3982/ECTA21048).
 
-## Installation
+### Installation
 
 You can install the package directly from this GitHub repository using:
 
@@ -37,5 +38,5 @@ install_github("ahoundetoungan/QuantilePeer")
 **Note for Windows users:** Make sure [**Rtools**](https://cran.r-project.org/bin/windows/Rtools/rtools44/rtools.html) is installed before installing from GitHub.
 
 
-## Getting Started
+### Getting Started
 See the [vignettes](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf) for detailed examples demonstrating how to use the package.
