@@ -20,6 +20,7 @@ Suggests:
     knitr,
     rmarkdown,
     PartialNetwork,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    covr
 VignetteBuilder: knitr
 Config/testthat/edition: 3

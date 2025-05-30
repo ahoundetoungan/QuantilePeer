@@ -1,0 +1,31 @@
+name: Test coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  coverage:
+    name: Run tests and upload coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Install dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: covr
+
+      - name: Run tests and compute coverage
+        run: |
+          Rscript -e 'covr::codecov()'
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ 888d6fe0-f81b-4842-9a49-b38fa491d867 }}  # Not needed for public repos
