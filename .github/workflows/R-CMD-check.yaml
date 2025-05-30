@@ -52,13 +52,13 @@ jobs:
           Rscript -e "tinytex::tlmgr_install(c('latex-bin', 'pdftex', 'babel-english', 'xcolor', 'framed', 'inconsolata'))"
           echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/win32" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Print contents of AppData (Windows)
+      - name: Print contents (Windows)
         if: runner.os == 'Windows'
         run: |
-          echo "Listing C:/Users/runneradmin/AppData"
-          dir "C:\Users\runneradmin\AppData"
-          echo "Listing C:/Users/runneradmin/AppData/Roaming"
-          dir "C:\Users\runneradmin\AppData\Roaming"
+          echo "Listing Listing C:/Users/runneradmin/AppData/Roaming/TinyTeX"
+          dir "C:\Users\runneradmin\AppData\Roaming\TinyTeX"
+          echo "Listing C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin"
+          dir "C:\Users\runneradmin\AppData\Roaming\TinyTex\bin"
           
       - name: Check pdflatex version (Windows)
         if: runner.os == 'Windows'
