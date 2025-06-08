@@ -652,7 +652,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
   } else if (length(init) != n) {
     stop("`init` is not an n-vector.")
   }
-  y        <- unlist(init)
+  y        <- unlist(init) + 0 # copy so that y not linked to init
   t        <- fNashE(y = y, G = Glist, d = dg, talpha = talpha, lambdatau = lt, igroup = igr, 
                      nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type, 
                      tol = tol, maxit = maxit)
