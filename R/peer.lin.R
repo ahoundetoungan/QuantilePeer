@@ -417,7 +417,7 @@ linpeer.sim   <- function(formula, Glist, parms, lambda, beta, epsilon, structur
   
   # Solving the game
   ## talpha
-  talpha   <- X %*% b + eps
+  talpha   <- c(X %*% b + eps)
   if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - lamst)
   
   y      <- rep(0, n)

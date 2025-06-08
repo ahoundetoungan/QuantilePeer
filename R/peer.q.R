@@ -640,12 +640,12 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
   }
   
   # Solving the game
-  talpha   <- X %*% b + eps
+  talpha   <- c(X %*% b + eps)
   if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - ltst)
   
   ## init
   if (missing(init)) {
-    init   <- rep(0, n)
+    init   <- talpha
   }
   if (length(init) == 1){
     init   <- rep(init, n)

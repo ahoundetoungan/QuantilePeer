@@ -559,7 +559,7 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
   
   # Solving the game
   ## talpha
-  talpha   <- X %*% b + eps
+  talpha   <- c(X %*% b + eps)
   if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - lamst)
   
   ## init
