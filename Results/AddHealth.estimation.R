@@ -17,7 +17,7 @@
 rm(list = ls()) 
 library(dplyr)
 library(QuantilePeer)
-library(PartialNetwork)
+library(CDatanet)
 library(openxlsx)
 
 OutDataPath <- "~/Dropbox/Data/AHdata/CleanData/" # Where prepared data for each outcome are saved (/ at the end is important)

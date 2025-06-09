@@ -10,7 +10,7 @@
 rm(list = ls()) 
 library(dplyr)
 library(QuantilePeer)
-library(PartialNetwork)
+library(CDatanet)
 library(foreach)
 library(doParallel)
 library(doRNG)

@@ -14,7 +14,7 @@
 
 rm(list = ls())
 library(QuantilePeer)
-library(CDatanet) #Another of my package to simulate and estimate peer effects models (count data, linear model, Tobit, ...)
+library(CDatanet) 
 library(parallel)
 library(dplyr)
 library(openxlsx)
