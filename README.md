@@ -4,16 +4,16 @@
 
 
  <!-- badges: start -->
-  [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+  [![Lifecycle: experimental](https://img.shields.io/badge/Lifecycle-Experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![R-CMD-check](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yml)
-  
+
   ![R-universe](https://img.shields.io/badge/R--universe-not%20yet-lightgrey)
   ![CRAN](https://img.shields.io/badge/CRAN-not%20yet-lightgrey)
   ![CRAN Downloads](https://img.shields.io/badge/CRAN-not%20yet-lightgrey)
-  
-   
-  [![Vignette](https://img.shields.io/badge/vignette-introduction-blue.svg)](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf)
+
+
+  [![Vignette](https://img.shields.io/badge/Vignette-blue.svg)](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf)
 
 <!-- badges: end -->
 <!-- [![CRAN status](https://www.r-pkg.org/badges/version/QuantilePeer)](https://cran.r-project.org/package=QuantilePeer) -->
@@ -21,7 +21,7 @@
 
 ### Overview
 
-The **QuantilePeer** package implements estimation and simulation routines for quantile peer effect models introduced in [Houndetoungan (2025)](https://). 
+The **QuantilePeer** package implements estimation and simulation routines for quantile peer effect models introduced in [Houndetoungan (2025)](https://).
 Replication code for all results in the paper is available in the [`Results`](https://github.com/ahoundetoungan/QuantilePeer/tree/main/Results) folder.
 
 The package also includes functions to simulate and estimate the CES-based peer effect model developed by [Boucher et al. (2024)](https://doi.org/10.3982/ECTA21048).
