@@ -227,44 +227,44 @@ set.seed(2025)  # Set global seed for reproducibility
 # Increasing lambda
 lambda1    <- c(0.2, 0, 0.05, 0.2, 0.3)
 cat("DGP A without fixed effects\n")
-Est11      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda1, FALSE), mc.cores = 10))
+Est11      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda1, FALSE), mc.cores = 2))
 cat("DGP A with fixed effects\n")
-Est12      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda1, TRUE), mc.cores = 10))
+Est12      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda1, TRUE), mc.cores = 2))
 
 # Decreasing lambda
 lambda2    <- c(0.2, 0.3, 0.2, 0.05, 0)
 cat("DGP B without fixed effects\n")
-Est21      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda2, FALSE), mc.cores = 10))
+Est21      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda2, FALSE), mc.cores = 2))
 cat("DGP B with fixed effects\n")
-Est22      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda2, TRUE), mc.cores = 10))
+Est22      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda2, TRUE), mc.cores = 2))
 
 # Concave lambda
 lambda3    <- c(0.2, 0, 0.275, 0.275, 0)
 cat("DGP C without fixed effects\n")
-Est31      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda3, FALSE), mc.cores = 10))
+Est31      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda3, FALSE), mc.cores = 2))
 cat("DGP C with fixed effects\n")
-Est32      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda3, TRUE), mc.cores = 10))
+Est32      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda3, TRUE), mc.cores = 2))
 
 # Convex lambda
 lambda4    <- c(0.2, 0.275, 0, 0, 0.275)
 cat("DGP D without fixed effects\n")
-Est41      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda4, FALSE), mc.cores = 10))
+Est41      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda4, FALSE), mc.cores = 2))
 cat("DGP D with fixed effects\n")
-Est42      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda4, TRUE), mc.cores = 10))
+Est42      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda4, TRUE), mc.cores = 2))
 
 # Concave lambda
 lambda5    <- c(0.2, -0.05, 0.35, 0.15, 0.1)
 cat("DGP E without fixed effects\n")
-Est51      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda5, FALSE), mc.cores = 10))
+Est51      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda5, FALSE), mc.cores = 2))
 cat("DGP E with fixed effects\n")
-Est52      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda5, TRUE), mc.cores = 10))
+Est52      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda5, TRUE), mc.cores = 2))
 
 # Constant lambda with data simulated using the standard LIM model
 lambda6    <- 0.55
 cat("DGP F without fixed effects\n")
-Est61      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda6, FALSE, TRUE), mc.cores = 10))
+Est61      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda6, FALSE, TRUE), mc.cores = 2))
 cat("DGP F with fixed effects\n")
-Est62      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda6, TRUE, TRUE), mc.cores = 10))
+Est62      <- do.call(cbind, mclapply(1:nsim, function(i) festim(lambda6, TRUE, TRUE), mc.cores = 2))
 
 save(Est11, Est12, Est21, Est22, Est31, Est32, Est41, Est42, Est51, Est52, Est61, Est62,
      file = paste0(OutResPath, "/Simulations.Rda"))
