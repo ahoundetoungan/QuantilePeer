@@ -2,6 +2,7 @@
 ^Meta$
 ^Results$
 ^.github$
+^scripts$
 ^\.gitignore$
 ^\.Rbuildignore$
 ^\.Rhistory$
