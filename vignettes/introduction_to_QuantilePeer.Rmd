@@ -1,5 +1,5 @@
 ---
-title: "QuantilePeer: An R Package for Estimating and Simulating Quantile Peer Effect Models"
+title: "QuantilePeer: An R package for Simulating and Estimation Quantile Peer Effect Models"
 author: "Aristide Houndetoungan"
 date: "`r Sys.Date()`"
 output:
@@ -16,7 +16,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
   %\VignetteIndexEntry{QuantilePeer package: Examples and Applications}
   %\VignetteEngine{knitr::rmarkdown}
-header-includes: 
+header-includes:
   - \usepackage[utf8]{inputenc}
   - \usepackage[T1]{fontenc}
   - \usepackage{xcolor}
@@ -49,8 +49,8 @@ This documentation is organized as follows. Section \ref{sec:model} provides a b
 To cite **QuantilePeer**, kindly run \textcolor{DarkRed}{\texttt{citation("QuantilePeer")}} in \textbf{R}. This will display the citation information, including the Bib\TeX{} entry for \LaTeX{} users. Please also cite the paper associated with the package \citep[][]{houndetoungan2025quantile}.
 
 
- 
-# A brief description of the model 
+
+# A brief description of the model
 \label{sec:model}
 
 \noindent Let $\mathcal{N}$ be a set of $n$ agents indexed by the integer $i \in [1, ~n]$. Agents are connected through a network that is characterized by an adjacency matrix $\mathbf{G} = [g_{ij}]$ of dimension $n \times n$, where $g_{ij} = 1$ if agent $j$ is a friend of agent $i$, and $g_{ij} = 0$ otherwise. In weighted networks, $g_{ij}$ can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from $i$ to $j$. The model can also accommodate such networks. Note that the network is generally constituted in many independent subnets (eg: schools).
@@ -66,15 +66,15 @@ where $\mathbf{y}_{-i} = (y_1, \ldots, y_{i-1}, y_{i+1}, \ldots, y_n)^{\prime}$ 
 
 One issue in linear peer effect models is that individual preferences with conformity and spillover (complementarity or substitution) lead to the same reduced form \citep[see][]{boucher2016some}. However, it is possible to disentangle both types of preferences using isolated individuals \citep{boucher2024toward}. Isolated individuals are those who have no friends, although they may or may not be considered friends by others. The structural specification of the model differs between isolated and non-isolated individuals, allowing for the separate identification of peer effects arising from spillovers and conformity.
 
-For isolated $i$, the specification is similar to a standard linear-in-means (LIM) model without social interactions, given by: 
+For isolated $i$, the specification is similar to a standard linear-in-means (LIM) model without social interactions, given by:
 \begin{equation}\label{eq:yiso}
 y_i = \mathbf{x}_i^{\prime}\boldsymbol \beta + \varepsilon_i.
 \end{equation}
-If $i$ is non-isolated, the specification is given by: 
+If $i$ is non-isolated, the specification is given by:
 \begin{equation}\label{eq:yniso}
 y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda_2)\mathbf{x}_i^{\prime}\boldsymbol \beta  + \varepsilon_i,
 \end{equation}
-where $\lambda_2$ determines whether preferences exhibit conformity or anti-conformity. Specifically, let $\lambda:= \sum_{\tau \in \mathcal{T}} \lambda_{\tau}$ denote the total peer effects at all quantile levels. These total effects can be decomposed as $\lambda = \lambda_1 + \lambda_2$, where $\lambda_1$ captures total spillover effects and $\lambda_2$ captures total conformity effects. As in \citet{boucher2024toward}, when $\lambda_1 > 0$, preferences exhibit complementarity; when $\lambda_1 < 0$, preferences exhibit substitution. In contrast, when $\lambda_2 > 0$, preferences are conformist. Anti-conformity may also arise when $\lambda_2 < 0$. 
+where $\lambda_2$ determines whether preferences exhibit conformity or anti-conformity. Specifically, let $\lambda:= \sum_{\tau \in \mathcal{T}} \lambda_{\tau}$ denote the total peer effects at all quantile levels. These total effects can be decomposed as $\lambda = \lambda_1 + \lambda_2$, where $\lambda_1$ captures total spillover effects and $\lambda_2$ captures total conformity effects. As in \citet{boucher2024toward}, when $\lambda_1 > 0$, preferences exhibit complementarity; when $\lambda_1 < 0$, preferences exhibit substitution. In contrast, when $\lambda_2 > 0$, preferences are conformist. Anti-conformity may also arise when $\lambda_2 < 0$.
 If peer effects are solely due to spillovers, then $\lambda_1 \ne 0$ and $\lambda_2 = 0$. Conversely, if peer effects arise only from conformity, then $\lambda_1 = 0$ and $\lambda_2 \ne 0$. The quantile peer effect model allows for the decomposition of total peer effects at different quantile levels, measured by the parameters $\lambda_{\tau}$'s.
 
 To identify $\lambda_1$ and $\lambda_2$, it is important to observe a sufficient number of isolated individuals in the network. This enables the identification of $\boldsymbol \beta$ in Equation \eqref{eq:yiso}, which in turn makes it possible to identify $\lambda_2$ in Equation \eqref{eq:yniso}. The underlying assumption here is that the $\boldsymbol{\beta}$ parameter is the same in both equations. Alternatively, assuming that a subset of the components of $\boldsymbol{\beta}$ are the same is sufficient for the identification of $\lambda_2$.  When the network contains no isolated nodes, the $\lambda_{\tau}$’s can still be identified, but it is not possible to determine whether they reflect conformity or spillover effects.
@@ -123,18 +123,18 @@ lambda2   <- 0.2 # lambda_2
 beta      <- c(2, -0.5, 1)
 
 # First dependent variable (reduced form without conformity)
-y1        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = lambdatau, 
-                       beta = beta, structural = FALSE, 
-                       epsilon = rnorm(n, 0, 0.4)) 
+y1        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = lambdatau,
+                       beta = beta, structural = FALSE,
+                       epsilon = rnorm(n, 0, 0.4))
 y1        <- y1$y #qpeer.sim returns a list of several object including y
 
 # Second dependent variable (structural form with conformity)
-y2        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, 
-                       lambda = c(lambda2, lambdatau), beta = beta, 
-                       structural = TRUE, epsilon = rnorm(n, 0, 0.4)) 
-y2        <- y2$y 
+y2        <- qpeer.sim(formula = ~ X, Glist = G, tau = tau,
+                       lambda = c(lambda2, lambdatau), beta = beta,
+                       structural = TRUE, epsilon = rnorm(n, 0, 0.4))
+y2        <- y2$y
 ```
-Note that we can also include contextual variables, such as averages of $\boldsymbol x$ among peers, as additional exogenous variables. 
+Note that we can also include contextual variables, such as averages of $\boldsymbol x$ among peers, as additional exogenous variables.
 
 ## Instruments
 \label{sec:quant:instruments}
@@ -151,36 +151,36 @@ Z1  <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1),
 Z1  <- Z1$instruments #qpeer.inst returns a list of several object
 
 # Second instrument set: y1 is used to order X
-Z21 <- qpeer.inst(formula = y1 ~ X, Glist = G, tau = tau, max.distance = 2, 
-                  checkrank = TRUE) 
+Z21 <- qpeer.inst(formula = y1 ~ X, Glist = G, tau = tau, max.distance = 2,
+                  checkrank = TRUE)
 qy1 <- Z21$qy #quantile of y among peers                 
 Z21 <- Z21$instruments
 
 # Second instrument set: y2 is used to order X
-Z22 <- qpeer.inst(formula = y2 ~ X, Glist = G, tau = tau, max.distance = 2, 
-                  checkrank = TRUE) 
+Z22 <- qpeer.inst(formula = y2 ~ X, Glist = G, tau = tau, max.distance = 2,
+                  checkrank = TRUE)
 qy2 <- Z22$qy #quantile of y among peers                 
 Z22 <- Z22$instruments
 ```
 As in the standard linear model, one can use the quantiles of $\boldsymbol{x}$ within direct friends and long-distance friends (such as friends of friends) to strengthen the instruments. Setting \texttt{max.distance = 2} means that the quantiles of $\boldsymbol{x}$ are computed among both direct friends and friends of friends. The \texttt{checkrank} argument ensures that the resulting instrument set is a full-rank matrix by removing columns that are linear combinations of others.
 
 ## Estimation
-\noindent Quantile peer effects are estimated using the General Method of Moments (GMM). Estimates can be obtained using the \texttt{qpeer} function. I begin with the reduced-form specification, using both types of instruments for each dependent variable. 
+\noindent Quantile peer effects are estimated using the General Method of Moments (GMM). Estimates can be obtained using the \texttt{qpeer} function. I begin with the reduced-form specification, using both types of instruments for each dependent variable.
 
 ```{r}
-QtR1 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, 
+QtR1 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G,
               tau = tau)
 summary(QtR1, diagnostic = TRUE)
 
-QtR2 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1 + Z21, Glist = G, 
+QtR2 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1 + Z21, Glist = G,
               tau = tau)
 summary(QtR2)
 
-QtR3 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, 
+QtR3 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G,
               tau = tau)
 summary(QtR3)
 
-QtR4 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + Z21, Glist = G, 
+QtR4 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + Z21, Glist = G,
              tau = tau)
 summary(QtR4)
 ```
@@ -192,25 +192,25 @@ The reduced-form estimation for \texttt{y2} is likely to be inconsistent, since 
 
 
 ```{r}
-QtS1 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, 
+QtS1 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G,
               tau = tau, structural = TRUE)
 summary(QtS1, diagnostic = TRUE)
 
-QtS2 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1 + Z21, Glist = G, 
+QtS2 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1 + Z21, Glist = G,
               tau = tau, structural = TRUE)
 summary(QtS2)
 
-QtS3 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, 
+QtS3 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G,
               tau = tau, structural = TRUE)
 summary(QtS3)
 
-QtS4 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + Z22, Glist = G, 
+QtS4 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1 + Z22, Glist = G,
               tau = tau, structural = TRUE)
 summary(QtS4)
 ```
 In the new results, the estimates appear reliable. For the dependent variable \texttt{y1}, the conformity parameter is not significant, as the data were simulated under the assumption of complementarity.
 
-The \texttt{qpeer} function offers several useful options, including the ability to change the type of GMM estimator, control for subnet fixed effects, and account for heteroskedasticity. The GMM estimator type is specified using the \texttt{estimator} argument. The default value, \texttt{"IV"}, corresponds to the standard instrumental variables (IV) estimator. It is also possible to use the GMM estimator with the identity matrix as the weighting matrix (\texttt{estimator = "gmm.identity"}) or with the optimal GMM weighting matrix (\texttt{estimator = "gmm.optimal"}). Jackknife IV estimators (type 1 and type 2) can be obtained by setting \texttt{estimator} to \texttt{"JIVE"} and \texttt{"JIVE2"}, respectively. Jackknife estimators can be especially useful when the number of instruments is large, as they help reduce the bias associated with the standard IV estimator \citep[see][]{mikusheva2022inference}. 
+The \texttt{qpeer} function offers several useful options, including the ability to change the type of GMM estimator, control for subnet fixed effects, and account for heteroskedasticity. The GMM estimator type is specified using the \texttt{estimator} argument. The default value, \texttt{"IV"}, corresponds to the standard instrumental variables (IV) estimator. It is also possible to use the GMM estimator with the identity matrix as the weighting matrix (\texttt{estimator = "gmm.identity"}) or with the optimal GMM weighting matrix (\texttt{estimator = "gmm.optimal"}). Jackknife IV estimators (type 1 and type 2) can be obtained by setting \texttt{estimator} to \texttt{"JIVE"} and \texttt{"JIVE2"}, respectively. Jackknife estimators can be especially useful when the number of instruments is large, as they help reduce the bias associated with the standard IV estimator \citep[see][]{mikusheva2022inference}.
 
 
 
@@ -220,13 +220,13 @@ The \texttt{fixed.effects} argument specifies how to control for subnet fixed ef
 The \texttt{HAC} argument specifies the assumed covariance structure of the errors. By default, homoscedasticity is assumed (\texttt{HAC = "iid"}). To allow for heteroskedasticity at the individual level, set \texttt{HAC = "hetero"}. To account for heteroskedasticity and within-subnet correlation, where errors may be correlated among individuals in the same subnet, set \texttt{HAC = "cluster"}. Below are examples of model specifications that incorporate these additional options.
 
 ```{r}
-QtR5  <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G, 
-               tau = tau, structural = FALSE, estimator = "gmm.optimal", 
+QtR5  <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G,
+               tau = tau, structural = FALSE, estimator = "gmm.optimal",
                HAC = "cluster", fixed.effects = "separate")
 summary(QtR5)
 
-QtS5 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, 
-              tau = tau, structural = TRUE, estimator = "gmm.optimal", 
+QtS5 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G,
+              tau = tau, structural = TRUE, estimator = "gmm.optimal",
               HAC = "cluster", fixed.effects = "separate")
 summary(QtS5)
 ```
@@ -257,8 +257,8 @@ Choosing suitable quantile levels is important. The `qpeer.test` function offers
 
 ```{r}
 # Estimating QtS6 with a misspecified tau
-QtS6 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G, 
-              tau = c(0, 1), structural = TRUE, estimator = "gmm.optimal", 
+QtS6 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G,
+              tau = c(0, 1), structural = TRUE, estimator = "gmm.optimal",
               HAC = "cluster", fixed.effects = "separate")
 qpeer.test(model1 = QtS6, model2 = QtS5, which = "encompassing")
 ```
@@ -267,7 +267,7 @@ In the preceding code, the null hypothesis is that the specification which inclu
 In the following code, the null hypothesis is that the model with four quantile levels is not worse than the competing model with two quantile levels:
 ```{r}
 qpeer.test(model1 = QtS5, model2 = QtS6, which = "encompassing")
-``` 
+```
 Here, the null hypothesis is not rejected. However, this does not directly imply that the other model with four quantiles is well specified. The model should also be compared with alternative specifications that include, for example, five or six quantile levels. Indeed, encompassing tests only compare two models and do not imply that one of them is correctly specified. Of course, in this example, we know that the model with four quantile levels is well specified because we know the data-generating process. Therefore, the model with four quantile levels cannot be rejected, in general, against other well-specified competing models.
 
 # CES-based peer effect models
@@ -291,7 +291,7 @@ As in Section \ref{sec:model}, CES-based models can describe preferences that ex
 
 
 
-## Data simulation 
+## Data simulation
 \noindent The function \texttt{cespee.sim} can be used to simulate the CES-based peer effect model. This is useful, for instance, for conducting counterfactual analyses involving changes in the intercept (e.g., providing subsidies or introducing a tax), in the network structure, or in the exogenous characteristics $\boldsymbol{x}$.
 
 The following code defines the sample size, simulates the network matrix and the matrix of explanatory variables $\mathbf{X}$, assigns values to the model parameters, and simulates the outcomes. As in Section \ref{sec:quant}, I simulate two outcomes: one generated from the reduced-form model (with only spillovers) and the other from the structural model. One important limitation of the CES specification is that it does not accommodate zero or negative outcomes. To simulate data from this model, $\boldsymbol{x}_i^{\prime}\boldsymbol{\beta} + \varepsilon_i$ must be strictly positive for all $i$. Consequently, I increase the intercept in $\boldsymbol{\beta}$ to ensure this condition is satisfied.
@@ -318,21 +318,21 @@ G <- lapply(1:ngr, function(z) {
 X   <- cbind(rnorm(n), rpois(n, 2)); colnames(X) <- c("X1", "X2")
 
 lambda  <- 0.55
-lambda2 <- 0.2 
+lambda2 <- 0.2
 beta    <- c(2.5, -0.5, 1)
 rho     <- -3
 
 # First dependent variable (reduced form without conformity)
-y1      <- cespeer.sim(formula = ~ X, Glist = G, rho = rho, 
-                       lambda = lambda, beta = beta, structural = FALSE, 
-                       epsilon = rnorm(n, 0, 0.4)) 
+y1      <- cespeer.sim(formula = ~ X, Glist = G, rho = rho,
+                       lambda = lambda, beta = beta, structural = FALSE,
+                       epsilon = rnorm(n, 0, 0.4))
 y1      <- y1$y #cespeer.sim returns a list of several object including y
 
 # Second dependent variable (structural form with conformity)
-y2      <-  cespeer.sim(formula = ~ X, Glist = G, rho = rho, 
-                        lambda = c(lambda2, lambda), beta = beta, 
-                        structural = TRUE, epsilon = rnorm(n, 0, 0.4)) 
-y2      <- y2$y 
+y2      <-  cespeer.sim(formula = ~ X, Glist = G, rho = rho,
+                        lambda = c(lambda2, lambda), beta = beta,
+                        structural = TRUE, epsilon = rnorm(n, 0, 0.4))
+y2      <- y2$y
 ```
 
 
@@ -344,10 +344,10 @@ yhat2 <- fitted(lm(y2 ~ X))
 ```
 Using the function \texttt{cespeer}, the exogenous prediction can be specified via the \texttt{instrument} argument. The remaining arguments are similar to those of the \texttt{qpeer} function, except that the quantile level vector \texttt{tau} is not required. Additionally, the function includes a \texttt{fixed.effects} argument to indicate the type fixed effects, and a \texttt{HAC} argument to account for heteroskedasticity and within-group correlation in the error terms.
 ```{r}
-cesR1 <- cespeer(formula = y1 ~ X, instrument = ~ yhat1, Glist = G, 
+cesR1 <- cespeer(formula = y1 ~ X, instrument = ~ yhat1, Glist = G,
                  structural = FALSE)
 summary(cesR1)
-cesS1 <- cespeer(formula = y2 ~ X, instrument = ~ yhat2, Glist = G, 
+cesS1 <- cespeer(formula = y2 ~ X, instrument = ~ yhat2, Glist = G,
                  structural = TRUE)
 summary(cesS1)
 ```
@@ -358,13 +358,13 @@ Since $\rho < 1$, peers with low outcomes play a more important role in explaini
 
 ```{r}
 Z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1),  
-                  max.distance = 2, checkrank = TRUE)$instruments 
-QtR1 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z, Glist = G, 
+                  max.distance = 2, checkrank = TRUE)$instruments
+QtR1 <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z, Glist = G,
               tau = seq(0, 1, 1/3))
 qpeer.test(QtR1, which = "decreasing")
 ```
 The null hypothesis is not rejected, suggesting that the CES model can be used in this case to analyze the outcome. The CES model involves fewer parameters and thus provides more precise estimates than the quantile model.
- 
+
 
 # Other specifications
 \label{sec:other}
@@ -376,8 +376,8 @@ For the standard LIM model, instruments can be $\mathbf{GX}$ when the model does
 library(PartialNetwork)
 GX  <- peer.avg(G, X)
 GGX <- peer.avg(G, GX)
-Ot1 <- linpeer(formula = y2 ~ X, excluded.instruments = ~ GX + GGX, Glist = G, 
-               structural = TRUE, estimator = "gmm.optimal", 
+Ot1 <- linpeer(formula = y2 ~ X, excluded.instruments = ~ GX + GGX, Glist = G,
+               structural = TRUE, estimator = "gmm.optimal",
                fixed.effects = "separate", HAC = "cluster")
 summary(Ot1, diagnostic = TRUE)
 ```
@@ -385,13 +385,13 @@ summary(Ot1, diagnostic = TRUE)
 Furthermore, the package provides the generic function \texttt{genpeer}, which allows users to define their own endogenous variables. This option is useful for estimating, for example, the effects of quantiles among girl and boy peers separately, combining average peer effects with quantile peer effects in the same model, or specifying other custom social norms.
 
 The \texttt{endogenous.variables} argument must be specified as a formula that includes the desired endogenous variables. The example below illustrates how to estimate peer effects using both the average outcome of peers and the minimum and maximum peer outcomes.
- 
+
 ```{r}
 Gy2 <- peer.avg(G, y2)
 qy2 <- qpeer.inst(formula = y2 ~ 1, Glist = G, tau = c(0, 1))$qy #min and max
-Ot2 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z + GX + GGX, 
-               endogenous.variables = ~ Gy2 + qy2, Glist = G, structural = TRUE, 
-               estimator = "gmm.optimal", fixed.effects = "separate", 
+Ot2 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z + GX + GGX,
+               endogenous.variables = ~ Gy2 + qy2, Glist = G, structural = TRUE,
+               estimator = "gmm.optimal", fixed.effects = "separate",
                HAC = "cluster") # includes average, min, and max of peers
 summary(Ot2, diagnostic = TRUE)
 ```

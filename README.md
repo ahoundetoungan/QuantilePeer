@@ -1,4 +1,4 @@
-## QuantilePeer: An R Package for Estimating Models with Quantile Peer Effects
+## QuantilePeer: An R package for Simulating and Estimation Quantile Peer Effect Models
 
 **Aristide Houndetoungan**
 
