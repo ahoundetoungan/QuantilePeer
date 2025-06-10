@@ -10,7 +10,7 @@
 
   ![R-universe](https://img.shields.io/badge/R--universe-not%20yet-lightgrey)
   ![CRAN](https://img.shields.io/badge/CRAN-not%20yet-lightgrey)
-  [![CRAN Downloads](https://img.shields.io/endpoint?url=https://ahoundetoungan.github.io/QuantilePeer/badges/cran_downloads.json)](https://cran.r-project.org/package=QuantilePeer)
+  [![CRAN Downloads](https://img.shields.io/endpoint?url=https://ahoundetoungan.github.io/cranlogs/badges/QuantilePeer.json)](https://cran.r-project.org/package=QuantilePeer)
 
 
   [![Vignette](https://img.shields.io/badge/Vignette-blue.svg)](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf)
