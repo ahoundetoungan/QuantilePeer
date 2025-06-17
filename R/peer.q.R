@@ -58,6 +58,7 @@
 #' In contrast, when \eqn{\lambda_2 = 0}, there is complementarity/substitution between individuals depending on the signs of the \eqn{\lambda_{\tau}} parameters.
 #' It is obvious that \eqn{\beta} and \eqn{\lambda_2} can be identified only if the network includes enough isolated individuals.
 #' @seealso \code{\link{qpeer.sim}}, \code{\link{qpeer.instruments}}
+#' @references Houndetoungan, A. (2025). Quantile peer effect models. arXiv preprint arXiv:2405.17290, \doi{10.48550/arXiv.2506.12920}.
 #' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 #' @return A list containing:
 #'     \item{model.info}{A list with information about the model, such as the number of subnets, number of observations, and other key details.}
@@ -532,6 +533,7 @@ print.qpeer <- function(x, ...) {
 #' @description
 #' `qpeer.sim` simulates the quantile peer effect models developed by Houndetoungan (2025).
 #' @seealso \code{\link{qpeer}}, \code{\link{qpeer.instruments}}
+#' @references Houndetoungan, A. (2025). Quantile peer effect models. arXiv preprint arXiv:2405.17290, \doi{10.48550/arXiv.2506.12920}.
 #' @references Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 #' @return A list containing:
 #'     \item{y}{The simulated variable.}

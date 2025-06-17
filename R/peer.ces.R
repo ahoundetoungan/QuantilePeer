@@ -2,7 +2,7 @@
 #' @param formula An object of class \link[stats]{formula}: a symbolic description of the model. `formula` should be specified as \code{y ~ x1 + x2}, 
 #' where `y` is the outcome and `x1` and `x2` are control variables, which can include contextual variables such as averages or quantiles among peers.
 #' @param instrument An object of class \link[stats]{formula} indicating the excluded instrument. It should be specified as \code{~ z},  
-#' where `z` is the excluded instrument for the outcome. Following Boucher et al. (2024) \doi{10.3982/ECTA21048}, it can be an OLS exogenous prediction of `y`.  
+#' where `z` is the excluded instrument for the outcome. Following Boucher et al. (2024), it can be an OLS exogenous prediction of `y`.  
 #' This prediction is used to compute instruments for the CES function of peer outcomes.
 #' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
@@ -26,7 +26,7 @@
 #' The subset is a segment centered at the optimal \eqn{\rho} found using `grid.rho`.  
 #' For better numerical optimization performance, use a finely subdivided `grid.rho` and a small `radius`.  
 #' @description
-#' `cespeer` estimates the CES-based peer effects model introduced by Boucher et al. (2024) \doi{10.3982/ECTA21048}. See Details.
+#' `cespeer` estimates the CES-based peer effects model introduced by Boucher et al. (2024). See Details.
 #' @details 
 #' Let \eqn{\mathcal{N}} be a set of \eqn{n} agents indexed by the integer \eqn{i \in [1, n]}.  
 #' Agents are connected through a network characterized by an adjacency matrix \eqn{\mathbf{G} = [g_{ij}]} of dimension \eqn{n \times n}, where \eqn{g_{ij} = 1} if agent \eqn{j} is a friend of agent \eqn{i}, and \eqn{g_{ij} = 0} otherwise.  

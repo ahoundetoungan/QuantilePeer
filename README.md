@@ -13,15 +13,14 @@
   [![CRAN Downloads](https://img.shields.io/endpoint?url=https://ahoundetoungan.github.io/cranlogs/badges/QuantilePeer.json)](https://cran.r-project.org/package=QuantilePeer)
 
 
-  [![Vignette](https://img.shields.io/badge/Vignette-blue.svg)](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf)
-
+  [![Vignette](https://img.shields.io/badge/Vignette-blue.svg)](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/raw/main/doc/introduction_to_QuantilePeer.pdf)
 <!-- badges: end -->
 <!-- [![CRAN status](https://www.r-pkg.org/badges/version/QuantilePeer)](https://cran.r-project.org/package=QuantilePeer) -->
 <!-- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](DOI: 10.32614/CRAN.package) -->
 
 ### Overview
 
-The **QuantilePeer** package implements estimation and simulation routines for quantile peer effect models introduced in [Houndetoungan (2025)](https://).
+The **QuantilePeer** package implements estimation and simulation routines for quantile peer effect models introduced in [Houndetoungan (2025)](https://doi.org/10.48550/arXiv.2506.12920).
 Replication code for all results in the paper is available in the [Results](https://github.com/ahoundetoungan/QuantilePeer/tree/main/Results) folder.
 
 The package also includes functions to simulate and estimate the CES-based peer effect model developed by [Boucher et al. (2024)](https://doi.org/10.3982/ECTA21048).
@@ -40,4 +39,4 @@ install_github("ahoundetoungan/QuantilePeer")
 
 
 ### Getting Started
-See the [vignettes](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/blob/main/doc/introduction_to_QuantilePeer.pdf) for detailed examples demonstrating how to use the package.
+See the [vignettes](https://nbviewer.org/github/ahoundetoungan/QuantilePeer/raw/main/doc/introduction_to_QuantilePeer.pdf) for detailed examples demonstrating how to use the package.

@@ -25,7 +25,7 @@ cespeer(
 where \code{y} is the outcome and \code{x1} and \code{x2} are control variables, which can include contextual variables such as averages or quantiles among peers.}
 
 \item{instrument}{An object of class \link[stats]{formula} indicating the excluded instrument. It should be specified as \code{~ z},
-where \code{z} is the excluded instrument for the outcome. Following Boucher et al. (2024) \doi{10.3982/ECTA21048}, it can be an OLS exogenous prediction of \code{y}.
+where \code{z} is the excluded instrument for the outcome. Following Boucher et al. (2024), it can be an OLS exogenous prediction of \code{y}.
 This prediction is used to compute instruments for the CES function of peer outcomes.}
 
 \item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
@@ -67,7 +67,7 @@ A list containing:
 \item{first.search}{A list containing initial estimations on the grid of values for \eqn{\rho}.}
 }
 \description{
-\code{cespeer} estimates the CES-based peer effects model introduced by Boucher et al. (2024) \doi{10.3982/ECTA21048}. See Details.
+\code{cespeer} estimates the CES-based peer effects model introduced by Boucher et al. (2024). See Details.
 }
 \details{
 Let \eqn{\mathcal{N}} be a set of \eqn{n} agents indexed by the integer \eqn{i \in [1, n]}.

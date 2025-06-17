@@ -3,6 +3,7 @@
 //#define NDEBUG
 #include <RcppNumerical.h>
 #include <RcppEigen.h>
+#include <unsupported/Eigen/KroneckerProduct>
 
 using namespace Numer;
 using namespace Rcpp;
@@ -767,7 +768,7 @@ Rcpp::List fEncompassingStrucKP(const Eigen::MatrixXd& qy1,
   
   
   // lambda and its varianve
-  Eigen::MatrixXd BAper(Eigen::KroneckerProduct(Bper, Aper.transpose()));
+  Eigen::MatrixXd BAper(Eigen::kroneckerProduct(Bper, Aper.transpose()));
   Eigen::VectorXd lambda (BAper * deltatilde);
   Eigen::MatrixXd varlambda (BAper * BAper.transpose());
   
@@ -852,7 +853,7 @@ Rcpp::List fEncompassingRedKP(const Eigen::MatrixXd& qy1,
   
   
   // lambda and its varianve
-  Eigen::MatrixXd BAper(Eigen::KroneckerProduct(Bper, Aper.transpose()));
+  Eigen::MatrixXd BAper(Eigen::kroneckerProduct(Bper, Aper.transpose()));
   Eigen::VectorXd lambda (BAper * deltatilde);
   Eigen::MatrixXd varlambda (BAper * BAper.transpose());
   

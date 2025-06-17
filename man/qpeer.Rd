@@ -236,6 +236,8 @@ gpeer2 <- genpeer(formula = y ~ X + GX, excluded.instruments = ~ GGX + Z,
 summary(gpeer2, diagnostic = TRUE)}
 }
 \references{
+Houndetoungan, A. (2025). Quantile peer effect models. arXiv preprint arXiv:2405.17290, \doi{10.48550/arXiv.2506.12920}.
+
 Hyndman, R. J., & Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365, \doi{10.1080/00031305.1996.10473566}.
 }
 \seealso{

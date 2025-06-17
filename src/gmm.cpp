@@ -579,7 +579,7 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy_,
   
   // estimator
   Eigen::MatrixXd Pi(Zqy.transpose() * iZZ);
-  Eigen::VectorXd pi(Pi.reshaped(l * ntau, 1)); // Eigen::KroneckerProduct(Eigen::MatrixXd::Identity(l, l), Zqy.transpose()) * ZZ.inverse().reshaped(l*l, 1)
+  Eigen::VectorXd pi(Pi.reshaped(l * ntau, 1)); // Eigen::kroneckerProduct(Eigen::MatrixXd::Identity(l, l), Zqy.transpose()) * ZZ.inverse().reshaped(l*l, 1)
   
   // vec(Ze)
   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(l * ntau, l * ntau));
@@ -616,7 +616,7 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy_,
   }
   
   // Variance of pi
-  Eigen::MatrixXd H(R * Eigen::KroneckerProduct(Eigen::MatrixXd::Identity(ntau, ntau), iZZ));
+  Eigen::MatrixXd H(R * Eigen::kroneckerProduct(Eigen::MatrixXd::Identity(ntau, ntau), iZZ));
   Eigen::MatrixXd varpi(H * VvecZe * H.transpose()); // O(1/n)
   
   // normalisation
@@ -628,7 +628,7 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy_,
   // Theta and its variance
   Eigen::MatrixXd Theta(G * Pi * F.transpose());
   Eigen::VectorXd theta(Theta.reshaped(l*ntau, 1));
-  Eigen::MatrixXd FG(Eigen::KroneckerProduct(F, G));
+  Eigen::MatrixXd FG(Eigen::kroneckerProduct(F, G));
   Eigen::MatrixXd vartheta(FG * varpi * FG.transpose());
   // cout << vartheta << endl;
   
@@ -657,7 +657,7 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy_,
   Eigen::MatrixXd Bper((V12V22 * V22.colPivHouseholderQr().solve(matrixSqrt(V22 * V22.transpose()))).transpose());
   
   // lambda and its varianve
-  Eigen::MatrixXd BAper(Eigen::KroneckerProduct(Bper, Aper.transpose()));
+  Eigen::MatrixXd BAper(Eigen::kroneckerProduct(Bper, Aper.transpose()));
   Eigen::VectorXd lambda (BAper * theta);
   Eigen::MatrixXd varlambda (BAper * vartheta * BAper.transpose());
   

@@ -2,9 +2,9 @@ Package: QuantilePeer
 Type: Package
 Title: Quantile Peer Effect Models
 Version: 0.0.1
-Date: 2025-06-10
+Date: 2025-07-10
 Authors@R: person(given = "Aristide", family = "Houndetoungan", role = c("cre","aut"), email =  "aristide.houndetoungan@ecn.ulaval.ca", comment = c(ORCID = "0009-0003-2733-9362"))
-Description: Simulating and estimating peer effect models including the quantile-based specification (Houndetoungan, 2025), and the models with Constant Elasticity of Substitution (CES)-based social norm (Boucher et al., 2024 <doi:10.3982/ECTA21048>).
+Description: Simulating and estimating peer effect models including the quantile-based specification (Houndetoungan, 2025 <doi:10.48550/arXiv.2506.12920>), and the models with Constant Elasticity of Substitution (CES)-based social norm (Boucher et al., 2024 <doi:10.3982/ECTA21048>).
 License: GPL-3
 Language: en-US
 Encoding: UTF-8
