@@ -15,6 +15,7 @@
 #' `demean` demeans variables by subtracting the within-subnetwork average. In each subnetwork, this transformation can be performed separately
 #' for isolated and non-isolated nodes.
 #' 
+#' @return A matrix or vector with the same dimensions as \code{X}, containing the demeaned values.
 #' @export
 demean <- function(X, Glist, separate = FALSE, drop = NULL) {
   X    <- as.matrix(X)

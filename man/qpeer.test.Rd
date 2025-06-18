@@ -29,6 +29,15 @@ for tests that compare two competing parameter sets.}
 \item{maxit, eps_f, eps_g}{Control parameters for the \code{optim_lbfgs} solver used to optimize the objective function in the \code{"increasing"} and \code{"decreasing"} tests (see Kodde and Palm, 1986).
 The \code{optim_lbfgs} function is provided by the \pkg{RcppNumerical} package and is based on the \code{L-BFGS} method.}
 }
+\value{
+A list containing:
+\item{test}{A vector or matrix containing the test statistics, degrees of freedom, and p-values.}
+\item{lambda}{Peer effect estimates from tests based on a single model (monotonicity tests).}
+\item{diff.theta}{Differences in peer effect estimates from tests based on two models (endogeneity and encompassing tests).}
+\item{delta}{The estimate of \eqn{\delta} for the encompassing test.}
+\item{which}{The value of \code{which} returned by the function.}
+\item{boot}{The value of \code{boot} returned by the function.}
+}
 \description{
 \code{qpeer.test} performs specification tests on peer effects models. These include monotonicity tests on quantile peer effects, as well as tests for instrument validity when an alternative set of instruments is available.
 }

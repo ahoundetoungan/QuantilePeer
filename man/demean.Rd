@@ -18,6 +18,9 @@ This is similar to setting \code{fixed.effects = "separate"} in \code{\link{qpee
 This can be used, for example, to remove false isolates or to estimate the model only on non-isolated agents.
 These observations cannot be directly removed from the network by the user, as they may still be connected to other agents.}
 }
+\value{
+A matrix or vector with the same dimensions as \code{X}, containing the demeaned values.
+}
 \description{
 \code{demean} demeans variables by subtracting the within-subnetwork average. In each subnetwork, this transformation can be performed separately
 for isolated and non-isolated nodes.

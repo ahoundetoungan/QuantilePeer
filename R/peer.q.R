@@ -721,6 +721,14 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
 #' If \eqn{Z_2} does not nest \eqn{Z_1}, the estimates themselves are compared. To compare the overidentification statistics, set the `which` argument to `"sargan"`. To compare the estimates directly, set the `which` argument to `"wald"`.\cr
 #' 
 #' Given two competing models, it is possible to test whether one is significantly worse using an encompassing test by setting `which` to `"encompassing"`. The null hypothesis is that `model1` is not worse.
+#' @return A list containing:
+#'    \item{test}{A vector or matrix containing the test statistics, degrees of freedom, and p-values.}
+#'    \item{lambda}{Peer effect estimates from tests based on a single model (monotonicity tests).}
+#'    \item{diff.theta}{Differences in peer effect estimates from tests based on two models (endogeneity and encompassing tests).}
+#'    \item{delta}{The estimate of \eqn{\delta} for the encompassing test.}
+#'    \item{which}{The value of \code{which} returned by the function.}
+#'    \item{boot}{The value of \code{boot} returned by the function.}
+#'     
 #' @examples
 #' \donttest{
 #' set.seed(123)
@@ -1051,6 +1059,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
 #' @param x an object of class \code{\link{qpeer.test}}
 #' @param ... Further arguments passed to or from other methods.
 #' @description A print method for the class \code{\link{qpeer.test}}.
+#' @return No return value, called for side effects
 #' @export
 print.qpeer.test <- function(x, ...) {
   stopifnot(class(x) == "qpeer.test")
