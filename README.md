@@ -25,18 +25,18 @@ Replication code for all results in the paper is available in the [Results](http
 
 The package also includes functions to simulate and estimate the CES-based peer effect model developed by [Boucher et al. (2024)](https://doi.org/10.3982/ECTA21048).
 
-### Installation
-
-You can install the package directly from this GitHub repository using:
-
-```r
-library(remotes)
-install_github("ahoundetoungan/QuantilePeer")
+## Installation
+### CRAN version
+**QuantilePeer** can be directly installed from CRAN.
+```R
+install.packages("QuantilePeer")
 ```
 
-
-**Note for Windows users:** Make sure [**Rtools**](https://cran.r-project.org/bin/windows/Rtools/rtools44/rtools.html) is installed before installing from GitHub.
-
+### GitHub version
+It may be possible that we updated the package without submitting the new version to CRAN. The latest version (*but not necessary stable*) of **QuantilePeer** can be installed from this GitHub repos.
+```R
+remotes::install_github("ahoundetoungan/QuantilePeer", build_vignettes = TRUE)
+```
 
 ### Getting Started
 See the [vignettes](https://docs.google.com/viewer?url=https://github.com/ahoundetoungan/QuantilePeer/raw/main/doc/introduction_to_QuantilePeer.pdf) for detailed examples demonstrating how to use the package.
