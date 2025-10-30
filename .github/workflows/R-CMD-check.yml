@@ -46,7 +46,7 @@ jobs:
         run: |
           Rscript -e "install.packages('tinytex')"
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
-          Rscript -e "tinytex::tlmgr_install(c('xcolor','framed','inconsolata'))"
+          Rscript -e "tinytex::tlmgr_install(c('latex-bin','pdftex','babel-english','xcolor','framed','inconsolata'))"
 
       # ----------------- TinyTeX setup for Windows -----------------
       - name: Install TinyTeX (Windows)
