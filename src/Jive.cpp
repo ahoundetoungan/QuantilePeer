@@ -141,7 +141,7 @@ Rcpp::List fJIVE2_redInd(const Eigen::VectorXd& y,
 Rcpp::List fJIVE_redClu(const Eigen::VectorXd& y,
                            const Eigen::MatrixXd& V,
                            const Eigen::MatrixXd& ins,
-                           const Eigen::MatrixXi& igroup,
+                           const Eigen::ArrayXi& igroup,
                            const Eigen::VectorXi& nvec,
                            const int& ngroup,
                            const int& Kx,
@@ -157,7 +157,7 @@ Rcpp::List fJIVE_redClu(const Eigen::VectorXd& y,
   Eigen::VectorXd ty(n);
   Rcpp::List LiImPkk(ngroup);
   for (int r(0); r < ngroup; ++ r) {
-    int n1(igroup(r, 0)), nr(nvec(r));
+    int n1(igroup(r)), nr(nvec(r));
     Eigen::MatrixXd Vr(V(Eigen::seqN(n1, nr), Eigen::all));
     Eigen::MatrixXd Pkk(tZ(Eigen::seqN(n1, nr), Eigen::all)*ins(Eigen::seqN(n1, nr), Eigen::all).transpose());
     Eigen::MatrixXd iImPkk((Eigen::MatrixXd::Identity(nr, nr) - Pkk).inverse());
@@ -185,7 +185,7 @@ Rcpp::List fJIVE_redClu(const Eigen::VectorXd& y,
     Eigen::MatrixXd Zteh(Kins, ngroup), tehtZ(ngroup, Kins);
     Rcpp::List LVtZ(ngroup), LZV(ngroup);
     for (int r(0); r < ngroup; ++ r) {
-      int n1(igroup(r, 0)), nr(nvec(r));
+      int n1(igroup(r)), nr(nvec(r));
       Eigen::MatrixXd iImPkk = LiImPkk[r];
       Eigen::MatrixXd tZr(tZ(Eigen::seqN(n1, nr), Eigen::all));
       Eigen::MatrixXd Zr(ins(Eigen::seqN(n1, nr), Eigen::all));
@@ -229,7 +229,7 @@ Rcpp::List fJIVE_redClu(const Eigen::VectorXd& y,
 Rcpp::List fJIVE2_redClu(const Eigen::VectorXd& y,
                             const Eigen::MatrixXd& V,
                             const Eigen::MatrixXd& ins,
-                            const Eigen::MatrixXd& igroup,
+                            const Eigen::ArrayXd& igroup,
                             const Eigen::VectorXi& nvec,
                             const int& ngroup,
                             const int& Kx,
@@ -243,7 +243,7 @@ Rcpp::List fJIVE2_redClu(const Eigen::VectorXd& y,
   
   Eigen::MatrixXd tZ(ins*iZZ), hV(n, Kv);
   for (int r(0); r < ngroup; ++ r) {
-    int n1(igroup(r, 0)), nr(nvec(r));
+    int n1(igroup(r)), nr(nvec(r));
     Eigen::MatrixXd Pkk((tZ(Eigen::seqN(n1, nr), Eigen::all))*(ins(Eigen::seqN(n1, nr), Eigen::all)).transpose());
     hV(Eigen::seqN(n1, nr), Eigen::all) = Pkk*V(Eigen::seqN(n1, nr), Eigen::all);
   }
@@ -265,7 +265,7 @@ Rcpp::List fJIVE2_redClu(const Eigen::VectorXd& y,
     Eigen::MatrixXd Zeh(Kins, ngroup), ehtZ(ngroup, Kins);
     Rcpp::List LVtZ(ngroup), LZV(ngroup);
     for (int r(0); r < ngroup; ++ r) {
-      int n1(igroup(r, 0)), nr(nvec(r));
+      int n1(igroup(r)), nr(nvec(r));
       Eigen::MatrixXd tZr(tZ(Eigen::seqN(n1, nr), Eigen::all));
       Eigen::MatrixXd Zr(ins(Eigen::seqN(n1, nr), Eigen::all));
       Eigen::MatrixXd Vr(V(Eigen::seqN(n1, nr), Eigen::all));
@@ -508,7 +508,7 @@ Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y,
                              const Eigen::VectorXi& Is,
                              Rcpp::List LnIs,
                              Rcpp::List LIs,
-                             const Eigen::MatrixXi& igroup,
+                             const Eigen::ArrayXi& igroup,
                              const Eigen::VectorXi& nvecnIs,
                              const Eigen::VectorXi& hasnIs,
                              const Eigen::VectorXi& hasIs,
@@ -584,7 +584,7 @@ Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y,
         Sigma1    += (Xehr*Xehr.transpose());
       }
       if (hasnIs(r) == 1) {
-        // int n1(igroup(r, 0)), nr(nvec(r));
+        // int n1(igroup(r)), nr(nvec(r));
         Eigen::VectorXi nIsr = LnIs[r];
         Eigen::MatrixXd iImPkk = LiImPkk[r];
         Eigen::MatrixXd tZr(tZ(nIsr, Eigen::all));
@@ -652,7 +652,7 @@ Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y,
                              const Eigen::VectorXi& Is,
                              Rcpp::List LnIs,
                              Rcpp::List LIs,
-                             const Eigen::MatrixXi& igroup,
+                             const Eigen::ArrayXi& igroup,
                              const Eigen::VectorXi& hasnIs,
                              const Eigen::VectorXi& hasIs,
                              const int& ngroup,
@@ -717,7 +717,7 @@ Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y,
         Sigma1    += (Xehr*Xehr.transpose());
       }
       if (hasnIs(r) == 1) {
-        // int n1(igroup(r, 0)), nr(nvec(r));
+        // int n1(igroup(r)), nr(nvec(r));
         Eigen::VectorXi nIsr = LnIs[r];
         Eigen::MatrixXd tZr(tZ(nIsr, Eigen::all));
         Eigen::MatrixXd Zr(Z(nIsr, Eigen::all));

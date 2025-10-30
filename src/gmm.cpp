@@ -19,7 +19,7 @@ Rcpp::List fgmm_red(const Eigen::VectorXd& y,
                     const Eigen::MatrixXd& V,
                     const Eigen::MatrixXd& ins,
                     Eigen::MatrixXd& W,
-                    const Eigen::MatrixXd& igroup,
+                    const Eigen::ArrayXi& igroup,
                     const int& ngroup,
                     const int& Kx,
                     const int& Kins, 
@@ -52,7 +52,7 @@ Rcpp::List fgmm_red(const Eigen::VectorXd& y,
   }
   if (HAC == 2) {
     for (int r(0); r < ngroup; ++ r) {
-      int n1(igroup(r, 0)), n2(igroup(r, 1));
+      int n1(igroup(r)), n2(igroup(r + 1) - 1);
       Eigen::VectorXd tp(ins(Eigen::seq(n1, n2), Eigen::all).transpose()*e(Eigen::seq(n1, n2)).matrix());
       VZe += tp*tp.transpose();
     }
@@ -94,7 +94,7 @@ Rcpp::List fgmm_redARMA(const arma::vec& y,
                         const arma::mat& V,
                         const arma::mat& ins,
                         arma::mat& W,
-                        const arma::mat& igroup,
+                        const arma::uvec& igroup,
                         const int& ngroup,
                         const int& Kx,
                         const int& Kins, 
@@ -126,7 +126,7 @@ Rcpp::List fgmm_redARMA(const arma::vec& y,
   }
   if (HAC == 2) {
     for (int r(0); r < ngroup; ++ r) {
-      int n1(igroup(r, 0)), n2(igroup(r, 1));
+      int n1(igroup(r)), n2(igroup(r + 1) - 1);
       arma::vec tp(ins.rows(n1, n2).t()*e.subvec(n1, n2));
       VZe += tp*tp.t();
     }
@@ -153,7 +153,7 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
                       const Eigen::VectorXi& idX2,
                       const int& Kx1,
                       const int& Kx2,
-                      const Eigen::MatrixXi& igroup,
+                      const Eigen::ArrayXi& igroup,
                       const Eigen::VectorXi& nIs,
                       const Eigen::VectorXi& Is,
                       const int& ngroup,
@@ -234,7 +234,7 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
     // e1.elem(nIs).zeros();
     // e2.elem(Is).zeros();
     for (int r(0); r < ngroup; ++ r) {
-      int n1(igroup(r, 0)), n2(igroup(r, 1));
+      int n1(igroup(r)), n2(igroup(r + 1) - 1);
       Eigen::MatrixXd tp1(n2 - n1 + 1, Kx1 + Kins + 1);
       tp1 << X1(Eigen::seq(n1, n2), Eigen::all), Z2(Eigen::seq(n1, n2), Eigen::all);
       Eigen::VectorXd tp2(tp1.transpose()*e2.matrix().segment(n1, n2));
@@ -290,7 +290,7 @@ Rcpp::List fgmm_strucARMA(const arma::vec& y,
                           const arma::uvec& idX2,
                           const int& Kx1,
                           const int& Kx2,
-                          const arma::mat& igroup,
+                          const arma::uvec& igroup,
                           const arma::uvec& nIs,
                           const arma::uvec& Is,
                           const int& ngroup,
@@ -359,7 +359,7 @@ Rcpp::List fgmm_strucARMA(const arma::vec& y,
     // e1.elem(nIs).zeros();
     // e2.elem(Is).zeros();
     for (int r(0); r < ngroup; ++ r) {
-      int n1(igroup(r, 0)), n2(igroup(r, 1));
+      int n1(igroup(r)), n2(igroup(r + 1) - 1);
       arma::vec tp(arma::join_cols(X1.rows(n1, n2).t()*e2.subvec(n1, n2),
                                    Z2.rows(n1, n2).t()*e2.subvec(n1, n2)));
       VF += tp*tp.t();
@@ -481,7 +481,7 @@ Rcpp::List fFstathomoARMA(const arma::mat& y,
 Rcpp::List fFstat(const Eigen::MatrixXd& y,
                   const Eigen::MatrixXd& X,
                   const Eigen::VectorXi& index,
-                  const Eigen::MatrixXd& igroup,
+                  const Eigen::ArrayXd& igroup,
                   const int& ngroup,
                   const int& HAC = 0) {
   int n(y.rows()), K(X.cols()), df1(index.size()), df2(n - K), S(y.cols());
@@ -501,7 +501,7 @@ Rcpp::List fFstat(const Eigen::MatrixXd& y,
     }
     if (HAC == 2) {
       for (int r(0); r < ngroup; ++ r) {
-        int n1(igroup(r, 0)), n2(igroup(r, 1));
+        int n1(igroup(r)), n2(igroup(r + 1) - 1);
         Eigen::VectorXd tp(X(Eigen::seq(n1, n2), Eigen::all).transpose()*e(Eigen::seq(n1, n2), s).matrix());
         V += tp*tp.transpose();
       }
@@ -518,7 +518,7 @@ Rcpp::List fFstat(const Eigen::MatrixXd& y,
 Rcpp::List fFstatARMA(const arma::mat& y,
                       const arma::mat& X,
                       const arma::uvec& index,
-                      const arma::mat& igroup,
+                      const arma::uvec& igroup,
                       const int& ngroup,
                       const int& HAC = 0) {
   int n(y.n_rows), K(X.n_cols), df1(index.n_elem), df2(n - K), S(y.n_cols);
@@ -537,7 +537,7 @@ Rcpp::List fFstatARMA(const arma::mat& y,
     }
     if (HAC == 2) {
       for (int r(0); r < ngroup; ++ r) {
-        int n1(igroup(r, 0)), n2(igroup(r, 1));
+        int n1(igroup(r)), n2(igroup(r + 1) - 1);
         arma::vec tp(X.rows(n1, n2).t()*e.submat(n1, s, n2, s));
         V += tp*tp.t();
       }
@@ -562,7 +562,7 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy_,
                    const Eigen::MatrixXd& X,
                    const Eigen::MatrixXd& Z_,
                    const arma::uvec& index,
-                   const Eigen::MatrixXd& igroup,
+                   const Eigen::ArrayXd& igroup,
                    const int& HAC = 0) {
   // cout<<qy_.cols()<<" "<<qy_.rows()<<endl;
   // cout<<X.cols()<<" "<<X.rows()<<endl;
@@ -572,7 +572,7 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy_,
   Eigen::MatrixXd Z(Z_(Eigen::all, index) - X * iXX * X.transpose() * Z_(Eigen::all, index));
   // Eigen::MatrixXd qy(qy_);
   // Eigen::MatrixXd Z(Z_);
-  int n(qy.rows()), ntau(qy.cols()), l(Z.cols()), ngroup(igroup.rows());
+  int n(qy.rows()), ntau(qy.cols()), l(Z.cols()), ngroup(igroup.size() - 1);
   Eigen::MatrixXd ZZ(Z.transpose() * Z);
   Eigen::MatrixXd iZZ(ZZ.inverse());
   Eigen::MatrixXd Zqy(Z.transpose() * qy);
@@ -605,7 +605,7 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy_,
     Ezz    = Z.transpose() * Z;
   } else if (HAC == 2) {
     for (int r(0); r < ngroup; ++ r) {
-      int n1(igroup(r, 0)), n2(igroup(r, 1));
+      int n1(igroup(r)), n2(igroup(r + 1) - 1);
       Eigen::VectorXd tp(vecZe(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix());
       VvecZe += tp * tp.transpose();
       tp      = eps(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix();
@@ -739,7 +739,7 @@ Rcpp::List fParamFull(const arma::vec& param,
 // DC test adapted to many variables, But does not make sense,
 // Rcpp::List fDCstat(const Eigen::MatrixXd& qy,
 //                    const Eigen::MatrixXd& Z,
-//                    const Eigen::MatrixXd& igroup,
+//                    const Eigen::ArrayXd& igroup,
 //                    const int& ngroup,
 //                    const int& HAC = 0) {
 //   int n(qy.rows()), ntau(qy.cols()), l(Z.cols());
@@ -759,7 +759,7 @@ Rcpp::List fParamFull(const arma::vec& param,
 //     VvecZe =vecZe.transpose()*vecZe;
 //   } else if (HAC == 2) {
 //     for (int r(0); r < ngroup; ++ r) {
-//       int n1(igroup(r, 0)), n2(igroup(r, 1));
+//       int n1(igroup(r)), n2(igroup(r + 1) - 1);
 //       Eigen::VectorXd tp(vecZe(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix());
 //       VvecZe += tp*tp.transpose();
 //     }

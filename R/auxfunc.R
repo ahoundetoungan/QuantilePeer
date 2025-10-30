@@ -53,7 +53,8 @@ fnetwork   <- function(Glist, isol = NULL) {
   nvec     <- unlist(lapply(Glist, nrow))
   n        <- sum(nvec)
   ncs      <- c(0, cumsum(nvec))
-  igr      <- cbind(head(ncs, M), tail(ncs, M) - 1)
+  group    <- rep(0:(M - 1), nvec)
+  groupidx <- unlist(lapply(1:M, \(m) 0:(nvec[m] - 1)))
   
   ldg      <- lapply(Glist, rowSums)
   dg       <- unlist(ldg)
@@ -86,8 +87,9 @@ fnetwork   <- function(Glist, isol = NULL) {
     nIs    <- unlist(lnIs)
   }
   
-  list(dg = dg, ldg = ldg, M = M, nvec = nvec, n = n, igr = igr, Is = Is, nIs = nIs, 
-       lIs = lIs, lnIs = lnIs, MIs = MIs, MnIs = MnIs)
+  list(dg = dg, ldg = ldg, M = M, nvec = nvec, n = n, igr = ncs, group = group,
+       groupidx = groupidx, Is = Is, nIs = nIs, lIs = lIs, lnIs = lnIs, MIs = MIs, 
+       MnIs = MnIs)
 }
 
 fdrop <- function(drop, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
@@ -110,7 +112,8 @@ fdrop <- function(drop, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
   nvec     <- sapply(ldg, length)
   n        <- sum(nvec)
   ncs      <- c(0, cumsum(nvec))
-  igr      <- cbind(head(ncs, M), tail(ncs, M) - 1)
+  group    <- rep(0:(M - 1), nvec)
+  groupidx <- unlist(lapply(1:M, \(m) 0:(nvec[m] - 1)))
   MIs      <- sum(sapply(ldg, function(s) any(s == 0)))
   MnIs     <- sum(sapply(ldg, function(s) any(s != 0)))
   lIs      <- lapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
@@ -121,8 +124,9 @@ fdrop <- function(drop, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
   X        <- X[keep, , drop = FALSE]
   qy       <- qy[keep, , drop = FALSE]
   ins      <- ins[keep, , drop = FALSE]
-  list(dg = dg, ldg = ldg, M = M, nvec = nvec, n = n, igr = igr, Is = Is, nIs = nIs, 
-       lIs = lIs, lnIs = lnIs, MIs = MIs, MnIs = MnIs, y = y, X = X, qy = qy, ins = ins)
+  list(dg = dg, ldg = ldg, M = M, nvec = nvec, n = n, igr = ncs, group = group,
+       groupidx = groupidx, Is = Is, nIs = nIs, lIs = lIs, lnIs = lnIs, MIs = MIs, 
+       MnIs = MnIs, y = y, X = X, qy = qy, ins = ins)
 }
 
 fcheckrank <- function(X, tol = 1e-10) {
@@ -158,7 +162,6 @@ fdiagnostic  <- function(object, nendo) {
   HAC      <- object$model.info$HAC
   HACnum   <- (0:2)[HAC == c("iid", "hetero", "cluster")]
   ncs      <- c(0, cumsum(nvec))
-  igr      <- cbind(head(ncs, M), tail(ncs, M) - 1)
   idX1     <- object$model.info$idXiso - 1
   idX2     <- object$model.info$idXniso - 1
   y        <- as.matrix(object$data$y)
@@ -180,7 +183,7 @@ fdiagnostic  <- function(object, nendo) {
   nvc      <- sapply(lnIs, length)
   theta    <- object$gmm$Estimate
   
-  ins      <- fdatadiagnostic(y = y, endo = endo, X = X, ins = ins, theta = theta, idX1 = idX1, idX2 = idX2, igroup = igr, 
+  ins      <- fdatadiagnostic(y = y, endo = endo, X = X, ins = ins, theta = theta, idX1 = idX1, idX2 = idX2, igroup = ncs, 
                               nIs = nIs, LIs = lIs, LnIs = lnIs, n = n, ngroup = M, ntau = ntau, struc = struc, FE = FE)
   y        <- ins$y
   endo     <- ins$endo
@@ -190,15 +193,15 @@ fdiagnostic  <- function(object, nendo) {
   if (struc) {
     nvc    <- nvc[nvc > 0]
     M      <- length(nvc)
-    igr    <- matrix(c(cumsum(c(0, nvc[-M])), cumsum(nvc) - 1), ncol = 2)
+    ncs    <- c(0, cumsum(nvc))
   }
   
   out      <- NULL
   cvKP     <- NULL
   if (object$model.info$estimator %in% c("JIVE", "JIVE2")) {
     ## Weak instrument test
-    tpF    <- fFstat(y = endo, X = ins, index = index, igroup = igr, ngroup = M, HAC = HACnum)
-    tpKP   <- fKPstat(qy_ = endo, X = X, Z_ = ins, index = index, igroup = igr, HAC = HACnum)
+    tpF    <- fFstat(y = endo, X = ins, index = index, igroup = ncs, ngroup = M, HAC = HACnum)
+    tpKP   <- fKPstat(qy_ = endo, X = X, Z_ = ins, index = index, igroup = ncs, HAC = HACnum)
     ## Endogeneity test
     
     
@@ -216,11 +219,11 @@ fdiagnostic  <- function(object, nendo) {
     rownames(out) <- rn
   } else {
     ## Weak instrument test
-    tpF    <- fFstat(y = endo, X = ins, index = index, igroup = igr, ngroup = M, HAC = HACnum)
-    tpKP   <- fKPstat(qy_ = endo, X = X, Z_ = ins, index = index, igroup = igr, HAC = HACnum)
+    tpF    <- fFstat(y = endo, X = ins, index = index, igroup = ncs, ngroup = M, HAC = HACnum)
+    tpKP   <- fKPstat(qy_ = endo, X = X, Z_ = ins, index = index, igroup = ncs, HAC = HACnum)
     
     ## Endogeneity test
-    tpend  <- fFstat(y = y, X = cbind(tpF$ru, endo, X), index = (0:(ntau - 1)), igroup = igr, ngroup = M, HAC = HACnum)
+    tpend  <- fFstat(y = y, X = cbind(tpF$ru, endo, X), index = (0:(ntau - 1)), igroup = ncs, ngroup = M, HAC = HACnum)
     
     out    <- cbind(df1        = c(rep(tpF$df1, ntau), tpKP$df, tpend$df1, object$gmm$Jtest["df"]),
                     df2        = c(rep(tpF$df2, ntau), NA, tpend$df2, NA),

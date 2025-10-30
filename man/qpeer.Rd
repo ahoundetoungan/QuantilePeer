@@ -51,6 +51,7 @@ qpeer(
   checkrank = FALSE,
   drop = NULL,
   compute.cov = TRUE,
+  nthreads = 1,
   tol = 1e-10
 )
 }
@@ -97,6 +98,8 @@ These observations cannot be directly removed from the network by the user becau
 \item{tau}{A numeric vector specifying the quantile levels.}
 
 \item{type}{An integer between 1 and 9 selecting one of the nine quantile algorithms used to compute peer quantiles (see the \link[stats]{quantile} function).}
+
+\item{nthreads}{A strictly positive integer indicating the number of threads to use when computing the quantiles of peer variables.}
 }
 \value{
 A list containing:

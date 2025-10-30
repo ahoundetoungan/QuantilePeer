@@ -22,7 +22,7 @@ arma::mat fCESdata(const arma::mat& X,
                    const arma::vec& z, 
                    const Rcpp::List& G,
                    const Rcpp::List& friendindex,
-                   const arma::umat& igroup,
+                   const arma::uvec& igroup,
                    const arma::uvec& frzeroy, 
                    const arma::uvec& frzeroz, 
                    const Rcpp::List& lIs,//in selection 
@@ -40,7 +40,7 @@ arma::mat fCESdata(const arma::mat& X,
   
   for (int r(0); r < ngroup; r++) {
     // Extract data for group r
-    int nm(nvec(r)), n1(igroup(r, 0)), n2(igroup(r, 1));
+    int nm(nvec(r)), n1(igroup(r)), n2(igroup(r + 1) - 1);
     arma::mat Gr = G[r];
     arma::mat Xm(X.rows(n1, n2));
     arma::vec ym(y.subvec(n1, n2)), zm(z.subvec(n1, n2));
@@ -260,7 +260,7 @@ Rcpp::List fCESgmmparms(const double& rho,
                         const arma::vec& z,
                         const Rcpp::List& G,
                         const Rcpp::List& friendindex,
-                        const arma::umat& igroup,
+                        const arma::uvec& igroup,
                         const arma::uvec& frzeroy,
                         const arma::uvec& frzeroz,
                         const Rcpp::List& lIs,//in selection
@@ -379,7 +379,7 @@ Rcpp::List fCESgmmparms(const double& rho,
         e(nIs) = e2;
         
         for (int r(0); r < ngroup; ++ r) {
-          int n1(igroup(r, 0)), n2(igroup(r, 1));
+          int n1(igroup(r)), n2(igroup(r + 1) - 1);
           Eigen::MatrixXd tp1(n2 - n1 + 1, Kx + 3);
           tp1 << X1(Eigen::seq(n1, n2), Eigen::all), Z(Eigen::seq(n1, n2), Eigen::all);
           Eigen::VectorXd tp2(tp1.transpose()*e.matrix().segment(n1, n2));
@@ -437,7 +437,7 @@ Rcpp::List fCESgmmparms(const double& rho,
         Eigen::VectorXd eall(Eigen::VectorXd::Zero(n));
         eall(sel) = e;
         for (int r(0); r < ngroup; ++ r) {
-          int n1(igroup(r, 0)), n2(igroup(r, 1));
+          int n1(igroup(r)), n2(igroup(r + 1) - 1);
           Eigen::VectorXd tp1(Zall(Eigen::seq(n1, n2), Eigen::all).transpose()*eall(Eigen::seq(n1, n2)));
           VF += tp1*tp1.transpose();
         }
@@ -471,7 +471,7 @@ double fCESgmmobj(const double& rho,
                   const arma::vec& z,
                   const Rcpp::List& G,
                   const Rcpp::List& friendindex,
-                  const arma::umat& igroup,
+                  const arma::uvec& igroup,
                   const arma::uvec& frzeroy,
                   const arma::uvec& frzeroz,
                   const Rcpp::List& lIs,//in selection
@@ -589,7 +589,7 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
                            const arma::uvec& Is,
                            const Eigen::ArrayXi& idX1,
                            const Eigen::ArrayXi& idX2,
-                           const Eigen::MatrixXi& igroup,
+                           const Eigen::ArrayXi& igroup,
                            const int& ngroup,
                            const int& Kx,
                            const int& Kx2,
@@ -686,7 +686,7 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
         e(nIs) = e2;
         
         for (int r(0); r < ngroup; ++ r) {
-          int n1(igroup(r, 0)), n2(igroup(r, 1));
+          int n1(igroup(r)), n2(igroup(r + 1) - 1);
           Eigen::MatrixXd tp1(n2 - n1 + 1, Kx + 3 - rhoinf);
           tp1 << X1(Eigen::seq(n1, n2), Eigen::all), Z(Eigen::seq(n1, n2), Eigen::all);
           Eigen::VectorXd tp2(tp1.transpose()*e.matrix().segment(n1, n2));
@@ -744,7 +744,7 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
         Eigen::VectorXd eall(Eigen::VectorXd::Zero(n));
         eall(sel) = y - yhat;
         for (int r(0); r < ngroup; ++ r) {
-          int n1(igroup(r, 0)), n2(igroup(r, 1));
+          int n1(igroup(r)), n2(igroup(r + 1) - 1);
           Eigen::VectorXd tp1(Zall(Eigen::seq(n1, n2), Eigen::all).transpose()*eall(Eigen::seq(n1, n2)));
           VZe += tp1*tp1.transpose();
         }
@@ -888,7 +888,7 @@ Rcpp::List fCESParam(const arma::vec& param,
 arma::vec BRCES(const arma::vec& y, 
                 const Rcpp::List& G,
                 const Rcpp::List& friendindex,
-                const arma::umat& igroup,
+                const arma::uvec& igroup,
                 const arma::uvec& frzeroy, 
                 const IntegerVector& nvec, 
                 const Eigen::MatrixXd& yFMiMa,
@@ -900,7 +900,7 @@ arma::vec BRCES(const arma::vec& y,
   vec Gy(n, fill::zeros);
   for (int r(0); r < ngroup; r++) {
     // Extract data for group r
-    int nm(nvec(r)), n1(igroup(r, 0)), n2(igroup(r, 1));
+    int nm(nvec(r)), n1(igroup(r)), n2(igroup(r + 1) - 1);
     arma::mat Gr = G[r];
     arma::vec ym(y.subvec(n1, n2));
     Rcpp::List frindexm(friendindex[r]);
@@ -943,7 +943,7 @@ int fNashECES(arma::vec& y,
               const double& lambda,
               const double& rho,
               const Rcpp::List& friendindex,
-              const arma::umat& igroup,
+              const arma::uvec& igroup,
               const arma::uvec& frzeroy, 
               const IntegerVector& nvec,
               const Eigen::MatrixXd& yFMiMa,

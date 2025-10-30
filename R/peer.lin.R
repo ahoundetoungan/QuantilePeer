@@ -319,6 +319,7 @@ print.linpeer <- function(x, ...) {
 #' @param epsilon A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution. 
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 #' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `linpeer.sim` is called.
+#' @param nthreads A strictly positive integer indicating the number of threads to use.
 #' @param structural A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see the Details section of \code{\link{qpeer}}).
 #' @description
 #' `linpeer.sim` simulates linear peer effect models.
@@ -343,7 +344,8 @@ print.linpeer <- function(x, ...) {
 #' out  <- linpeer.sim(formula = ~ X, Glist = G, lambda = l, beta = b)
 #' summary(out$y)
 #' @export
-linpeer.sim   <- function(formula, Glist, parms, lambda, beta, epsilon, structural = FALSE, data){
+linpeer.sim   <- function(formula, Glist, parms, lambda, beta, epsilon, 
+                          structural = FALSE, nthreads = 1, data){
   if (!is.list(Glist)) {
     Glist  <- list(Glist)
   }
@@ -417,12 +419,13 @@ linpeer.sim   <- function(formula, Glist, parms, lambda, beta, epsilon, structur
   
   # Solving the game
   ## talpha
-  talpha   <- c(X %*% b + eps)
+  talpha <- c(X %*% b + eps)
   if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - lamst)
   
-  y      <- rep(0, n)
-  Gy     <- numeric(n)
-  fylim(y = y, Gy = Gy, G = Glist, talpha = talpha, igroup = igr, ngroup = M, lambda = lam)
+  y      <- fylim(G = Glist, talpha = talpha, igroup = igr, nvec = nvec, 
+                  ngroup = M, lambda = lam, n = n, nthreads = nthreads)
+  Gy     <- y$Gy
+  y      <- y$y
   
   out    <- list("y"  = y,
                  "Gy" = Gy)

@@ -15,6 +15,7 @@ qpeer.instruments(
   data,
   max.distance = 1,
   checkrank = FALSE,
+  nthreads = 1,
   tol = 1e-10
 )
 
@@ -64,6 +65,8 @@ in the model. If not found in \code{data}, the variables are taken from \code{en
 \item{max.distance}{The maximum network distance of friends to consider in computing instruments.}
 
 \item{checkrank}{A logical value indicating whether the instrument matrix should be checked for full rank. If the matrix is not of full rank, unimportant columns will be removed to obtain a full-rank matrix.}
+
+\item{nthreads}{A strictly positive integer indicating the number of threads to use when computing the quantiles of peer variables.}
 
 \item{tol}{A tolerance value used in the QR factorization to identify columns that ensure a full-rank matrix (see the \link[base]{qr} function).}
 }

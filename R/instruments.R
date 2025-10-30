@@ -9,6 +9,7 @@
 #' @param max.distance The maximum network distance of friends to consider in computing instruments.
 #' @param checkrank A logical value indicating whether the instrument matrix should be checked for full rank. If the matrix is not of full rank, unimportant columns will be removed to obtain a full-rank matrix.
 #' @param tol A tolerance value used in the QR factorization to identify columns that ensure a full-rank matrix (see the \link[base]{qr} function).
+#' @param nthreads A strictly positive integer indicating the number of threads to use when computing the quantiles of peer variables.
 #' @description
 #' `qpeer.instruments` computes quantile peer variables. 
 #' @details
@@ -43,7 +44,7 @@
 #' summary(Inst)
 #' @export
 qpeer.instruments <- function(formula, Glist, tau, type = 7, data, max.distance = 1, 
-                              checkrank = FALSE, tol = 1e-10){
+                              checkrank = FALSE, nthreads = 1, tol = 1e-10){
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   stopifnot(max.distance >= 1)
@@ -56,7 +57,9 @@ qpeer.instruments <- function(formula, Glist, tau, type = 7, data, max.distance 
   M        <- length(Glist)
   nvec     <- unlist(lapply(Glist, nrow))
   n        <- sum(nvec)
-  igr      <- matrix(c(cumsum(c(0, nvec[-M])), cumsum(nvec) - 1), ncol = 2)
+  igr      <- c(0, cumsum(nvec))
+  group    <- rep(0:(M - 1), nvec)
+  groupidx <- unlist(lapply(1:M, \(m) 0:(nvec[m] - 1)))
   
   # Data
   formula    <- as.formula(formula)
@@ -73,19 +76,21 @@ qpeer.instruments <- function(formula, Glist, tau, type = 7, data, max.distance 
   qy         <- NULL
   ins        <- NULL
   if (!is.null(yname)) {
-    tp       <- fQtauyWithIndex(y = y, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
-                            ngroup = M, n = n, ntau = ntau, type = type)
+    tp       <- fQtauyWithIndex(y = y, G = Glist, d = dg, igroup = igr, group = group,
+                                groupidx = groupidx, nvec = nvec, stau = tau, ngroup = M, 
+                                n = n, ntau = ntau, type = type, nthreads = nthreads)
     W        <- lapply(1:ntau, function(s) fIndexMat(pi1 = tp$pi1[,s], pi2 = tp$pi2[,s], w1 = tp$w1[,s], w2 = tp$w2[,s], n = n))
     qy       <- tp$qy
     ins      <- do.call(cbind, lapply(W, function(s) fProdWVI(W = s, V = as.matrix(X), distance = max.distance)))
   } else {
     W        <- lapply(1:Kx, function(k){
-      tp     <- fQtauyIndex(y = X[,k], G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
-                            ngroup = M, n = n, ntau = ntau, type = type)
+      tp     <- fQtauyIndex(y = X[,k], G = Glist, d = dg, igroup = igr, group = group,
+                            groupidx = groupidx, nvec = nvec, stau = tau, 
+                            ngroup = M, n = n, ntau = ntau, type = type, nthreads = nthreads)
       lapply(1:ntau, function(s) fIndexMat(pi1 = tp$pi1[,s], pi2 = tp$pi2[,s], w1 = tp$w1[,s], w2 = tp$w2[,s], n = n))})
     ins      <- do.call(cbind, lapply(1:Kx, function(s1) do.call(cbind, lapply(1:ntau, function(s2) fProdWVI(W = W[[s1]][[s2]], V = as.matrix(X[,s1]), distance = max.distance)))))
   }
-  
+ 
   # Column name
   suffiins  <- NULL
   suffiy    <- NULL

@@ -32,10 +32,10 @@ Eigen::Array<bool, Eigen::Dynamic, 1> fcheckrankEigen(const Eigen::MatrixXd& X, 
 // Demean
 //[[Rcpp::export]]
 arma::mat Demean(arma::mat X,
-                 const arma::mat& igroup,
+                 const arma::uvec& igroup,
                  const int & ngroup) {
   for (int r(0); r < ngroup; ++ r) {
-    int n1(igroup(r, 0)), n2(igroup(r, 1));
+    int n1(igroup(r)), n2(igroup(r + 1) - 1);
     X.rows(n1, n2).each_row() -= arma::mean(X.rows(n1, n2), 0);
   }
   return X;
@@ -44,7 +44,7 @@ arma::mat Demean(arma::mat X,
 // Demean for the structural model
 //[[Rcpp::export]]
 arma::mat Demean_separate(arma::mat X,
-                          const arma::mat& igroup,
+                          const arma::uvec& igroup,
                           const Rcpp::List& LIs,
                           const Rcpp::List& LnIs,
                           const int & ngroup,
@@ -75,7 +75,7 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
                            const arma::vec& theta,
                            const arma::uvec& idX1,
                            const arma::uvec& idX2,
-                           const arma::mat& igroup,
+                           const arma::uvec& igroup,
                            const arma::uvec& nIs,
                            const Rcpp::List& LIs,
                            const Rcpp::List& LnIs,
@@ -173,10 +173,10 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
 // 
 // //[[Rcpp::export]]
 // Eigen::MatrixXd Demean(Eigen::MatrixXd& X,
-//                        const Eigen::MatrixXi& igroup,
+//                        const Eigen::ArrayXi& igroup,
 //                        const int & ngroup) {
 //   for (int r(0); r < ngroup; ++ r) {
-//     int n1(igroup(r, 0)), n2(igroup(r, 1));
+//     int n1(igroup(r)), n2(igroup(r + 1) - 1);
 //     X(Eigen::seq(n1, n2), Eigen::all).rowwise() -= X(Eigen::seq(n1, n2), Eigen::all).colwise().mean();
 //   }
 //   return X;
@@ -185,7 +185,7 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
 // // Demean for the structural model
 // //[[Rcpp::export]]
 // Eigen::MatrixXd Demean_separate(Eigen::MatrixXd& X,
-//                                 const Eigen::MatrixXi& igroup,
+//                                 const Eigen::ArrayXi& igroup,
 //                                 const LVectorXi& LIs,
 //                                 const LVectorXi& LnIs,
 //                                 const int & ngroup,
@@ -325,7 +325,7 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
 //                            const arma::vec& theta,
 //                            const arma::uvec& idX1,
 //                            const arma::uvec& idX2,
-//                            const arma::mat& igroup,
+//                            const arma::uvec& igroup,
 //                            const arma::uvec& Is,
 //                            const arma::uvec& nIs,
 //                            const int& n,

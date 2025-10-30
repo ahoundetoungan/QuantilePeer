@@ -27,6 +27,7 @@
 #' @param compute.cov A logical value indicating whether the covariance matrix of the estimator should be computed.
 #' @param HAC A character string specifying the correlation structure among the idiosyncratic error terms for covariance computation. Options are `"iid"` for independent errors, `"hetero"` for heteroskedastic non-autocorrelated errors, and `"cluster"` for heteroskedastic errors with potential within-subnet correlation.
 #' @param checkrank A logical value indicating whether the instrument matrix should be checked for full rank. If the matrix is not of full rank, unimportant columns will be removed to obtain a full-rank matrix.
+#' @param nthreads A strictly positive integer indicating the number of threads to use when computing the quantiles of peer variables.
 #' @description
 #' `qpeer` estimates the quantile peer effect models introduced by Houndetoungan (2025). In the \code{\link{linpeer}} function, quantile peer variables are replaced with the average peer variable, and they can be replaced with other peer variables in the \code{\link{genpeer}} function.
 #' @details 
@@ -167,7 +168,7 @@
 qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data, 
                   estimator = "IV", structural = FALSE, fixed.effects = FALSE, 
                   HAC = "iid", checkrank = FALSE, drop = NULL,
-                  compute.cov = TRUE, tol = 1e-10){
+                  compute.cov = TRUE, nthreads = 1, tol = 1e-10){
   # Quantiles
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
@@ -206,6 +207,8 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   nvec     <- dg$nvec
   n        <- dg$n
   igr      <- dg$igr
+  group    <- dg$group
+  groupidx <- dg$groupidx
   lIs      <- dg$lIs
   Is       <- dg$Is
   lnIs     <- dg$lnIs
@@ -223,8 +226,8 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
   xname      <- f.t.data$xname
   yname      <- f.t.data$yname
   xint       <- f.t.data$intercept
-  qy         <- fQtauy(y = y, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
-                       ngroup = M, n = n, ntau = ntau, type = type)
+  qy         <- fQtauy(y = y, G = Glist, d = dg, igroup = igr, group = group, groupidx = groupidx,
+                       nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type, nthreads = nthreads)
   
   # Instruments
   inst       <- as.formula(excluded.instruments); excluded.instruments <- inst
@@ -530,6 +533,7 @@ print.qpeer <- function(x, ...) {
 #' between two consecutive values of `y` is less than `tol`.
 #' @param details A logical value indicating whether to save the indices and weights of the two peers whose weighted average determines the quantile.
 #' @param structural A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see the Details section of \code{\link{qpeer}}).
+#' @param nthreads A strictly positive integer indicating the number of threads to use.
 #' @description
 #' `qpeer.sim` simulates the quantile peer effect models developed by Houndetoungan (2025).
 #' @seealso \code{\link{qpeer}}, \code{\link{qpeer.instruments}}
@@ -565,7 +569,7 @@ print.qpeer <- function(x, ...) {
 #' @importFrom utils tail
 #' @export
 qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structural = FALSE, init, 
-                      type = 7, tol = 1e-10, maxit = 500, details = TRUE, data){
+                      type = 7, tol = 1e-10, maxit = 500, details = TRUE, nthreads = 1, data){
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   # Network
@@ -577,6 +581,8 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
   nvec     <- dg$nvec
   n        <- dg$n
   igr      <- dg$igr
+  group    <- dg$group
+  groupidx <- dg$groupidx
   Is       <- dg$Is
   nIs      <- dg$nIs
   dg       <- dg$dg
@@ -656,16 +662,18 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
   }
   y        <- unlist(init) + 0 # copy so that y not linked to init
   t        <- fNashE(y = y, G = Glist, d = dg, talpha = talpha, lambdatau = lt, igroup = igr, 
-                     nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type, 
-                     tol = tol, maxit = maxit)
+                     group = group, groupidx = groupidx, nvec = nvec, stau = tau, ngroup = M, 
+                     n = n, ntau = ntau, type = type, tol = tol, maxit = maxit, nthreads = nthreads)
   # Quantile
   qy       <- NULL
   if (details) {
-    qy     <- fQtauyWithIndex(y = y, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
-                              ngroup = M, n = n, ntau = ntau, type = type)
+    qy     <- fQtauyWithIndex(y = y, G = Glist, d = dg, igroup = igr, group = group, groupidx = groupidx,
+                              nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type,
+                              nthreads = nthreads)
   } else {
-    qy     <- fQtauy(y = y, G = Glist, d = dg, igroup = igr, nvec = nvec, stau = tau, 
-                     ngroup = M, n = n, ntau = ntau, type = type)
+    qy     <- fQtauy(y = y, G = Glist, d = dg, igroup = igr, group = group, groupidx = groupidx, 
+                     nvec = nvec, stau = tau, ngroup = M, n = n, ntau = ntau, type = type,
+                     nthreads = nthreads)
   }
   
   W        <- list()
@@ -925,13 +933,12 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
       stop("`model1` and `model2` differ in data or model specification.")
     }
     
-    igr     <- matrix(c(cumsum(c(0, nvec1[-ngr1])), cumsum(nvec1) - 1), ncol = 2)
-    ncs     <- c(0, cumsum(nvec1))
+    igr     <- c(0, cumsum(nvec1))
     LIs     <- lapply(1:ngr1, function(m) {
-      Is1[Is1 %in% ncs[m]:(ncs[m + 1] - 1)]
+      Is1[Is1 %in% igr[m]:(igr[m + 1] - 1)]
     })
     LnIs    <- lapply(1:ngr1, function(m) {
-      nIs1[nIs1 %in% ncs[m]:(ncs[m + 1] - 1)]
+      nIs1[nIs1 %in% igr[m]:(igr[m + 1] - 1)]
     })
     FEnum   <- (0:2)[FE1 == c("no", "join", "separate")]
     
@@ -979,7 +986,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
                      Z2 = Z2, W22 = W22, e2 = e2, theta2 = theta2, 
                      X = X1, qy = qy1, W1 = W11, Kest1 = Kest1, Kest2 = Kest2, 
                      idX1 = idX11, idX2 = idX21, nIs = nIs1, Is = Is1, ngroup = ngr1, 
-                     cumsn = ncs, HAC = HAC1, full = full)
+                     cumsn = igr, HAC = HAC1, full = full)
       } else {
         FUN   <- ifelse(which == "wald", Cov2ThetaRed, validZ2SarganRed)
         K     <- length(theta1)
@@ -987,7 +994,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
         CTT   <- FUN(Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, 
                      Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, 
                      X = X1, qy = qy1, Kest = Kest, ngroup = ngr1, 
-                     cumsn = ncs, HAC = HAC1, full = full)
+                     cumsn = igr, HAC = HAC1, full = full)
       }
       stat    <- c(CTT$stat)
       df      <- c(CTT$df)
@@ -1014,11 +1021,11 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
         CTT   <- list(F = fEncompassingStruc(qy1 = qy1, Z1 = Z1, W21 = W21, e1 = e1, theta1 = theta1, Kest21 = Kest21, 
                                              qy2 = qy2, Z2 = Z2, W22 = W22, e2 = e2, theta2 = theta2, Kest22 = Kest22,
                                              X = X1, W1 = W11, idX1 = idX11, idX2 = idX21, Kest1 = Kest11,
-                                             nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full),
+                                             nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = igr, HAC = HAC1, full = full),
                       KP = fEncompassingStrucKP(qy1 = qy1, Z1 = Z1, W21 = W21, e1 = e1, theta1 = theta1, Kest21 = Kest21, 
                                                 qy2 = qy2, Z2 = Z2, W22 = W22, e2 = e2, theta2 = theta2, Kest22 = Kest22,
                                                 X = X1, W1 = W11, idX1 = idX11, idX2 = idX21, Kest1 = Kest11,
-                                                nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full))
+                                                nIs = nIs1, Is = Is1, ngroup = ngr1, cumsn = igr, HAC = HAC1, full = full))
       } else {
         K1    <- length(theta1)
         K2    <- length(theta2)
@@ -1026,10 +1033,10 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE,
         Kest2 <- ifelse(FEnum == 0, K2, ifelse(FEnum == 1, K2 + ngr1, K2 + MIs + MnIs))
         CTT   <- list(F = fEncompassingRed(qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
                                            qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
-                                           X = X1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full),
+                                           X = X1, ngroup = ngr1, cumsn = igr, HAC = HAC1, full = full),
                       KP = fEncompassingRedKP(qy1 = qy1, Z1 = Z1, W1 = W1, e1 = e1, theta1 = theta1, Kest1 = Kest1,
                                               qy2 = qy2, Z2 = Z2, W2 = W2, e2 = e2, theta2 = theta2, Kest2 = Kest2,
-                                              X = X1, ngroup = ngr1, cumsn = ncs, HAC = HAC1, full = full))
+                                              X = X1, ngroup = ngr1, cumsn = igr, HAC = HAC1, full = full))
       }
       Fstat   <- c(CTT$F$stat)
       Fdf1    <- c(CTT$F$df1)
@@ -1095,3 +1102,151 @@ print.qpeer.test <- function(x, ...) {
   }
   invisible(x)
 }
+
+#' @title Simulating Optimal (or "Good") Instruments for Quantile Peer Effect Models
+#'
+#' @description
+#' `qpeer.optimal.inst` computes optimal (or "good") instruments for quantile peer effect models using a bootstrap approach.
+#'
+#' @param boot A strictly positive integer indicating the number of bootstrap replications.
+#' @param seed The random number generator (RNG) state used for random number generation. 
+#' This can also be set using the \code{\link{set.seed}} function.
+#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), 
+#' `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, 
+#' where \eqn{n_m} is the number of nodes in the `m`-th subnet.
+#' @param maxit The maximum number of iterations for the fixed-point iteration method.
+#' @param tol The tolerance value used in the fixed-point iteration method to compute the outcome `y`. 
+#' The process stops if the \eqn{\ell_1}-distance between two consecutive values of `y` is less than `tol`.
+#' @param model An object of class \code{\link{qpeer}} that contains an initial estimation of the model 
+#' for which the "optimal" instruments will be computed.
+#' @param nthreads A strictly positive integer indicating the number of threads to use when bootstrapping.
+#'
+#' @return A matrix of instruments, where the k-th column corresponds to the instrument for the k-th endogenous variable.
+#' @examples
+#' \donttest{
+#' set.seed(123)
+#' ngr  <- 30  # Number of subnets
+#' nvec <- rep(30, ngr)  # Size of subnets
+#' n    <- sum(nvec)
+#' 
+#' ### Simulating Data
+#' ## Network matrix
+#' G <- lapply(1:ngr, function(z) {
+#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
+#'   diag(Gz) <- 0
+#'   # Adding isolated nodes (important for the structural model)
+#'   niso <- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1))
+#'   if (niso > 0) {
+#'     Gz[sample(1:nvec[z], niso), ] <- 0
+#'   }
+#'   Gz
+#' })
+#' 
+#' tau <- seq(0, 1, 1/3)
+#' X   <- cbind(rnorm(n), rpois(n, 2))
+#' l   <- c(0.2, 0.15, 0.1, 0.2)
+#' b   <- c(2, -0.5, 1)
+#' eps <- rnorm(n, 0, 0.4)
+#' 
+#' ## Generating `y`
+#' y <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l,
+#'                beta = b, epsilon = eps)$y
+#' 
+#' ### Estimation
+#' ## Computing instruments
+#' Z <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1),
+#'                 max.distance = 2, checkrank = TRUE)
+#' Z <- Z$instruments
+#' 
+#' ## Reduced-form model
+#' rest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau)
+#' summary(rest, diagnostic = TRUE)  
+#' 
+#' # Estimation using the optimal instrument
+#' Ired <- qpeer.optimal.insts(rest, Glist = G, boot = 100, nthreads = 2)
+#' summary(qpeer(formula = y ~ X, excluded.instruments = ~ Ired, Glist = G, tau = tau), 
+#'         diagnostic = TRUE)  
+#' 
+#' ## Structural model
+#' sest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau,
+#'               structural = TRUE)
+#' summary(sest, diagnostic = TRUE)
+#' 
+#' # Estimation using the optimal instrument
+#' Istr <- qpeer.optimal.insts(sest, Glist = G, boot = 100, nthreads = 2)
+#' summary(qpeer(formula = y ~ X, excluded.instruments = ~ Istr, Glist = G, tau = tau), 
+#'         diagnostic = TRUE)
+#' }
+#' @importFrom stats runif
+#' @export
+qpeer.optimal.instruments <- function(model, 
+                                      Glist,
+                                      boot     = 100L, 
+                                      nthreads = 1L, 
+                                      seed, 
+                                      tol      = 1e-10,
+                                      maxit    = 500) {
+  stopifnot(class(model) == "qpeer")
+  if (missing(seed)) {
+    seed   <- runif(1, 0, 1e6)
+  }
+  FE       <- ifelse(model$model.info$fixed.effects == "no", 0, 1)
+  if (!is.list(Glist)) {
+    Glist  <- list(Glist)
+  }
+  dg       <- unlist(lapply(Glist, rowSums))
+  if (length(dg) != model$model.info$n) {
+    stop("`Glist` seems to be different from the one used for the estimation.")
+  }
+  nvec     <- model$model.info$nvec
+  ngroup   <- model$model.info$ngroup
+  igroup   <- c(0, cumsum(nvec))
+  group    <- rep(0:(ngroup - 1), nvec)
+  groupidx <- unlist(lapply(1:ngroup, \(m) 0:(nvec[m] - 1)))
+  
+  out      <- simInstrqpeer(y = model$data$y, qy = as.matrix(model$data$qy), X = model$data$X, G = Glist, 
+                d = dg, igroup = igroup, group = group, groupidx = groupidx, estimate = model$gmm$Estimate, 
+                nIs = model$data$non.isolated - 1, nvec = nvec, stau = model$model.info$tau, boot = boot,
+                fixedeffects = FE, structural =  model$model.info$structural, nthreads = nthreads, 
+                seed = seed, type = model$model.info$type, tol = tol, maxit = maxit)
+  colnames(out) <- paste0("Instrument", 1:length(model$model.info$tau))
+  out
+}
+
+
+#' @rdname qpeer.optimal.instruments
+#' @export
+qpeer.optimal.instrument <- function(model, 
+                                     Glist,
+                                     boot     = 100L, 
+                                     nthreads = 1L, 
+                                     seed, 
+                                     tol      = 1e-10,
+                                     maxit    = 500) {
+  qpeer.optimal.instruments(model, Glist, boot, nthreads, seed, tol, maxit)
+}
+
+#' @rdname qpeer.optimal.instruments
+#' @export
+qpeer.optimal.insts <- function(model, 
+                                     Glist,
+                                     boot     = 100L, 
+                                     nthreads = 1L, 
+                                     seed, 
+                                     tol      = 1e-10,
+                                     maxit    = 500) {
+  qpeer.optimal.instruments(model, Glist, boot, nthreads, seed, tol, maxit)
+}
+
+#' @rdname qpeer.optimal.instruments
+#' @export
+qpeer.optimal.inst <- function(model, 
+                                     Glist,
+                                     boot     = 100L, 
+                                     nthreads = 1L, 
+                                     seed, 
+                                     tol      = 1e-10,
+                                     maxit    = 500) {
+  qpeer.optimal.instruments(model, Glist, boot, nthreads, seed, tol, maxit)
+}
+

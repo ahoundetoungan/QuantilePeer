@@ -37,20 +37,32 @@ fNashECES <- function(y, G, talpha, lambda, rho, friendindex, igroup, frzeroy, n
     .Call(`_QuantilePeer_fNashECES`, y, G, talpha, lambda, rho, friendindex, igroup, frzeroy, nvec, yFMiMa, ngroup, n, tol, maxit)
 }
 
-fgPIyP <- function(y, G, d, igroup, nvec, ngroup, n) {
-    .Call(`_QuantilePeer_fgPIyP`, y, G, d, igroup, nvec, ngroup, n)
+fQtauy <- function(y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads) {
+    .Call(`_QuantilePeer_fQtauy`, y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads)
 }
 
-fQtauy <- function(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type) {
-    .Call(`_QuantilePeer_fQtauy`, y, G, d, igroup, nvec, stau, ngroup, n, ntau, type)
+fQtauy_EIGEN <- function(y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads) {
+    .Call(`_QuantilePeer_fQtauy_EIGEN`, y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads)
 }
 
-fQtauyWithIndex <- function(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type) {
-    .Call(`_QuantilePeer_fQtauyWithIndex`, y, G, d, igroup, nvec, stau, ngroup, n, ntau, type)
+fQtauyWithIndex <- function(y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads) {
+    .Call(`_QuantilePeer_fQtauyWithIndex`, y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads)
 }
 
-fQtauyIndex <- function(y, G, d, igroup, nvec, stau, ngroup, n, ntau, type) {
-    .Call(`_QuantilePeer_fQtauyIndex`, y, G, d, igroup, nvec, stau, ngroup, n, ntau, type)
+fQtauyWithIndex_EIGEN <- function(y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads) {
+    .Call(`_QuantilePeer_fQtauyWithIndex_EIGEN`, y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads)
+}
+
+fQtauyIndex <- function(y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads) {
+    .Call(`_QuantilePeer_fQtauyIndex`, y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads)
+}
+
+fQtauyIndex_EIGEN <- function(y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads) {
+    .Call(`_QuantilePeer_fQtauyIndex_EIGEN`, y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads)
+}
+
+fIndexMat_ARMA <- function(pi1, pi2, w1, w2, n) {
+    .Call(`_QuantilePeer_fIndexMat_ARMA`, pi1, pi2, w1, w2, n)
 }
 
 fIndexMat <- function(pi1, pi2, w1, w2, n) {
@@ -61,20 +73,32 @@ fProdWVI <- function(W, V, distance = 1L) {
     .Call(`_QuantilePeer_fProdWVI`, W, V, distance)
 }
 
-fNashE <- function(y, G, d, talpha, lambdatau, igroup, nvec, stau, ngroup, n, ntau, type = 7L, tol = 1e-10, maxit = 500L) {
-    .Call(`_QuantilePeer_fNashE`, y, G, d, talpha, lambdatau, igroup, nvec, stau, ngroup, n, ntau, type, tol, maxit)
+fProdWVI_EIGEN <- function(W, V, distance = 1L) {
+    .Call(`_QuantilePeer_fProdWVI_EIGEN`, W, V, distance)
 }
 
-optins_red <- function(beta, y, G, X, d, igroup, nvec, stau, ngroup, n, ntau, type, Kx, tol, maxit) {
-    .Call(`_QuantilePeer_optins_red`, beta, y, G, X, d, igroup, nvec, stau, ngroup, n, ntau, type, Kx, tol, maxit)
+fNashE <- function(y, G, d, talpha, lambdatau, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type = 7L, tol = 1e-10, maxit = 500L, nthreads = 1L) {
+    .Call(`_QuantilePeer_fNashE`, y, G, d, talpha, lambdatau, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, tol, maxit, nthreads)
 }
 
-optins_struc <- function(beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, ntau, type, Kx, tol, maxit) {
-    .Call(`_QuantilePeer_optins_struc`, beta, y, G, X, d, igroup, nvec, stau, nIs, ngroup, n, ntau, type, Kx, tol, maxit)
+fNashE_EIGEN <- function(y0, G, d, talpha, lambdatau, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type = 7L, tol = 1e-10, maxit = 500L, nthreads = 1L) {
+    .Call(`_QuantilePeer_fNashE_EIGEN`, y0, G, d, talpha, lambdatau, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, tol, maxit, nthreads)
 }
 
-fylim <- function(y, Gy, G, talpha, igroup, ngroup, lambda) {
-    invisible(.Call(`_QuantilePeer_fylim`, y, Gy, G, talpha, igroup, ngroup, lambda))
+simInstrqpeer <- function(y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, boot, fixedeffects, structural, nthreads, seed, type = 7L, tol = 1e-10, maxit = 500L) {
+    .Call(`_QuantilePeer_simInstrqpeer`, y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, boot, fixedeffects, structural, nthreads, seed, type, tol, maxit)
+}
+
+simInstrqpeer_EIGEN <- function(y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, boot, structural, fixedeffects, nthreads, seed, type = 7L, tol = 1e-10, maxit = 500L) {
+    .Call(`_QuantilePeer_simInstrqpeer_EIGEN`, y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, boot, structural, fixedeffects, nthreads, seed, type, tol, maxit)
+}
+
+fylim_ARMA <- function(y, Gy, G, talpha, igroup, ngroup, lambda, nthreads) {
+    invisible(.Call(`_QuantilePeer_fylim_ARMA`, y, Gy, G, talpha, igroup, ngroup, lambda, nthreads))
+}
+
+fylim <- function(G, talpha, igroup, nvec, ngroup, lambda, n, nthreads) {
+    .Call(`_QuantilePeer_fylim`, G, talpha, igroup, nvec, ngroup, lambda, n, nthreads)
 }
 
 fJIVE_redInd <- function(y, V, ins, Kx, Kins, ntau, n, Kest, HAC = 0L, COV = TRUE) {

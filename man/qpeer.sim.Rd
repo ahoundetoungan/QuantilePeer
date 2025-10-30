@@ -18,6 +18,7 @@ qpeer.sim(
   tol = 1e-10,
   maxit = 500,
   details = TRUE,
+  nthreads = 1,
   data
 )
 }
@@ -51,6 +52,8 @@ between two consecutive values of \code{y} is less than \code{tol}.}
 \item{maxit}{The maximum number of iterations for the Fixed Point Iteration Method.}
 
 \item{details}{A logical value indicating whether to save the indices and weights of the two peers whose weighted average determines the quantile.}
+
+\item{nthreads}{A strictly positive integer indicating the number of threads to use.}
 
 \item{data}{An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 in the model. If not found in \code{data}, the variables are taken from \code{environment(formula)}, typically the environment from which \code{sim.qpeer} is called.}

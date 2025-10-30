@@ -12,6 +12,7 @@ linpeer.sim(
   beta,
   epsilon,
   structural = FALSE,
+  nthreads = 1,
   data
 )
 }
@@ -32,6 +33,8 @@ The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately us
 \item{epsilon}{A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution.}
 
 \item{structural}{A logical value indicating whether simulations should be performed using the structural model. The default is the reduced-form model (see the Details section of \code{\link{qpeer}}).}
+
+\item{nthreads}{A strictly positive integer indicating the number of threads to use.}
 
 \item{data}{An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 in the model. If not found in \code{data}, the variables are taken from \code{environment(formula)}, typically the environment from which \code{linpeer.sim} is called.}
