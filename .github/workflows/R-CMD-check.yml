@@ -47,6 +47,21 @@ jobs:
           Rscript -e "install.packages('tinytex')"
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
           Rscript -e "tinytex::tlmgr_install(c('latex-bin','pdftex','babel-english','xcolor','framed','inconsolata'))"
+      
+      # ----------------- LLVM -----------------
+      - name: Install LLVM
+        if: runner.os == 'macOS'
+        run: brew install llvm
+  
+      - name: Setup OpenMP compiler
+        if: runner.os == 'macOS'
+        run: |
+          export PATH="/usr/local/opt/llvm/bin:$PATH"
+          export CC=/usr/local/opt/llvm/bin/clang
+          export CXX=/usr/local/opt/llvm/bin/clang++
+          export CXXFLAGS="-O3 -march=native -fopenmp"
+          export LDFLAGS="-L/usr/local/opt/llvm/lib -fopenmp"
+          export CPPFLAGS="-I/usr/local/opt/llvm/include"
 
       # ----------------- TinyTeX setup for Windows -----------------
       - name: Install TinyTeX (Windows)
@@ -80,12 +95,6 @@ jobs:
             any::qpdf
             any::rcmdcheck
             any::tinytex
-            
-      # --------------- Allow OpenMP for mac --------------     
-      - name: Install GCC (macOS OpenMP)
-        if: runner.os == 'macOS'
-        run: |
-          brew install gcc
 
       # ----------------- Run R CMD check -----------------
       - name: Run R CMD check (Linux & macOS)
