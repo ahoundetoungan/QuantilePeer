@@ -16,8 +16,8 @@ library(doParallel)
 library(doRNG)
 library(ggplot2)
 
-OutDataPath <- "~/Dropbox/Data/AHdata/CleanData/" # Where prepared data for each outcome are saved (/ at the end is important)
-OutResPath  <- "~/Dropbox/Academy/1.Papers/Quantile Peer Effects/Application/Outputs/" # Where results should be saved
+OutDataPath <- "PATH/TO/WHERE/PREPARED/DATA/IS/SAVED/" # Where prepared data for each outcome are saved (/ at the end is important)
+OutResPath  <- "PATH/TO/WHERE/RESULTS/WILL/BE/SAVED/" # Where results should be saved
 
 
 # List of outcome variables

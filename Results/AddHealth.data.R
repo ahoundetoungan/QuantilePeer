@@ -15,8 +15,8 @@ rm(list = ls())
 library(dplyr)
 library(haven)
 
-InDataPath  <- "~/Dropbox/Data/AHdata/" # Where Add Health data are saved (/ at the end is important)
-OutDataPath <- "~/Dropbox/Data/AHdata/CleanData/" # Where prepared data for each outcome are saved (/ at the end is important)
+InDataPath  <- "PATH/TO/DATA/LOCATION/" # Where Add Health data are saved (/ at the end is important)
+OutDataPath <- "PATH/TO/WHERE/PREPARED/DATA/IS/SAVED/" # Where prepared data for each outcome are saved (/ at the end is important)
 
 ##########################################################################################
 ##########################################################################################
