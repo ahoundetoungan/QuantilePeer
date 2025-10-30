@@ -80,6 +80,12 @@ jobs:
             any::qpdf
             any::rcmdcheck
             any::tinytex
+            
+      # --------------- Allow OpenMP for mac --------------     
+      - name: Install GCC (macOS OpenMP)
+        if: runner.os == 'macOS'
+        run: |
+          brew install gcc
 
       # ----------------- Run R CMD check -----------------
       - name: Run R CMD check (Linux & macOS)
