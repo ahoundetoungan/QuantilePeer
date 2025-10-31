@@ -203,10 +203,9 @@ gPIyP_EIGEN fgPIyP_EIGEN(const Eigen::ArrayXd& y,
                          const int& ngroup,
                          const int& n,
                          const int& nthreads){
+  gPIyP_EIGEN out(n);
 #ifdef _OPENMP
   omp_set_num_threads(nthreads);
-#endif
-  gPIyP_EIGEN out(n);
 #pragma omp parallel for
   for(int k = 0; k < n; ++ k){
     if(d(k) < 1e-50) continue;
@@ -247,6 +246,47 @@ gPIyP_EIGEN fgPIyP_EIGEN(const Eigen::ArrayXd& y,
     out.cumsumgP[k] = csgPi;
     out.IyP[k]      = idx;
   }
+#else
+  for(int k = 0; k < n; ++ k){
+    if(d(k) < 1e-50) continue;
+    int i(groupidx(k)), r(group(k)), n1(igroup(r));
+    
+    std::vector<int> ipGriVec;
+    for (int j(0); j < nvec(r); ++ j){
+      if (G[r](i, j) > 1e-50) {
+        ipGriVec.push_back(j);
+      }
+    }
+    int nfr(ipGriVec.size());
+    Eigen::ArrayXi ipGri = Eigen::Map<Eigen::ArrayXi>(ipGriVec.data(), nfr);
+    Eigen::ArrayXd Gri(G[r](i, ipGri).transpose() / d(k));
+    
+    Eigen::ArrayXi tp(Eigen::ArrayXi::LinSpaced(nfr, 0, nfr - 1));
+    std::sort(tp.data(), tp.data() + nfr,
+              [&y, &ipGri, &n1](int a, int b) {
+                return y(ipGri(a) + n1) < y(ipGri(b) + n1);
+              });
+    Gri   = Gri(tp);
+    
+    // Index
+    tp    = ipGri(tp) + n1;
+    Eigen::ArrayXi idx(nfr + 2);
+    idx << tp(0), tp, tp(nfr - 1);
+    
+    // cumsum
+    Eigen::ArrayXd csgPi(Eigen::ArrayXd::Zero(nfr + 1));
+    for (int j(0); j < nfr; ++ j) {
+      csgPi(j + 1) = std::min(1.0, csgPi(j) + Gri(j));
+    }
+    
+    // Weights
+    Eigen::ArrayXd gP(nfr + 1);
+    gP << Gri, 1;
+    out.gP[k] = gP;
+    out.cumsumgP[k] = csgPi;
+    out.IyP[k]      = idx;
+  }
+#endif
   return out;
 }
 
@@ -665,8 +705,6 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
                          const int& nthreads){
 #if defined(_OPENMP)
   omp_set_num_threads(nthreads);
-#endif
-  
   if(type == 1){
 #pragma omp parallel for
     for(int i = 0; i < n; ++ i){
@@ -860,6 +898,193 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       pi2.col(i) = lIyP[i](pii1 + 1);
     }
   }
+  
+#else
+  if(type == 1){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      Eigen::ArrayXd w2i(ntau);
+      Eigen::ArrayXi pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = ceilP(tp2 - pii1(k));
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i](pii1);
+      pi2.col(i) = lIyP[i](pii1 + 1);
+    }
+  }
+  
+  if(type == 2){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      Eigen::ArrayXd w2i(ntau);
+      Eigen::ArrayXi pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = 0.5*(1 + ceilP(tp2 - pii1(k)));
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i](pii1);
+      pi2.col(i) = lIyP[i](pii1 + 1);
+    }
+  }
+  
+  if(type == 3){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      Eigen::ArrayXd w2i(ntau);
+      Eigen::ArrayXi pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l - 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        pii1(k)  = floorP(tp2); if (pii1(k) < 0) pii1(k) = 0;//this is j in HYNDMAN and FAN (1996)
+        if((pii1(k)%2 == 0) & (tp2 >= 1)){
+          w2i(k) = ceilP(tp2 - pii1(k));
+        } else{
+          w2i(k) = 1;
+        }
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i](pii1);
+      pi2.col(i) = lIyP[i](pii1 + 1);
+    }
+  }
+  
+  if(type == 4){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      Eigen::ArrayXd w2i(ntau);
+      Eigen::ArrayXi pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i](pii1);
+      pi2.col(i) = lIyP[i](pii1 + 1);
+    }
+  }
+  
+  if(type == 5){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      Eigen::ArrayXd w2i(ntau);
+      Eigen::ArrayXi pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i](pii1);
+      pi2.col(i) = lIyP[i](pii1 + 1);
+    }
+  }
+  
+  if(type == 6){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      Eigen::ArrayXd w2i(ntau);
+      Eigen::ArrayXi pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)); 
+        if(stau(k) >= 1) tp2 = l;
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i](pii1);
+      pi2.col(i) = lIyP[i](pii1 + 1);
+    }
+  }
+  
+  if(type == 7){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      Eigen::ArrayXd w2i(ntau);
+      Eigen::ArrayXi pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + 1 - stau(k)); //here tp2 is necessarily >= 0
+        pii1(k) = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)  = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i](pii1);
+      pi2.col(i) = lIyP[i](pii1 + 1);
+    }
+  }
+  
+  if(type == 8){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      Eigen::ArrayXd w2i(ntau);
+      Eigen::ArrayXi pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + (stau(k) + 1.0)/3.0); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i](pii1);
+      pi2.col(i) = lIyP[i](pii1 + 1);
+    }
+  }
+  
+  if(type == 9){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      Eigen::ArrayXd w2i(ntau);
+      Eigen::ArrayXi pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)/4.0 + 3.0/8.0); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i](pii1);
+      pi2.col(i) = lIyP[i](pii1 + 1);
+    }
+  }
+#endif
 }
 
 // This function computes Qtau(y) 
@@ -925,11 +1150,15 @@ Eigen::ArrayXXd fQtauy_EIGEN(const Eigen::ArrayXd& y,
   Eigen::ArrayXXd Qty(ntau, n);
 #if defined(_OPENMP)
   omp_set_num_threads(nthreads);
-#endif
 #pragma omp parallel for
   for(int i = 0; i < n; ++ i){
     Qty.col(i) = y(pi1.col(i)) * w1.col(i) +  y(pi2.col(i)) * w2.col(i);
   }
+#else
+  for(int i = 0; i < n; ++ i){
+    Qty.col(i) = y(pi1.col(i)) * w1.col(i) +  y(pi2.col(i)) * w2.col(i);
+  }
+#endif
   return Qty.transpose();
 }
 
@@ -1000,11 +1229,15 @@ Rcpp::List fQtauyWithIndex_EIGEN(const Eigen::ArrayXd& y,
   Eigen::ArrayXXd Qty(ntau, n);
 #if defined(_OPENMP)
   omp_set_num_threads(nthreads);
-#endif
 #pragma omp parallel for
   for(int i = 0; i < n; ++ i){
     Qty.col(i) = y(pi1.col(i)) * w1.col(i) +  y(pi2.col(i)) * w2.col(i);
   }
+#else
+  for(int i = 0; i < n; ++ i){
+    Qty.col(i) = y(pi1.col(i)) * w1.col(i) +  y(pi2.col(i)) * w2.col(i);
+  }
+#endif
   
   return Rcpp::List::create(Rcpp::_["qy"]  = Qty.transpose(), 
                             Rcpp::_["pi1"] = pi1.transpose(), 
@@ -1357,32 +1590,31 @@ arma::mat simInstrqpeer(const arma::vec& y,
     if (dist > tol && t < maxit) goto computeBR;
     out        += Qtauy;
   }
-}
 #endif
 return out / boot;
 }
 
 //[[Rcpp::export]]
 Eigen::ArrayXXd simInstrqpeer_EIGEN(const Eigen::VectorXd& y,
-                              const Eigen::MatrixXd& qy,
-                              const Eigen::MatrixXd& X,
-                              const std::vector<Eigen::ArrayXXd>& G,
-                              const Eigen::ArrayXd& d,
-                              const Eigen::ArrayXXi& igroup,
-                              const Eigen::ArrayXi& group, // group index
-                              const Eigen::ArrayXi& groupidx, // position in the group
-                              const Eigen::VectorXd& estimate,
-                              const Eigen::ArrayXi& nIs,
-                              const Eigen::ArrayXi& nvec,
-                              const Eigen::ArrayXd& stau,
-                              const int& boot,
-                              const bool& structural,
-                              const bool& fixedeffects,
-                              const unsigned int& nthreads,
-                              const unsigned int& seed,
-                              const int& type = 7,
-                              const double& tol = 1e-10,
-                              const int& maxit  = 500) {
+                                    const Eigen::MatrixXd& qy,
+                                    const Eigen::MatrixXd& X,
+                                    const std::vector<Eigen::ArrayXXd>& G,
+                                    const Eigen::ArrayXd& d,
+                                    const Eigen::ArrayXXi& igroup,
+                                    const Eigen::ArrayXi& group, // group index
+                                    const Eigen::ArrayXi& groupidx, // position in the group
+                                    const Eigen::VectorXd& estimate,
+                                    const Eigen::ArrayXi& nIs,
+                                    const Eigen::ArrayXi& nvec,
+                                    const Eigen::ArrayXd& stau,
+                                    const int& boot,
+                                    const bool& structural,
+                                    const bool& fixedeffects,
+                                    const unsigned int& nthreads,
+                                    const unsigned int& seed,
+                                    const int& type = 7,
+                                    const double& tol = 1e-10,
+                                    const int& maxit  = 500) {
   int n(y.size()), ntau(stau.size()), Kx(X.cols()), ngroup(nvec.size());
   
   // residuals
@@ -1410,13 +1642,16 @@ Eigen::ArrayXXd simInstrqpeer_EIGEN(const Eigen::VectorXd& y,
   }
   int nstrata = strata.size() - 1;
   
-  // list of instruments
-  std::vector<Eigen::MatrixXd> listQtauy(nthreads);
+  // output 
+  Eigen::MatrixXd out;
   
   // bootstrap
 #if defined(_OPENMP)
+  
+  // list of instruments
+  std::vector<Eigen::MatrixXd> listQtauy(nthreads);
+  
   omp_set_num_threads(nthreads);
-#endif
 #pragma omp parallel
 {
   unsigned int tid = omp_get_thread_num();
@@ -1462,10 +1697,50 @@ Eigen::ArrayXXd simInstrqpeer_EIGEN(const Eigen::VectorXd& y,
   }
 }
 
-Eigen::Matrix out = listQtauy[0];
-for (int k = 1; k < nthreads; ++k){
-  out += listQtauy[k];
-}
+  out = listQtauy[0];
+  for (int k = 1; k < nthreads; ++k){
+    out += listQtauy[k];
+  }
+
+#else
+  // Initialize RNG with seed_seq for thread safety
+  std::mt19937 rng(seed);
+  
+  out.resize(n, ntau);           
+  out.setZero();
+  
+  Eigen::ArrayXd epsb, talpha, yy, yyst;
+  Eigen::MatrixXd Qtauy;
+  int t;
+  double dist;
+  
+  for (int b = 0; b < boot; ++b) {
+    epsb = eps;
+    for (int s = 0; s < nstrata; ++s) {
+      std::shuffle(epsb.begin() + strata[s], epsb.begin() + strata[s + 1], rng);
+    }
+    if (structural){
+      epsb(nIs) *= (1 - estimate(0));
+    }
+    talpha     = Xbeta + epsb;
+    yy         = y;
+    t          = 0;
+    computeBR: ++t;
+    
+    // Compute Qtauy
+    Qtauy = fQtauy_EIGEN(yy, G, d, igroup, group, groupidx, nvec, stau, 
+                         ngroup, n, ntau, type, 1);
+    
+    // New y
+    yyst   = talpha.matrix() + Qtauy * estimate.segment(structural, ntau);
+    
+    // check convergence
+    dist   = ((yyst - yy).abs()/(yy.abs() + 1e-50)).maxCoeff();
+    yy              = yyst;
+    if (dist > tol && t < maxit) goto computeBR;
+    out += Qtauy;
+  }
+#endif
 return out / boot;
 }
 
@@ -1483,7 +1758,6 @@ void fylim_ARMA(arma::vec& y,
   //loop over group
 #if defined(_OPENMP)
   omp_set_num_threads(nthreads);
-#endif
 #pragma omp parallel
 {
   arma::mat Am;
@@ -1498,6 +1772,18 @@ void fylim_ARMA(arma::vec& y,
     Gy.rows(igroup(m), igroup(m + 1) - 1) = G[m] * ym;
   }
 }
+#else
+  arma::mat Am;
+  arma::vec ym;
+
+  for (int m = 0; m < ngroup; ++m) {
+    Am = -lambda * G[m];
+    Am.diag() += 1.0;
+    ym = arma::solve(Am, talpha.subvec(igroup(m), igroup(m + 1) - 1));
+    y.rows(igroup(m), igroup(m + 1) - 1)  = ym;
+    Gy.rows(igroup(m), igroup(m + 1) - 1) = G[m] * ym;
+  }
+#endif
 }
 
 //[[Rcpp::export]]
