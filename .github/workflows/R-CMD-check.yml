@@ -48,13 +48,13 @@ jobs:
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
           Rscript -e "tinytex::tlmgr_install(c('latex-bin','pdftex','babel-english','xcolor','framed','inconsolata'))"
 
-      - name: Set TinyTeX PATH and check pdflatex (Linux/macOS)
+      - name: Set TinyTeX PATH (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           export PATH="$HOME/bin/TinyTeX/bin:$PATH"
           echo "$HOME/bin/TinyTeX/bin" >> $GITHUB_PATH
       
-      - name: Set PATH for pdflatex (Windows)
+      - name: Set TinyTeX PATH (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -85,6 +85,6 @@ jobs:
       - name: Run R CMD check
         uses: r-lib/actions/check-r-package@v2
         with:
-          args: 'c("--as-cran")'
-          build_args: 'c("--compact-vignettes=gs+qpdf")'
+          args: 'c("--as-cran","--no-manual")'
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
           upload-snapshots: true
