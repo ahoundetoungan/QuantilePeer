@@ -22,8 +22,10 @@
  */
 
 // [[Rcpp::depends(RcppArmadillo, RcppEigen)]]
+#ifndef ARMA_64BIT_WORD
+#define ARMA_64BIT_WORD
+#endif
 #include <RcppArmadillo.h>
-#define ARMA_64BIT_WORD 1
 #include <RcppEigen.h>
 
 #if defined(_OPENMP)
@@ -1552,7 +1554,7 @@ arma::mat simInstrqpeer(const arma::vec& y,
 }
 
   out = listQtauy[0];
-  for (int k = 1; k < nthreads; ++k){
+  for (unsigned int k = 1; k < nthreads; ++k){
     out += listQtauy[k];
   }
 
@@ -1698,7 +1700,7 @@ Eigen::ArrayXXd simInstrqpeer_EIGEN(const Eigen::VectorXd& y,
 }
 
   out = listQtauy[0];
-  for (int k = 1; k < nthreads; ++k){
+  for (unsigned int k = 1; k < nthreads; ++k){
     out += listQtauy[k];
   }
 
