@@ -48,13 +48,18 @@ jobs:
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
           Rscript -e "tinytex::tlmgr_install(c('latex-bin','pdftex','babel-english','xcolor','framed','inconsolata'))"
 
-      - name: Add TinyTeX to PATH
+      - name: Add TinyTeX to PATH (Windows)
+        if: runner.os == 'Windows'
         run: |
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/windows" >> $env:GITHUB_PATH
-          elif [ "${{ runner.os }}" = "Linux" ]; then
-            echo "$HOME/bin/TinyTeX/bin/*" >> $GITHUB_PATH
-          fi
+          echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/windows" >> $env:GITHUB_PATH
+          # Debug
+          which pdflatex
+          pdflatex --version || echo "pdflatex not found"
+          
+      - name: Add TinyTeX to PATH (Linus)
+        if: runner.os == 'Linux'
+        run: |
+          echo "$HOME/bin/TinyTeX/bin/*" >> $GITHUB_PATH
           # Debug
           which pdflatex
           pdflatex --version || echo "pdflatex not found"
