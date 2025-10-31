@@ -53,8 +53,6 @@ jobs:
         run: |
           export PATH="$HOME/bin/TinyTeX/bin:$PATH"
           echo "$HOME/bin/TinyTeX/bin" >> $GITHUB_PATH
-          which pdflatex
-          pdflatex --version
       
       - name: Set PATH for pdflatex (Windows)
         if: runner.os == 'Windows'
