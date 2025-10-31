@@ -50,19 +50,20 @@ jobs:
 
       - name: Add TinyTeX to PATH (Windows)
         if: runner.os == 'Windows'
-        run: |
-          echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/windows" >> $env:GITHUB_PATH
-          # Debug
-          which pdflatex
-          pdflatex --version || echo "pdflatex not found"
-          
-      - name: Add TinyTeX to PATH (Linus)
-        if: runner.os == 'Linux'
-        run: |
-          echo "$HOME/bin/TinyTeX/bin/*" >> $GITHUB_PATH
-          # Debug
-          which pdflatex
-          pdflatex --version || echo "pdflatex not found"
+        run: echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/windows" >> $GITHUB_PATH
+      
+      - name: Check pdflatex (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: Get-Command pdflatex
+         
+      - name: Add TinyTeX to PATH (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: export PATH="$HOME/bin/TinyTeX/bin:$PATH"
+      
+      - name: Check pdflatex (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: which pdflatex && pdflatex --version       
 
       # ------------------------ Install tidy ------------------------
       - name: Install tidy (macOS only)
