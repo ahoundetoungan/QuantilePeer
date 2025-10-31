@@ -382,7 +382,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
                                        idXniso = idX2 + 1, HAC = HAC, yname = yname, xnames = xname, znames = zename),
                     gmm         = GMMe,
                     data        = list(y = y0, qy = qy0, X = X0, instruments = ins0, isolated = Is + 1, 
-                                       non.isolated = nIs + 1, degree = dg))
+                                       non.isolated = nIs + 1, degree = dg, drop = drop))
   class(out) <- "qpeer"
   out
 }
