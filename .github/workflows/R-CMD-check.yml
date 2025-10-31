@@ -48,11 +48,11 @@ jobs:
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
           Rscript -e "tinytex::tlmgr_install(c('latex-bin','pdftex','babel-english','xcolor','framed','inconsolata'))"
 
-      - name: Set PATH for pdflatex (Linux/macOS)
+      - name: Set TinyTeX PATH and check pdflatex (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
-          echo "$HOME/bin/TinyTeX/bin:$PATH" >> $GITHUB_PATH
           export PATH="$HOME/bin/TinyTeX/bin:$PATH"
+          echo "$HOME/bin/TinyTeX/bin" >> $GITHUB_PATH
           which pdflatex
           pdflatex --version
       
