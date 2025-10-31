@@ -48,13 +48,22 @@ jobs:
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
           Rscript -e "tinytex::tlmgr_install(c('latex-bin','pdftex','babel-english','xcolor','framed','inconsolata'))"
 
-      - name: Add TinyTeX to PATH (Windows)
-        if: runner.os == 'Windows'
-        run: echo "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/windows" >> $GITHUB_PATH
-         
-      - name: Add TinyTeX to PATH (Linux/macOS)
+      - name: Set PATH for pdflatex (Linux/macOS)
         if: runner.os != 'Windows'
-        run: export PATH="$HOME/bin/TinyTeX/bin:$PATH"
+        run: |
+          echo "$HOME/bin/TinyTeX/bin:$PATH" >> $GITHUB_PATH
+          export PATH="$HOME/bin/TinyTeX/bin:$PATH"
+          which pdflatex
+          pdflatex --version
+      
+      - name: Set PATH for pdflatex (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $texPath = "C:/Users/runneradmin/AppData/Roaming/TinyTeX/bin/windows"
+          $env:PATH = "$texPath;$env:PATH"
+          Get-Command pdflatex
+          
       # ------------------------ Install tidy ------------------------
       - name: Install tidy (macOS only)
         if: runner.os == 'macOS'
