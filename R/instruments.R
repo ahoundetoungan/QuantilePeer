@@ -48,6 +48,7 @@ qpeer.instruments <- function(formula, Glist, tau, type = 7, data, max.distance 
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
   stopifnot(max.distance >= 1)
+  nthreads <- fnthreads(nthreads = nthreads)
   
   # Network
   if (!is.list(Glist)) {

@@ -257,6 +257,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fnthreads
+int fnthreads(const int& nthreads);
+RcppExport SEXP _QuantilePeer_fnthreads(SEXP nthreadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int& >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(fnthreads(nthreads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fQtauy
 arma::mat fQtauy(const arma::vec& y, const std::vector<arma::mat>& G, const arma::vec& d, const arma::uvec& igroup, const arma::uvec& group, const arma::uvec& groupidx, const arma::uvec& nvec, const arma::vec& stau, const int& ngroup, const int& n, const int& ntau, const int& type, const int& nthreads);
 RcppExport SEXP _QuantilePeer_fQtauy(SEXP ySEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP groupSEXP, SEXP groupidxSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP ngroupSEXP, SEXP nSEXP, SEXP ntauSEXP, SEXP typeSEXP, SEXP nthreadsSEXP) {
@@ -1306,6 +1317,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_QuantilePeer_fCESgmmrhoobj", (DL_FUNC) &_QuantilePeer_fCESgmmrhoobj, 12},
     {"_QuantilePeer_fCESParam", (DL_FUNC) &_QuantilePeer_fCESParam, 9},
     {"_QuantilePeer_fNashECES", (DL_FUNC) &_QuantilePeer_fNashECES, 14},
+    {"_QuantilePeer_fnthreads", (DL_FUNC) &_QuantilePeer_fnthreads, 1},
     {"_QuantilePeer_fQtauy", (DL_FUNC) &_QuantilePeer_fQtauy, 13},
     {"_QuantilePeer_fQtauy_EIGEN", (DL_FUNC) &_QuantilePeer_fQtauy_EIGEN, 13},
     {"_QuantilePeer_fQtauyWithIndex", (DL_FUNC) &_QuantilePeer_fQtauyWithIndex, 13},

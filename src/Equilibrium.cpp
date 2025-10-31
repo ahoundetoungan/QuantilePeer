@@ -22,13 +22,13 @@
  */
 
 // [[Rcpp::depends(RcppArmadillo, RcppEigen)]]
-// [[Rcpp::plugins(openmp)]]
 #include <RcppArmadillo.h>
 #define ARMA_64BIT_WORD 1
 #include <RcppEigen.h>
 
-#ifdef _OPENMP
+#if defined(_OPENMP)
 #include <omp.h>
+// [[Rcpp::plugins(openmp)]]
 #endif
 
 //===============================================================================================//
@@ -78,6 +78,19 @@ int ceilP(const long double& x, const unsigned int& k = 10){
   return tp3;
 }
 
+// This function set nthreads
+//[[Rcpp::export]]
+int fnthreads(const int& nthreads) {
+#if defined(_OPENMP)
+  return nthreads;
+#else
+  if (nthreads > 1) {
+    Rf_warning("OpenMP is not available. Sequential processing is used.");
+  }
+  return 1;
+#endif
+}
+
 
 // gP vector of gij for gij>0, this is sorted from the smallest based of yj of peers
 // IyP includes the indexes of sorterd yj of peers in the original y
@@ -93,10 +106,9 @@ gPIyP fgPIyP(const arma::vec& y,
              const int& ngroup,
              const int& n,
              const int& nthreads){
-#ifdef _OPENMP
-  omp_set_num_threads(nthreads);
-#endif
   gPIyP out(n);
+#if defined(_OPENMP)
+  omp_set_num_threads(nthreads);
 #pragma omp parallel
 {
   arma::vec Gri;
@@ -138,6 +150,45 @@ gPIyP fgPIyP(const arma::vec& y,
       out.IyP[k]      = idx;
     }
 }
+#else
+  arma::vec Gri;
+  arma::uvec ipGri, tp;
+  int i, r, n1, nfr;
+  for(int k = 0; k < n; ++ k){
+    if(d(k) < 1e-50) continue;
+    i  = groupidx(k); 
+    r  = group(k);
+    n1 = igroup(r);
+    
+    Gri   = G[r].row(i).t();
+    ipGri = arma::find(Gri > 1e-50);
+    Gri   = Gri.elem(ipGri) / d(k);
+    tp    = arma::sort_index(y.elem(ipGri + n1));
+    Gri   = Gri.elem(tp);
+    
+    // Index
+    tp    = ipGri.elem(tp) + n1;
+    nfr   = tp.n_elem;
+    arma::uvec idx(nfr + 2);
+    idx(0)             = tp(0);
+    idx.subvec(1, nfr) = tp;
+    idx(nfr + 1)       = tp(nfr - 1);
+    
+    // cumsum
+    arma::vec csgPi(nfr + 1);
+    csgPi(0)        = 0;
+    csgPi.tail(nfr) = arma::cumsum(Gri);
+    
+    // Weights
+    arma::vec gP(nfr + 1);
+    gP.head(nfr) = Gri;
+    gP(nfr)      = 1;
+    
+    out.gP[k] = gP;
+    out.cumsumgP[k] = csgPi;
+    out.IyP[k]      = idx;
+  }
+#endif
   return out;
 }
 
@@ -216,10 +267,8 @@ void fQWeightIndex(arma::mat& w1,
                    const int& ntau,
                    const int& type,
                    const int& nthreads){
-#ifdef _OPENMP
+#if defined(_OPENMP)
   omp_set_num_threads(nthreads);
-#endif
-  
   if(type == 1){
 #pragma omp parallel for
     for(int i = 0; i < n; ++ i){
@@ -413,6 +462,192 @@ void fQWeightIndex(arma::mat& w1,
       pi2.col(i) = lIyP[i].elem(pii1 + 1);
     }
   }
+#else
+  if(type == 1){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = ceilP(tp2 - pii1(k));
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i].elem(pii1);
+      pi2.col(i) = lIyP[i].elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 2){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = 0.5*(1 + ceilP(tp2 - pii1(k)));
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i].elem(pii1);
+      pi2.col(i) = lIyP[i].elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 3){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l - 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        pii1(k)  = floorP(tp2); if (pii1(k) < 0) pii1(k) = 0;//this is j in HYNDMAN and FAN (1996)
+        if((pii1(k)%2 == 0) & (tp2 >= 1)){
+          w2i(k) = ceilP(tp2 - pii1(k));
+        } else{
+          w2i(k) = 1;
+        }
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i].elem(pii1);
+      pi2.col(i) = lIyP[i].elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 4){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i].elem(pii1);
+      pi2.col(i) = lIyP[i].elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 5){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i].elem(pii1);
+      pi2.col(i) = lIyP[i].elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 6){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)); 
+        if(stau(k) >= 1) tp2 = l;
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i].elem(pii1);
+      pi2.col(i) = lIyP[i].elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 7){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + 1 - stau(k)); //here tp2 is necessarily >= 0
+        pii1(k) = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)  = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i].elem(pii1);
+      pi2.col(i) = lIyP[i].elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 8){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + (stau(k) + 1.0)/3.0); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i].elem(pii1);
+      pi2.col(i) = lIyP[i].elem(pii1 + 1);
+    }
+  }
+  
+  if(type == 9){
+    for(int i = 0; i < n; ++ i){
+      if(d(i) == 0) continue;
+      arma::vec w2i(ntau);
+      arma::uvec pii1(ntau);
+      
+      for(int k(0); k < ntau; ++ k){
+        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumgP[i](l));
+        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)/4.0 + 3.0/8.0); 
+        pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
+        w2i(k)   = tp2 - pii1(k);
+      }
+      w1.col(i)  = 1 - w2i;
+      w2.col(i)  = w2i;
+      pi1.col(i) = lIyP[i].elem(pii1);
+      pi2.col(i) = lIyP[i].elem(pii1 + 1);
+    }
+  }
+#endif
 }
 
 void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
@@ -428,7 +663,7 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
                          const int& ntau,
                          const int& type,
                          const int& nthreads){
-#ifdef _OPENMP
+#if defined(_OPENMP)
   omp_set_num_threads(nthreads);
 #endif
   
@@ -651,13 +886,17 @@ arma::mat fQtauy(const arma::vec& y,
   arma::umat pi1(ntau, n, arma::fill::zeros), pi2(ntau, n, arma::fill::zeros);
   fQWeightIndex(w1, w2, pi1, pi2, tp.gP, tp.cumsumgP, tp.IyP, d, stau, n, ntau, type, nthreads);
   arma::mat Qty(ntau, n);
-#ifdef _OPENMP
+#if defined(_OPENMP)
   omp_set_num_threads(nthreads);
-#endif
 #pragma omp parallel for
   for(int i = 0; i < n; ++ i){
     Qty.col(i) = y.elem(pi1.col(i))%w1.col(i) +  y.elem(pi2.col(i))%w2.col(i);
   }
+#else
+  for(int i = 0; i < n; ++ i){
+    Qty.col(i) = y.elem(pi1.col(i))%w1.col(i) +  y.elem(pi2.col(i))%w2.col(i);
+  }
+#endif
   return Qty.t();
 }
 
@@ -684,7 +923,7 @@ Eigen::ArrayXXd fQtauy_EIGEN(const Eigen::ArrayXd& y,
   Eigen::ArrayXXi pi1(Eigen::ArrayXXi::Zero(ntau, n)), pi2(Eigen::ArrayXXi::Zero(ntau, n));
   fQWeightIndex_EIGEN(w1, w2, pi1, pi2, tp.gP, tp.cumsumgP, tp.IyP, d, stau, n, ntau, type, nthreads);
   Eigen::ArrayXXd Qty(ntau, n);
-#ifdef _OPENMP
+#if defined(_OPENMP)
   omp_set_num_threads(nthreads);
 #endif
 #pragma omp parallel for
@@ -718,14 +957,18 @@ Rcpp::List fQtauyWithIndex(const arma::vec& y,
   arma::umat pi1(ntau, n, arma::fill::zeros), pi2(ntau, n, arma::fill::zeros);
   fQWeightIndex(w1, w2, pi1, pi2, tp.gP, tp.cumsumgP, tp.IyP, d, stau, n, ntau, type, nthreads);
   arma::mat Qty(ntau, n);
-#ifdef _OPENMP
+#if defined(_OPENMP)
   omp_set_num_threads(nthreads);
-#endif
 #pragma omp parallel for
   for(int i = 0; i < n; ++ i){
     Qty.col(i) = y.elem(pi1.col(i))%w1.col(i) +  y.elem(pi2.col(i))%w2.col(i);
   }
-  
+#else
+  for(int i = 0; i < n; ++ i){
+    Qty.col(i) = y.elem(pi1.col(i))%w1.col(i) +  y.elem(pi2.col(i))%w2.col(i);
+  }
+#endif
+
   return Rcpp::List::create(Rcpp::_["qy"]  = Qty.t(), 
                             Rcpp::_["pi1"] = pi1.t(), 
                             Rcpp::_["pi2"] = pi2.t(), 
@@ -755,7 +998,7 @@ Rcpp::List fQtauyWithIndex_EIGEN(const Eigen::ArrayXd& y,
   Eigen::ArrayXXi pi1(Eigen::ArrayXXi::Zero(ntau, n)), pi2(Eigen::ArrayXXi::Zero(ntau, n));
   fQWeightIndex_EIGEN(w1, w2, pi1, pi2, tp.gP, tp.cumsumgP, tp.IyP, d, stau, n, ntau, type, nthreads);
   Eigen::ArrayXXd Qty(ntau, n);
-#ifdef _OPENMP
+#if defined(_OPENMP)
   omp_set_num_threads(nthreads);
 #endif
 #pragma omp parallel for
@@ -1011,7 +1254,7 @@ arma::mat simInstrqpeer(const arma::vec& y,
   if (structural) {
     eps(nIs)   /= (1 - estimate(0));
   }
- 
+  
   // strata setup
   std::vector<int> strata;
   strata.push_back(0);
@@ -1024,13 +1267,16 @@ arma::mat simInstrqpeer(const arma::vec& y,
   }
   int nstrata = strata.size() - 1;
   
+  // output
+  arma::mat out;
+  
+  // If it can be run in parallel
+#if defined(_OPENMP)
   // list of instruments
   std::vector<arma::mat> listQtauy(nthreads);
   
   // bootstrap
-#ifdef _OPENMP
   omp_set_num_threads(nthreads);
-#endif
 #pragma omp parallel
 {
   unsigned int tid = omp_get_thread_num();
@@ -1072,10 +1318,47 @@ arma::mat simInstrqpeer(const arma::vec& y,
   }
 }
 
-arma::mat out = listQtauy[0];
-for (int k = 1; k < nthreads; ++k){
-  out += listQtauy[k];
+  out = listQtauy[0];
+  for (int k = 1; k < nthreads; ++k){
+    out += listQtauy[k];
+  }
+
+#else
+  // Initialize RNG with seed_seq for thread safety
+  std::mt19937 rng(seed);
+  
+  out.resize(n, ntau);
+  out.zeros();
+  
+  for (int b = 0; b < boot; ++b) {
+    arma::vec epsb = eps;
+    for (int s = 0; s < nstrata; ++s) {
+      std::shuffle(epsb.memptr() + strata[s], epsb.memptr() + strata[s + 1], rng);
+    }
+    if (structural) {
+      epsb(nIs) *= (1 - estimate(0));
+    }
+    arma::vec talpha(Xbeta + epsb);
+    
+    arma::vec yy(y);
+    int t(0);
+    computeBR: ++t;
+    
+    // Compute Qtauy
+    arma::mat Qtauy = fQtauy(yy, G, d, igroup, group, groupidx, nvec, stau, 
+                             ngroup, n, ntau, type, 1);
+    
+    // New y
+    arma::vec yyst = talpha + Qtauy * estimate.subvec(structural, ntau - 1 + structural);
+    
+    // check convergence
+    double dist = max(abs(yyst - yy)/(abs(yy) + 1e-50));
+    yy          = yyst;
+    if (dist > tol && t < maxit) goto computeBR;
+    out        += Qtauy;
+  }
 }
+#endif
 return out / boot;
 }
 
@@ -1131,7 +1414,7 @@ Eigen::ArrayXXd simInstrqpeer_EIGEN(const Eigen::VectorXd& y,
   std::vector<Eigen::MatrixXd> listQtauy(nthreads);
   
   // bootstrap
-#ifdef _OPENMP
+#if defined(_OPENMP)
   omp_set_num_threads(nthreads);
 #endif
 #pragma omp parallel
@@ -1198,7 +1481,7 @@ void fylim_ARMA(arma::vec& y,
            const double& lambda,
            const int& nthreads) {
   //loop over group
-#ifdef _OPENMP
+#if defined(_OPENMP)
   omp_set_num_threads(nthreads);
 #endif
 #pragma omp parallel
@@ -1228,9 +1511,8 @@ Rcpp::List fylim(const std::vector<Eigen::MatrixXd>& G,
                        const int& nthreads) {
   Eigen::VectorXd y(n), Gy(n);
   //loop over group
-#ifdef _OPENMP
+#if defined(_OPENMP)
   omp_set_num_threads(nthreads);
-#endif
 #pragma omp parallel for
   for (int m = 0; m < ngroup; ++ m) {
     int nm(nvec(m));
@@ -1239,6 +1521,15 @@ Rcpp::List fylim(const std::vector<Eigen::MatrixXd>& G,
     y.segment(igroup(m), nm)  = Am.colPivHouseholderQr().solve(talpha.segment(igroup(m), nm));
     Gy.segment(igroup(m), nm) = G[m] * y.segment(igroup(m), nm);
   }
+#else
+  for (int m = 0; m < ngroup; ++ m) {
+    int nm(nvec(m));
+    Eigen::MatrixXd Am(-lambda * G[m]);
+    Am.diagonal().array() += 1;
+    y.segment(igroup(m), nm)  = Am.colPivHouseholderQr().solve(talpha.segment(igroup(m), nm));
+    Gy.segment(igroup(m), nm) = G[m] * y.segment(igroup(m), nm);
+  }
+#endif
   return Rcpp::List::create(Rcpp::_["y"] = y, Rcpp::_["Gy"] = Gy);
 }
 

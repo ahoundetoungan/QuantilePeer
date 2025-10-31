@@ -169,6 +169,7 @@ qpeer <- function(formula, excluded.instruments, Glist, tau, type = 7, data,
                   estimator = "IV", structural = FALSE, fixed.effects = FALSE, 
                   HAC = "iid", checkrank = FALSE, drop = NULL,
                   compute.cov = TRUE, nthreads = 1, tol = 1e-10){
+  nthreads   <- fnthreads(nthreads = nthreads)
   # Quantiles
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
@@ -572,6 +573,7 @@ qpeer.sim <- function(formula, Glist, tau, parms, lambda, beta, epsilon, structu
                       type = 7, tol = 1e-10, maxit = 500, details = TRUE, nthreads = 1, data){
   stopifnot(all((tau >= 0) & (tau <= 1)))
   stopifnot(type %in% 1:9)
+  nthreads <- fnthreads(nthreads = nthreads)
   # Network
   if (!is.list(Glist)) {
     Glist  <- list(Glist)
@@ -1187,6 +1189,7 @@ qpeer.optimal.instruments <- function(model,
                                       tol      = 1e-10,
                                       maxit    = 500) {
   stopifnot(class(model) == "qpeer")
+  nthreads <- fnthreads(nthreads = nthreads)
   if (missing(seed)) {
     seed   <- runif(1, 0, 1e6)
   }

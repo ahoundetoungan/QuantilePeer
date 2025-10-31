@@ -37,6 +37,10 @@ fNashECES <- function(y, G, talpha, lambda, rho, friendindex, igroup, frzeroy, n
     .Call(`_QuantilePeer_fNashECES`, y, G, talpha, lambda, rho, friendindex, igroup, frzeroy, nvec, yFMiMa, ngroup, n, tol, maxit)
 }
 
+fnthreads <- function(nthreads) {
+    .Call(`_QuantilePeer_fnthreads`, nthreads)
+}
+
 fQtauy <- function(y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads) {
     .Call(`_QuantilePeer_fQtauy`, y, G, d, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, nthreads)
 }
