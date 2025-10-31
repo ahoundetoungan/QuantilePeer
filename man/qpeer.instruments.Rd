@@ -26,7 +26,9 @@ qpeer.instrument(
   type = 7,
   data,
   max.distance = 1,
-  checkrank = FALSE
+  checkrank = FALSE,
+  nthreads = 1,
+  tol = 1e-10
 )
 
 qpeer.inst(
@@ -36,7 +38,9 @@ qpeer.inst(
   type = 7,
   data,
   max.distance = 1,
-  checkrank = FALSE
+  checkrank = FALSE,
+  nthreads = 1,
+  tol = 1e-10
 )
 
 qpeer.insts(
@@ -46,7 +50,9 @@ qpeer.insts(
   type = 7,
   data,
   max.distance = 1,
-  checkrank = FALSE
+  checkrank = FALSE,
+  nthreads = 1,
+  tol = 1e-10
 )
 }
 \arguments{

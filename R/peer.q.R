@@ -1208,10 +1208,10 @@ qpeer.optimal.instruments <- function(model,
   groupidx <- unlist(lapply(1:ngroup, \(m) 0:(nvec[m] - 1)))
   
   out      <- simInstrqpeer(y = model$data$y, qy = as.matrix(model$data$qy), X = model$data$X, G = Glist, 
-                d = dg, igroup = igroup, group = group, groupidx = groupidx, estimate = model$gmm$Estimate, 
-                nIs = model$data$non.isolated - 1, nvec = nvec, stau = model$model.info$tau, boot = boot,
-                fixedeffects = FE, structural =  model$model.info$structural, nthreads = nthreads, 
-                seed = seed, type = model$model.info$type, tol = tol, maxit = maxit)
+                            d = dg, igroup = igroup, group = group, groupidx = groupidx, estimate = model$gmm$Estimate, 
+                            nIs = model$data$non.isolated - 1, nvec = nvec, stau = model$model.info$tau, boot = boot,
+                            fixedeffects = FE, structural =  model$model.info$structural, nthreads = nthreads, 
+                            seed = seed, type = model$model.info$type, tol = tol, maxit = maxit)
   colnames(out) <- paste0("Instrument", 1:length(model$model.info$tau))
   out
 }
@@ -1232,24 +1232,24 @@ qpeer.optimal.instrument <- function(model,
 #' @rdname qpeer.optimal.instruments
 #' @export
 qpeer.optimal.insts <- function(model, 
-                                     Glist,
-                                     boot     = 100L, 
-                                     nthreads = 1L, 
-                                     seed, 
-                                     tol      = 1e-10,
-                                     maxit    = 500) {
+                                Glist,
+                                boot     = 100L, 
+                                nthreads = 1L, 
+                                seed, 
+                                tol      = 1e-10,
+                                maxit    = 500) {
   qpeer.optimal.instruments(model, Glist, boot, nthreads, seed, tol, maxit)
 }
 
 #' @rdname qpeer.optimal.instruments
 #' @export
 qpeer.optimal.inst <- function(model, 
-                                     Glist,
-                                     boot     = 100L, 
-                                     nthreads = 1L, 
-                                     seed, 
-                                     tol      = 1e-10,
-                                     maxit    = 500) {
+                               Glist,
+                               boot     = 100L, 
+                               nthreads = 1L, 
+                               seed, 
+                               tol      = 1e-10,
+                               maxit    = 500) {
   qpeer.optimal.instruments(model, Glist, boot, nthreads, seed, tol, maxit)
 }
 

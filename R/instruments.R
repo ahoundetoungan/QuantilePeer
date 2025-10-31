@@ -125,19 +125,25 @@ qpeer.instruments <- function(formula, Glist, tau, type = 7, data, max.distance 
 
 #' @rdname qpeer.instruments
 #' @export
-qpeer.instrument <- function(formula, Glist, tau, type = 7, data, max.distance = 1, checkrank = FALSE){
-  qpeer.instruments(formula, Glist, tau, type, data, max.distance, checkrank)
+qpeer.instrument <- function(formula, Glist, tau, type = 7, data, max.distance = 1, 
+                             checkrank = FALSE, nthreads = 1, tol = 1e-10){
+  qpeer.instruments(formula, Glist, tau, type, data, max.distance, checkrank, 
+                    nthreads, tol)
 }
 
 #' @rdname qpeer.instruments
 #' @export
-qpeer.inst <- function(formula, Glist, tau, type = 7, data, max.distance = 1, checkrank = FALSE){
-  qpeer.instruments(formula, Glist, tau, type, data, max.distance, checkrank)
+qpeer.inst <- function(formula, Glist, tau, type = 7, data, max.distance = 1, 
+                       checkrank = FALSE, nthreads = 1, tol = 1e-10){
+  qpeer.instruments(formula, Glist, tau, type, data, max.distance, checkrank, 
+                    nthreads, tol)
 }
 
 #' @rdname qpeer.instruments
 #' @export
-qpeer.insts <- function(formula, Glist, tau, type = 7, data, max.distance = 1, checkrank = FALSE){
-  qpeer.instruments(formula, Glist, tau, type, data, max.distance, checkrank)
+qpeer.insts <- function(formula, Glist, tau, type = 7, data, max.distance = 1, 
+                        checkrank = FALSE, nthreads = 1, tol = 1e-10){
+  qpeer.instruments(formula, Glist, tau, type, data, max.distance, checkrank, 
+                    nthreads, tol)
 }
 
