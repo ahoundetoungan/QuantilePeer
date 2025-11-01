@@ -517,8 +517,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // simInstrqpeer
-arma::mat simInstrqpeer(const arma::vec& y, const arma::mat& qy, const arma::mat& X, const std::vector<arma::mat>& G, const arma::vec& d, const arma::uvec& igroup, const arma::uvec& group, const arma::uvec& groupidx, const arma::vec& estimate, const arma::uvec& nIs, const arma::uvec& nvec, const arma::vec& stau, const int& boot, const bool& fixedeffects, const bool& structural, const unsigned int& nthreads, const unsigned int& seed, const int& type, const double& tol, const int& maxit);
-RcppExport SEXP _QuantilePeer_simInstrqpeer(SEXP ySEXP, SEXP qySEXP, SEXP XSEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP groupSEXP, SEXP groupidxSEXP, SEXP estimateSEXP, SEXP nIsSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP bootSEXP, SEXP fixedeffectsSEXP, SEXP structuralSEXP, SEXP nthreadsSEXP, SEXP seedSEXP, SEXP typeSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
+arma::mat simInstrqpeer(const arma::vec& y, const arma::mat& qy, const arma::mat& X, const std::vector<arma::mat>& G, const arma::vec& d, const arma::uvec& igroup, const arma::uvec& group, const arma::uvec& groupidx, const arma::vec& estimate, const arma::uvec& nIs, const arma::uvec& nvec, const arma::vec& stau, const arma::vec& stauInst, const int& boot, const bool& fixedeffects, const bool& structural, const unsigned int& nthreads, const unsigned int& seed, const int& type, const double& tol, const int& maxit);
+RcppExport SEXP _QuantilePeer_simInstrqpeer(SEXP ySEXP, SEXP qySEXP, SEXP XSEXP, SEXP GSEXP, SEXP dSEXP, SEXP igroupSEXP, SEXP groupSEXP, SEXP groupidxSEXP, SEXP estimateSEXP, SEXP nIsSEXP, SEXP nvecSEXP, SEXP stauSEXP, SEXP stauInstSEXP, SEXP bootSEXP, SEXP fixedeffectsSEXP, SEXP structuralSEXP, SEXP nthreadsSEXP, SEXP seedSEXP, SEXP typeSEXP, SEXP tolSEXP, SEXP maxitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -534,6 +534,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::uvec& >::type nIs(nIsSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type nvec(nvecSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type stau(stauSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type stauInst(stauInstSEXP);
     Rcpp::traits::input_parameter< const int& >::type boot(bootSEXP);
     Rcpp::traits::input_parameter< const bool& >::type fixedeffects(fixedeffectsSEXP);
     Rcpp::traits::input_parameter< const bool& >::type structural(structuralSEXP);
@@ -542,7 +543,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type type(typeSEXP);
     Rcpp::traits::input_parameter< const double& >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< const int& >::type maxit(maxitSEXP);
-    rcpp_result_gen = Rcpp::wrap(simInstrqpeer(y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, boot, fixedeffects, structural, nthreads, seed, type, tol, maxit));
+    rcpp_result_gen = Rcpp::wrap(simInstrqpeer(y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, stauInst, boot, fixedeffects, structural, nthreads, seed, type, tol, maxit));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1330,7 +1331,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_QuantilePeer_fProdWVI_EIGEN", (DL_FUNC) &_QuantilePeer_fProdWVI_EIGEN, 3},
     {"_QuantilePeer_fNashE", (DL_FUNC) &_QuantilePeer_fNashE, 17},
     {"_QuantilePeer_fNashE_EIGEN", (DL_FUNC) &_QuantilePeer_fNashE_EIGEN, 17},
-    {"_QuantilePeer_simInstrqpeer", (DL_FUNC) &_QuantilePeer_simInstrqpeer, 20},
+    {"_QuantilePeer_simInstrqpeer", (DL_FUNC) &_QuantilePeer_simInstrqpeer, 21},
     {"_QuantilePeer_simInstrqpeer_EIGEN", (DL_FUNC) &_QuantilePeer_simInstrqpeer_EIGEN, 20},
     {"_QuantilePeer_fylim_ARMA", (DL_FUNC) &_QuantilePeer_fylim_ARMA, 8},
     {"_QuantilePeer_fylim", (DL_FUNC) &_QuantilePeer_fylim, 8},

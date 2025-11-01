@@ -1466,7 +1466,8 @@ arma::mat simInstrqpeer(const arma::vec& y,
                         const arma::vec& estimate,
                         const arma::uvec& nIs,
                         const arma::uvec& nvec,
-                        const arma::vec& stau,
+                        const arma::vec& stau,     // tau for the model
+                        const arma::vec& stauInst, // tau for the instrument
                         const int& boot,
                         const bool& fixedeffects,
                         const bool& structural,
@@ -1475,7 +1476,8 @@ arma::mat simInstrqpeer(const arma::vec& y,
                         const int& type = 7,
                         const double& tol = 1e-10,
                         const int& maxit  = 500) {
-  int n(y.n_elem), ntau(stau.n_elem), Kx(X.n_cols), ngroup(nvec.n_elem);
+  int n(y.n_elem), ntau(stau.n_elem), ntauInst(stauInst.n_elem), 
+  Kx(X.n_cols), ngroup(nvec.n_elem);
   
   // residuals
   arma::vec eps(y - qy * estimate.subvec(structural, ntau - 1 + structural));
@@ -1520,7 +1522,7 @@ arma::mat simInstrqpeer(const arma::vec& y,
   std::seed_seq seq(seq_data.begin(), seq_data.end());
   std::mt19937 rng(seq);
   
-  listQtauy[tid].resize(n, ntau);
+  listQtauy[tid].resize(n, ntauInst);
   listQtauy[tid].zeros();
   
 #pragma omp for
@@ -1549,7 +1551,8 @@ arma::mat simInstrqpeer(const arma::vec& y,
     double dist     = max(abs(yyst - yy)/(abs(yy) + 1e-50));
     yy              = yyst;
     if (dist > tol && t < maxit) goto computeBR;
-    listQtauy[tid] += Qtauy;
+    listQtauy[tid] += fQtauy(yy, G, d, igroup, group, groupidx, nvec, stauInst,
+                             ngroup, n, ntauInst, type, 1);
   }
 }
 
@@ -1590,7 +1593,8 @@ arma::mat simInstrqpeer(const arma::vec& y,
     double dist = max(abs(yyst - yy)/(abs(yy) + 1e-50));
     yy          = yyst;
     if (dist > tol && t < maxit) goto computeBR;
-    out        += Qtauy;
+    out        += fQtauy(yy, G, d, igroup, group, groupidx, nvec, stauInst,
+                         ngroup, n, ntauInst, type, 1);
   }
 #endif
 return out / boot;

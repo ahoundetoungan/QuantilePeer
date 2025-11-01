@@ -10,6 +10,7 @@
 qpeer.optimal.instruments(
   model,
   Glist,
+  tau,
   boot = 100L,
   nthreads = 1L,
   seed,
@@ -20,6 +21,7 @@ qpeer.optimal.instruments(
 qpeer.optimal.instrument(
   model,
   Glist,
+  tau,
   boot = 100L,
   nthreads = 1L,
   seed,
@@ -30,6 +32,7 @@ qpeer.optimal.instrument(
 qpeer.optimal.insts(
   model,
   Glist,
+  tau,
   boot = 100L,
   nthreads = 1L,
   seed,
@@ -40,6 +43,7 @@ qpeer.optimal.insts(
 qpeer.optimal.inst(
   model,
   Glist,
+  tau,
   boot = 100L,
   nthreads = 1L,
   seed,
@@ -54,6 +58,9 @@ for which the "optimal" instruments will be computed.}
 \item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools),
 \code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix,
 where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
+
+\item{tau}{A numeric vector specifying the quantile levels for the instrument matrix.
+The default value is the vector of quantile levels used to estimate the model.}
 
 \item{boot}{A strictly positive integer indicating the number of bootstrap replications.}
 

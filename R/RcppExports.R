@@ -89,8 +89,8 @@ fNashE_EIGEN <- function(y0, G, d, talpha, lambdatau, igroup, group, groupidx, n
     .Call(`_QuantilePeer_fNashE_EIGEN`, y0, G, d, talpha, lambdatau, igroup, group, groupidx, nvec, stau, ngroup, n, ntau, type, tol, maxit, nthreads)
 }
 
-simInstrqpeer <- function(y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, boot, fixedeffects, structural, nthreads, seed, type = 7L, tol = 1e-10, maxit = 500L) {
-    .Call(`_QuantilePeer_simInstrqpeer`, y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, boot, fixedeffects, structural, nthreads, seed, type, tol, maxit)
+simInstrqpeer <- function(y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, stauInst, boot, fixedeffects, structural, nthreads, seed, type = 7L, tol = 1e-10, maxit = 500L) {
+    .Call(`_QuantilePeer_simInstrqpeer`, y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, stauInst, boot, fixedeffects, structural, nthreads, seed, type, tol, maxit)
 }
 
 simInstrqpeer_EIGEN <- function(y, qy, X, G, d, igroup, group, groupidx, estimate, nIs, nvec, stau, boot, structural, fixedeffects, nthreads, seed, type = 7L, tol = 1e-10, maxit = 500L) {

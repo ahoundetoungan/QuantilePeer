@@ -1119,6 +1119,8 @@ print.qpeer.test <- function(x, ...) {
 #' @param maxit The maximum number of iterations for the fixed-point iteration method.
 #' @param tol The tolerance value used in the fixed-point iteration method to compute the outcome `y`. 
 #' The process stops if the \eqn{\ell_1}-distance between two consecutive values of `y` is less than `tol`.
+#' @param tau A numeric vector specifying the quantile levels for the instrument matrix. 
+#' The default value is the vector of quantile levels used to estimate the model.
 #' @param model An object of class \code{\link{qpeer}} that contains an initial estimation of the model 
 #' for which the "optimal" instruments will be computed.
 #' @param nthreads A strictly positive integer indicating the number of threads to use when bootstrapping.
@@ -1183,6 +1185,7 @@ print.qpeer.test <- function(x, ...) {
 #' @export
 qpeer.optimal.instruments <- function(model, 
                                       Glist,
+                                      tau,
                                       boot     = 100L, 
                                       nthreads = 1L, 
                                       seed, 
@@ -1190,6 +1193,10 @@ qpeer.optimal.instruments <- function(model,
                                       maxit    = 500) {
   stopifnot(class(model) == "qpeer")
   nthreads <- fnthreads(nthreads = nthreads)
+  if (missing(tau)) {
+    tau    <- model$model.info$tau
+  }
+  stopifnot(all((tau >= 0) & (tau <= 1)))
   if (missing(seed)) {
     seed   <- runif(1, 0, 1e6)
   }
@@ -1209,10 +1216,10 @@ qpeer.optimal.instruments <- function(model,
   
   out      <- simInstrqpeer(y = model$data$y, qy = as.matrix(model$data$qy), X = model$data$X, G = Glist, 
                             d = dg, igroup = igroup, group = group, groupidx = groupidx, estimate = model$gmm$Estimate, 
-                            nIs = model$data$non.isolated - 1, nvec = nvec, stau = model$model.info$tau, boot = boot,
-                            fixedeffects = FE, structural =  model$model.info$structural, nthreads = nthreads, 
+                            nIs = model$data$non.isolated - 1, nvec = nvec, stau = model$model.info$tau, stauInst = tau,
+                            boot = boot, fixedeffects = FE, structural =  model$model.info$structural, nthreads = nthreads, 
                             seed = seed, type = model$model.info$type, tol = tol, maxit = maxit)
-  colnames(out) <- paste0("Instrument", 1:length(model$model.info$tau))
+  colnames(out) <- paste0("Instrument", 1:length(tau))
   out
 }
 
@@ -1221,35 +1228,38 @@ qpeer.optimal.instruments <- function(model,
 #' @export
 qpeer.optimal.instrument <- function(model, 
                                      Glist,
+                                     tau,
                                      boot     = 100L, 
                                      nthreads = 1L, 
                                      seed, 
                                      tol      = 1e-10,
                                      maxit    = 500) {
-  qpeer.optimal.instruments(model, Glist, boot, nthreads, seed, tol, maxit)
+  qpeer.optimal.instruments(model, Glist, tau, boot, nthreads, seed, tol, maxit)
 }
 
 #' @rdname qpeer.optimal.instruments
 #' @export
 qpeer.optimal.insts <- function(model, 
                                 Glist,
+                                tau, 
                                 boot     = 100L, 
                                 nthreads = 1L, 
                                 seed, 
                                 tol      = 1e-10,
                                 maxit    = 500) {
-  qpeer.optimal.instruments(model, Glist, boot, nthreads, seed, tol, maxit)
+  qpeer.optimal.instruments(model, Glist, tau, boot, nthreads, seed, tol, maxit)
 }
 
 #' @rdname qpeer.optimal.instruments
 #' @export
 qpeer.optimal.inst <- function(model, 
                                Glist,
+                               tau, 
                                boot     = 100L, 
                                nthreads = 1L, 
                                seed, 
                                tol      = 1e-10,
                                maxit    = 500) {
-  qpeer.optimal.instruments(model, Glist, boot, nthreads, seed, tol, maxit)
+  qpeer.optimal.instruments(model, Glist, tau, boot, nthreads, seed, tol, maxit)
 }
 
