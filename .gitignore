@@ -49,3 +49,4 @@ inst/doc
 /doc/.Rmd
 /Meta/
 /doc/
+*.DS_Store

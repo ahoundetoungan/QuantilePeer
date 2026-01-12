@@ -1262,4 +1262,3 @@ qpeer.optimal.inst <- function(model,
                                maxit    = 500) {
   qpeer.optimal.instruments(model, Glist, tau, boot, nthreads, seed, tol, maxit)
 }
-

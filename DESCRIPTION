@@ -2,7 +2,7 @@ Package: QuantilePeer
 Type: Package
 Title: Quantile Peer Effect Models
 Version: 0.0.2
-Date: 2025-12-01
+Date: 2026-02-11
 Authors@R: person(given = "Aristide", family = "Houndetoungan", role = c("cre","aut"), email =  "ahoundetoungan@ecn.ulaval.ca", comment = c(ORCID = "0009-0003-2733-9362"))
 Description: Simulating and estimating peer effect models including the quantile-based specification (Houndetoungan, 2025 <doi:10.48550/arXiv.2506.12920>), and the models with Constant Elasticity of Substitution (CES)-based social norm (Boucher et al., 2024 <doi:10.3982/ECTA21048>).
 SystemRequirements: Requires the OpenMP library for parallel computing.
@@ -16,7 +16,7 @@ URL: https://github.com/ahoundetoungan/QuantilePeer
 Depends: R (>= 4.1.0)
 Imports: Rcpp (>= 1.0.0), formula.tools, Matrix, MASS
 LinkingTo: Rcpp, RcppArmadillo, RcppEigen, RcppNumerical
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)
 Suggests: 
     knitr,

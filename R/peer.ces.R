@@ -575,7 +575,7 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
     stop("`init` is not an n-vector.")
   }
   y        <- unlist(init) + 0 # copy so that y not linked to init
-
+  
   ## other variables
   ncs      <- c(0, cumsum(nvec))
   friendindex <- lapply(1:M, function(m) {
