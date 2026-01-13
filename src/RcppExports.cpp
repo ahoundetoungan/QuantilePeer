@@ -42,14 +42,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // fOLS
-Eigen::VectorXd fOLS(const Eigen::MatrixXd& data, const Eigen::ArrayXi& idX1, const arma::uvec& Is, const int& Kx);
+Eigen::VectorXd fOLS(const Eigen::MatrixXd& data, const Eigen::ArrayXi& idX1, const Eigen::ArrayXi& Is, const int& Kx);
 RcppExport SEXP _QuantilePeer_fOLS(SEXP dataSEXP, SEXP idX1SEXP, SEXP IsSEXP, SEXP KxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type idX1(idX1SEXP);
-    Rcpp::traits::input_parameter< const arma::uvec& >::type Is(IsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type Is(IsSEXP);
     Rcpp::traits::input_parameter< const int& >::type Kx(KxSEXP);
     rcpp_result_gen = Rcpp::wrap(fOLS(data, idX1, Is, Kx));
     return rcpp_result_gen;
