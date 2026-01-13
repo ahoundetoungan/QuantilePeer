@@ -165,7 +165,7 @@ arma::mat fCESdata(const arma::mat& X,
 // [[Rcpp::export]]
 Eigen::VectorXd fOLS(const Eigen::MatrixXd& data,
                      const Eigen::ArrayXi& idX1,
-                     const arma::uvec& Is, 
+                     const Eigen::ArrayXi& Is, 
                      const int& Kx) {
   Eigen::MatrixXd X(data(Is, idX1));
   return (X.transpose()*X).colPivHouseholderQr().solve(X.transpose()*data(Is, Kx));
