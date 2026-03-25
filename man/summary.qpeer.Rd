@@ -17,6 +17,9 @@
   fullparameters = TRUE,
   diagnostic = FALSE,
   diagnostics = FALSE,
+  boot = NULL,
+  nthreads = 1L,
+  print = TRUE,
   ...
 )
 
@@ -29,6 +32,9 @@
   fullparameters = TRUE,
   diagnostic = FALSE,
   diagnostics = FALSE,
+  boot = NULL,
+  nthreads = 1L,
+  print = TRUE,
   ...
 )
 
@@ -41,6 +47,9 @@
   fullparameters = TRUE,
   diagnostic = FALSE,
   diagnostics = FALSE,
+  boot = NULL,
+  nthreads = 1L,
+  print = TRUE,
   ...
 )
 
@@ -56,6 +65,12 @@
 \item{diagnostics, diagnostic}{Logical. Should diagnostic tests for the instrumental-variable regression be performed?
 These include an F-test of the first-stage regression for weak instruments, a Wu-Hausman test for endogeneity,
 and a Hansen's J-test for overidentifying restrictions (only if there are more instruments than regressors).}
+
+\item{boot}{An integer indicating the number of bootstrap replications for the encompassing test.}
+
+\item{nthreads}{A strictly positive integer indicating the number of threads used to perform the bootstrap.}
+
+\item{print}{A logical indicating whether a progress bar should be displayed for bootstrap methods.}
 
 \item{...}{Further arguments passed to or from other methods.}
 

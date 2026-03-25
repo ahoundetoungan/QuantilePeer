@@ -153,14 +153,14 @@ fprintcoeft <- function(coef) {
 }
 
 #' @importFrom stats pf
-fdiagnostic  <- function(object, nendo) {
+fdiagnostic  <- function(object, nendo, seed, boot, nthreads, print) {
   FE       <- object$model.info$fixed.effects
   struc    <- object$model.info$structural
   M        <- object$model.info$ngroup
   nvec     <- object$model.info$nvec
   n        <- object$model.info$n
   HAC      <- object$model.info$HAC
-  HACnum   <- (0:2)[HAC == c("iid", "hetero", "cluster")]
+  HACnum   <- (0:3)[HAC == c("iid", "hetero", "cluster", "cluster-bootstrap")]
   ncs      <- c(0, cumsum(nvec))
   idX1     <- object$model.info$idXiso - 1
   idX2     <- object$model.info$idXniso - 1
@@ -172,14 +172,10 @@ fdiagnostic  <- function(object, nendo) {
   ins      <- object$data$instruments
   dg       <- object$data$degree
   index    <- which(!(colnames(ins) %in% colnames(X))) - 1
-  Is       <- object$data$isolated - 1
-  nIs      <- object$data$non.isolated - 1
-  lIs      <- lapply(1:M, function(m) {
-    Is[Is %in% ncs[m]:(ncs[m + 1] - 1)]
-  })
-  lnIs     <- lapply(1:M, function(m) {
-    nIs[nIs %in% ncs[m]:(ncs[m + 1] - 1)]
-  })
+  lIs      <- lapply(object$data$isolated, \(s) s - 1)
+  lnIs     <- lapply(object$data$non.isolated, \(s) s - 1)
+  Is       <- unlist(lIs)
+  nIs      <- unlist(lnIs)
   nvc      <- sapply(lnIs, length)
   theta    <- object$gmm$Estimate
   
@@ -201,9 +197,9 @@ fdiagnostic  <- function(object, nendo) {
   if (object$model.info$estimator %in% c("JIVE", "JIVE2")) {
     ## Weak instrument test
     tpF    <- fFstat(y = endo, X = ins, index = index, igroup = ncs, ngroup = M, HAC = HACnum)
-    tpKP   <- fKPstat(qy_ = endo, X = X, Z_ = ins, index = index, igroup = ncs, HAC = HACnum)
+    tpKP   <- fKPstat(qy = endo, Z = ins, index = index, igroup = ncs, HAC = HACnum)
     ## Endogeneity test
-    
+    # Not implemented
     
     out    <- cbind(df1        = c(rep(tpF$df1, ntau), tpKP$df, object$gmm$Jtest["df"]),
                     df2        = c(rep(tpF$df2, ntau), NA, NA),
@@ -217,10 +213,27 @@ fdiagnostic  <- function(object, nendo) {
     }
     rn            <- c(rn, "Kleibergen-Paap rk Wald", "Hansen's J-test")
     rownames(out) <- rn
+  } else if (HACnum == 3) {
+    ## Weak instrument test
+    tpKP   <- fKPstat_boot(qy = endo, Z = ins, index = index, LnIs = lnIs, 
+                           LIs = lIs, ngroup = M, boot = boot, nthreads = nthreads,
+                           seed = seed, print = print)
+    
+    ## Endogeneity test
+    # not implemented!
+    
+    out    <- cbind(df1        = c(tpKP$df, object$gmm$Jtest["df"]),
+                    df2        = c(NA, NA),
+                    statistic  = c(tpKP$stat, object$gmm$Jtest["statistic"]),
+                    "p-value"  = object$gmm$Jtest["p-value"])
+    out[1, 4]     <- pchisq(out[1, 3], out[1, 1], lower.tail = FALSE)
+    rn            <- c("Kleibergen-Paap rk Wald", "Hansen J")
+    rownames(out) <- rn
+    
   } else {
     ## Weak instrument test
     tpF    <- fFstat(y = endo, X = ins, index = index, igroup = ncs, ngroup = M, HAC = HACnum)
-    tpKP   <- fKPstat(qy_ = endo, X = X, Z_ = ins, index = index, igroup = ncs, HAC = HACnum)
+    tpKP   <- fKPstat(qy = endo, Z = ins, index = index, igroup = ncs, HAC = HACnum)
     
     ## Endogeneity test
     tpend  <- fFstat(y = y, X = cbind(tpF$ru, endo, X), index = (0:(ntau - 1)), igroup = ncs, ngroup = M, HAC = HACnum)

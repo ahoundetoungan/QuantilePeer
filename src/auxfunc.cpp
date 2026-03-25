@@ -86,7 +86,6 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
                            const std::string& FE) {
   if (struc) {
     arma::vec xb(X.cols(idX1)*theta.elem(idX1 + ntau + 1));
-    ins = arma::join_rows(ins, xb);
     X   = arma::join_rows(X.cols(idX2), xb);
   }
   

@@ -9,7 +9,9 @@ qpeer.test(
   model2 = NULL,
   which,
   full = FALSE,
-  boot = 10000,
+  boot = 500,
+  nthreads = 1L,
+  print = TRUE,
   maxit = 1e+06,
   eps_f = 1e-09,
   eps_g = 1e-09
@@ -24,7 +26,11 @@ The value must be one of \code{"uniform"}, \code{"increasing"}, \code{"decreasin
 \item{full}{A Boolean indicating whether the parameters associated with the exogenous variables should be compared. This is used
 for tests that compare two competing parameter sets.}
 
-\item{boot}{An integer indicating the number of bootstrap replications to use for computing \code{p-values} in the \code{"increasing"} and \code{"decreasing"} tests.}
+\item{boot}{An integer indicating the number of bootstrap replications to use for the encompassing test and for computing \code{p-values} in the \code{"increasing"} and \code{"decreasing"} tests.}
+
+\item{nthreads}{Number of CPU cores (threads) used to run parts of the estimation in parallel.}
+
+\item{print}{A Boolean indicating whether the progression bar should be printed for bootstrap methods.}
 
 \item{maxit, eps_f, eps_g}{Control parameters for the \code{optim_lbfgs} solver used to optimize the objective function in the \code{"increasing"} and \code{"decreasing"} tests (see Kodde and Palm, 1986).
 The \code{optim_lbfgs} function is provided by the \pkg{RcppNumerical} package and is based on the \code{L-BFGS} method.}

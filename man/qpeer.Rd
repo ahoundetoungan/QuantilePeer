@@ -19,7 +19,10 @@ genpeer(
   HAC = "iid",
   checkrank = FALSE,
   compute.cov = TRUE,
-  tol = 1e-10
+  boot = 500,
+  nthreads = 1,
+  tol = 1e-10,
+  print = TRUE
 )
 
 linpeer(
@@ -34,7 +37,10 @@ linpeer(
   HAC = "iid",
   checkrank = FALSE,
   compute.cov = TRUE,
-  tol = 1e-10
+  boot = 500,
+  nthreads = 1,
+  tol = 1e-10,
+  print = TRUE
 )
 
 qpeer(
@@ -51,8 +57,10 @@ qpeer(
   checkrank = FALSE,
   drop = NULL,
   compute.cov = TRUE,
+  boot = 500,
   nthreads = 1,
-  tol = 1e-10
+  tol = 1e-10,
+  print = TRUE
 )
 }
 \arguments{
@@ -87,19 +95,25 @@ These observations cannot be directly removed from the network by the user becau
 \code{"join"} or \code{TRUE} (indicating the same fixed effects for isolated and non-isolated nodes within each subnet), and \code{"separate"} (indicating different fixed effects for isolated and non-isolated nodes within each subnet). Note that \code{"join"} fixed effects are not applicable for structural models;
 \code{"join"} and \code{TRUE} are automatically converted to \code{"separate"}.}
 
-\item{HAC}{A character string specifying the correlation structure among the idiosyncratic error terms for covariance computation. Options are \code{"iid"} for independent errors, \code{"hetero"} for heteroskedastic non-autocorrelated errors, and \code{"cluster"} for heteroskedastic errors with potential within-subnet correlation.}
+\item{HAC}{A character string specifying the correlation structure of the idiosyncratic error terms used for covariance computation.
+Options are \code{"iid"} for independent errors, \code{"hetero"} for heteroskedastic but non-autocorrelated errors, \code{"cluster"} for clustered errors at the subnet level, and
+\code{"cluster-bootstrap"} for clustered errors at the subnet level with bootstrap-based standard error estimation.}
 
 \item{checkrank}{A logical value indicating whether the instrument matrix should be checked for full rank. If the matrix is not of full rank, unimportant columns will be removed to obtain a full-rank matrix.}
 
 \item{compute.cov}{A logical value indicating whether the covariance matrix of the estimator should be computed.}
 
+\item{boot}{An integer indicating the number of bootstrap replications.}
+
+\item{nthreads}{A strictly positive integer indicating the number of threads to use when computing quantiles of peer variables or when performing the bootstrap.}
+
 \item{tol}{A tolerance value used in the QR factorization to identify columns of explanatory variable and instrument matrices that ensure a full-rank matrix (see the \link[base]{qr} function).}
+
+\item{print}{A Boolean indicating whether the progression bar should be printed for bootstrap methods.}
 
 \item{tau}{A numeric vector specifying the quantile levels.}
 
 \item{type}{An integer between 1 and 9 selecting one of the nine quantile algorithms used to compute peer quantiles (see the \link[stats]{quantile} function).}
-
-\item{nthreads}{A strictly positive integer indicating the number of threads to use when computing the quantiles of peer variables.}
 }
 \value{
 A list containing:

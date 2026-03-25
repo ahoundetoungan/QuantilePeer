@@ -147,3 +147,166 @@ qpeer.insts <- function(formula, Glist, tau, type = 7, data, max.distance = 1,
                     nthreads, tol)
 }
 
+
+#' @title Simulating Optimal (or "Good") Instruments for Quantile Peer Effect Models
+#'
+#' @description
+#' `qpeer.optimal.inst` computes optimal (or "good") instruments for quantile peer effect models using a bootstrap approach.
+#'
+#' @param boot A strictly positive integer indicating the number of bootstrap replications.
+#' @param seed The random number generator (RNG) state used for random number generation. 
+#' This can also be set using the \code{\link{set.seed}} function.
+#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), 
+#' `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, 
+#' where \eqn{n_m} is the number of nodes in the `m`-th subnet.
+#' @param maxit The maximum number of iterations for the fixed-point iteration method.
+#' @param tol The tolerance value used in the fixed-point iteration method to compute the outcome `y`. 
+#' The process stops if the \eqn{\ell_1}-distance between two consecutive values of `y` is less than `tol`.
+#' @param tau A numeric vector specifying the quantile levels for the instrument matrix. 
+#' The default value is the vector of quantile levels used to estimate the model.
+#' @param model An object of class \code{\link{qpeer}} that contains an initial estimation of the model 
+#' for which the "optimal" instruments will be computed.
+#' @param nthreads A strictly positive integer indicating the number of threads to use when bootstrapping.
+#'
+#' @return A matrix of instruments, where the k-th column corresponds to the instrument for the k-th endogenous variable.
+#' @examples
+#' \donttest{
+#' set.seed(123)
+#' ngr  <- 30  # Number of subnets
+#' nvec <- rep(30, ngr)  # Size of subnets
+#' n    <- sum(nvec)
+#' 
+#' ### Simulating Data
+#' ## Network matrix
+#' G <- lapply(1:ngr, function(z) {
+#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
+#'   diag(Gz) <- 0
+#'   # Adding isolated nodes (important for the structural model)
+#'   niso <- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1))
+#'   if (niso > 0) {
+#'     Gz[sample(1:nvec[z], niso), ] <- 0
+#'   }
+#'   Gz
+#' })
+#' 
+#' tau <- seq(0, 1, 1/3)
+#' X   <- cbind(rnorm(n), rpois(n, 2))
+#' l   <- c(0.2, 0.15, 0.1, 0.2)
+#' b   <- c(2, -0.5, 1)
+#' eps <- rnorm(n, 0, 0.4)
+#' 
+#' ## Generating `y`
+#' y <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l,
+#'                beta = b, epsilon = eps)$y
+#' 
+#' ### Estimation
+#' ## Computing instruments
+#' Z <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1),
+#'                 max.distance = 2, checkrank = TRUE)
+#' Z <- Z$instruments
+#' 
+#' ## Reduced-form model
+#' rest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau)
+#' summary(rest, diagnostic = TRUE)  
+#' 
+#' # Estimation using the optimal instrument
+#' Ired <- qpeer.optimal.insts(rest, Glist = G, boot = 100, nthreads = 2)
+#' summary(qpeer(formula = y ~ X, excluded.instruments = ~ Ired, Glist = G, tau = tau), 
+#'         diagnostic = TRUE)  
+#' 
+#' ## Structural model
+#' sest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau,
+#'               structural = TRUE)
+#' summary(sest, diagnostic = TRUE)
+#' 
+#' # Estimation using the optimal instrument
+#' Istr <- qpeer.optimal.insts(sest, Glist = G, boot = 100, nthreads = 2)
+#' summary(qpeer(formula = y ~ X, excluded.instruments = ~ Istr, Glist = G, tau = tau), 
+#'         diagnostic = TRUE)
+#' }
+#' @importFrom stats runif
+#' @export
+qpeer.optimal.instruments <- function(model, 
+                                      Glist,
+                                      tau,
+                                      boot     = 100L, 
+                                      nthreads = 1L, 
+                                      seed, 
+                                      tol      = 1e-10,
+                                      maxit    = 500) {
+  stopifnot(class(model) == "qpeer")
+  nthreads <- fnthreads(nthreads = nthreads)
+  if (missing(tau)) {
+    tau    <- model$model.info$tau
+  }
+  stopifnot(all((tau >= 0) & (tau <= 1)))
+  if (missing(seed)) {
+    seed   <- runif(1, 0, 1e6)
+  }
+  FE       <- ifelse(model$model.info$fixed.effects == "no", 0, 1)
+  if (!is.list(Glist)) {
+    Glist  <- list(Glist)
+  }
+  dg       <- unlist(lapply(Glist, rowSums))
+  if (length(dg) != model$model.info$n) {
+    stop("`Glist` seems to be different from the one used for the estimation.")
+  }
+  nvec     <- model$model.info$nvec
+  ngroup   <- model$model.info$ngroup
+  igroup   <- c(0, cumsum(nvec))
+  group    <- rep(0:(ngroup - 1), nvec)
+  groupidx <- unlist(lapply(1:ngroup, \(m) 0:(nvec[m] - 1)))
+  lIs      <- lapply(model$data$isolated, \(s) s - 1)
+  lnIs     <- lapply(model$data$non.isolated, \(s) s - 1)
+  Is       <- unlist(lIs)
+  nIs      <- unlist(lnIs)
+  
+  out      <- simInstrqpeer(y = model$data$y, qy = as.matrix(model$data$qy), X = model$data$X, G = Glist, 
+                            d = dg, igroup = igroup, group = group, groupidx = groupidx, estimate = model$gmm$Estimate, 
+                            nIs = nIs, nvec = nvec, stau = model$model.info$tau, stauInst = tau,
+                            boot = boot, fixedeffects = FE, structural =  model$model.info$structural, nthreads = nthreads, 
+                            seed = seed, type = model$model.info$type, tol = tol, maxit = maxit)
+  colnames(out) <- paste0("Instrument", 1:length(tau))
+  out
+}
+
+
+#' @rdname qpeer.optimal.instruments
+#' @export
+qpeer.optimal.instrument <- function(model, 
+                                     Glist,
+                                     tau,
+                                     boot     = 100L, 
+                                     nthreads = 1L, 
+                                     seed, 
+                                     tol      = 1e-10,
+                                     maxit    = 500) {
+  qpeer.optimal.instruments(model, Glist, tau, boot, nthreads, seed, tol, maxit)
+}
+
+#' @rdname qpeer.optimal.instruments
+#' @export
+qpeer.optimal.insts <- function(model, 
+                                Glist,
+                                tau, 
+                                boot     = 100L, 
+                                nthreads = 1L, 
+                                seed, 
+                                tol      = 1e-10,
+                                maxit    = 500) {
+  qpeer.optimal.instruments(model, Glist, tau, boot, nthreads, seed, tol, maxit)
+}
+
+#' @rdname qpeer.optimal.instruments
+#' @export
+qpeer.optimal.inst <- function(model, 
+                               Glist,
+                               tau, 
+                               boot     = 100L, 
+                               nthreads = 1L, 
+                               seed, 
+                               tol      = 1e-10,
+                               maxit    = 500) {
+  qpeer.optimal.instruments(model, Glist, tau, boot, nthreads, seed, tol, maxit)
+}
+

@@ -1,9 +1,18 @@
-// [[Rcpp::depends(RcppArmadillo, RcppNumerical, RcppEigen)]]
+// [[Rcpp::depends(RcppArmadillo, RcppProgress, RcppNumerical, RcppEigen)]]
+// [[Rcpp::plugins(openmp)]]
 #include <RcppArmadillo.h>
 //#define NDEBUG
+#include <random>
+#include <progress.hpp>
+#include <progress_bar.hpp>
 #include <RcppNumerical.h>
 #include <RcppEigen.h>
 #include <unsupported/Eigen/KroneckerProduct>
+
+#if defined(_OPENMP)
+#include <omp.h>
+// [[Rcpp::plugins(openmp)]]
+#endif
 
 using namespace Numer;
 using namespace Rcpp;
@@ -40,7 +49,6 @@ Eigen::MatrixXd matrixSqrt2(const Eigen::MatrixXd& A) {
   Eigen::VectorXd sqrt_evals = es.eigenvalues().array().sqrt();
   return es.eigenvectors() * sqrt_evals.asDiagonal() * es.eigenvectors().transpose();
 }
-
 
 // Covariance matrix of two theta using two different sets of instruments, reduced form
 //[[Rcpp::export]]
@@ -113,9 +121,16 @@ Rcpp::List Cov2ThetaRed(const Eigen::MatrixXd& Z1,
   // R matrix
   Eigen::ArrayXi itheta(df);
   itheta << Eigen::ArrayXi::LinSpaced(df, 1, df);
+  
+  // R for selected parameters
   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(df, 2*Kv));
   R(Eigen::all, Eigen::seqN(0, df))  = Eigen::MatrixXd::Identity(df, df);
   R(Eigen::all, Eigen::seqN(Kv, df)) = -Eigen::MatrixXd::Identity(df, df);
+  
+  // R for full 
+  Eigen::MatrixXd Rfull(Eigen::MatrixXd::Zero(Kv, 2*Kv));
+  Rfull(Eigen::all, Eigen::seqN(0, Kv))  = Eigen::MatrixXd::Identity(Kv, Kv);
+  Rfull(Eigen::all, Eigen::seqN(Kv, Kv)) = -Eigen::MatrixXd::Identity(Kv, Kv);
   
   // test statistic
   Eigen::VectorXd Rtheta(R*theta);
@@ -123,10 +138,14 @@ Rcpp::List Cov2ThetaRed(const Eigen::MatrixXd& Z1,
   Eigen::MatrixXd VarRtheta(RiHdF * HVFH * RiHdF.transpose());
   Eigen::VectorXd stat(Rtheta.transpose() * ginv(VarRtheta) * Rtheta);
   
+  Eigen::VectorXd Rfulltheta(Rfull*theta);
+  Eigen::MatrixXd RfulliHdF(Rfull*iHdF);
+  Eigen::MatrixXd VarRfulltheta(RfulliHdF * HVFH * RfulliHdF.transpose());
+  
   return Rcpp::List::create(_["stat"]    = stat, 
                             _["df"]      = df, 
-                            _["dtheta"]  = Rtheta,
-                            _["Vdtheta"] = VarRtheta,
+                            _["dtheta"]  = Rfulltheta,
+                            _["Vdtheta"] = VarRfulltheta,
                             _["itheta"]  = itheta);
 }
 
@@ -163,14 +182,11 @@ Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& Z1,
   Eigen::VectorXd b(theta1(1 + ntau + idX1));// b2(theta2(1 + ntau + idX1));
   
   // Second stage
-  Eigen::VectorXd Xb(X(Eigen::all, idX1)*b), Xb1(Xb(Is)), Xb2(Xb(nIs));
   Eigen::MatrixXd X21(X(nIs, idX1)), X22(X(nIs, idX2)), V2(n_niso, 1 + ntau + K2);
-  V2 << Xb2, qy(nIs, Eigen::all), X22;
+  V2 << X(nIs, idX1)*b, qy(nIs, Eigen::all), X22;
   
-  Eigen::MatrixXd Z21(n_niso, 1 + Kins1);
-  Z21 << Xb2, Z1(nIs, Eigen::all);
-  Eigen::MatrixXd Z22(n_niso, 1 + Kins2);
-  Z22 << Xb2, Z2(nIs, Eigen::all);
+  Eigen::MatrixXd Z21(Z1(nIs, Eigen::all));
+  Eigen::MatrixXd Z22(Z2(nIs, Eigen::all));
   
   Eigen::MatrixXd ZV21(Z21.transpose()*V2), ZZ21(Z21.transpose()*Z21);
   Eigen::MatrixXd ZV22(Z22.transpose()*V2), ZZ22(Z22.transpose()*Z22);
@@ -180,52 +196,51 @@ Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& Z1,
   
   Eigen::ArrayXd eiso(e1(Is)), e21(e1(nIs)*(1 - theta1(0))), e22(e2(nIs)*(1 - theta2(0)));
   
-  Eigen::MatrixXd H(Eigen::MatrixXd::Zero(K + K2 + 2*ntau + 2, K1 + Kins + 2));
+  Eigen::MatrixXd H(Eigen::MatrixXd::Zero(K + K2 + 2*ntau + 2, K1 + Kins));
   H.block(0, 0, K1, K1)  = XXW1;
-  H.block(K1, K1, K2 + ntau + 1, Kins1 + 1) = VZW21;
-  // cout<<H<<endl;
-  H.block(K + ntau + 1, K1 + Kins1 + 1, K2 + ntau + 1, Kins2 + 1) = VZW22;
+  H.block(K1, K1, K2 + ntau + 1, Kins1) = VZW21;
+  H.block(K + ntau + 1, K1 + Kins1, K2 + ntau + 1, Kins2) = VZW22;
   
   
-  Eigen::MatrixXd dF(Eigen::MatrixXd::Zero(K1 + Kins + 2, K + K2 + 2*ntau + 2));
+  Eigen::MatrixXd dF(Eigen::MatrixXd::Zero(K1 + Kins, K + K2 + 2*ntau + 2));
   dF.block(0, 0, K1, K1) = XX1;
-  dF.block(K1, 0, Kins1 + 1, K + ntau + 1) << Z21.transpose()*X21*(1 - theta1(0)), ZV21;
-  dF.block(K1 + Kins1 + 1, 0, Kins2 + 1, K1) << (Z22.transpose()*X21*(1 - theta2(0)));
-  dF.block(K1 + Kins1 + 1, K + ntau + 1, Kins2 + 1, K2 + ntau + 1) << ZV22;
+  dF.block(K1, 0, Kins1, K + ntau + 1) << Z21.transpose()*X21*(1 - theta1(0)), ZV21;
+  dF.block(K1 + Kins1, 0, Kins2, K1) << (Z22.transpose()*X21*(1 - theta2(0)));
+  dF.block(K1 + Kins1, K + ntau + 1, Kins2, K2 + ntau + 1) << ZV22;
   
-  Eigen::MatrixXd VF(Eigen::MatrixXd::Zero(K1 + Kins + 2, K1 + Kins + 2));
+  Eigen::MatrixXd VF(Eigen::MatrixXd::Zero(K1 + Kins, K1 + Kins));
   if (HAC == 0) {
     double s21(eiso.square().sum()/(n_iso - Kest1));
     double s22((e21.square().sum() + e22.square().sum())/(2*n_niso - 2*Kest2));
     Eigen::MatrixXd Z21Z22(Z21.transpose()*Z22);
     VF.block(0, 0, K1, K1) = s21*XX1;
-    VF.block(K1, K1, Kins1 + 1, Kins1 + 1) = s22*ZZ21;
-    VF.block(K1, K1 + Kins1 + 1, Kins1 + 1, Kins2 + 1) = s22*Z21Z22;
-    VF.block(K1 + Kins1 + 1, K1, Kins2 + 1, Kins1 + 1) = s22*Z21Z22.transpose();
-    VF.block(K1 + Kins1 + 1, K1 + Kins1 + 1, Kins2 + 1, Kins2 + 1) = s22*ZZ22;
+    VF.block(K1, K1, Kins1, Kins1) = s22*ZZ21;
+    VF.block(K1, K1 + Kins1, Kins1, Kins2) = s22*Z21Z22;
+    VF.block(K1 + Kins1, K1, Kins2, Kins1) = s22*Z21Z22.transpose();
+    VF.block(K1 + Kins1, K1 + Kins1, Kins2, Kins2) = s22*ZZ22;
   }
   if (HAC == 1) {
     Eigen::MatrixXd Xe1(X1.array().colwise()*eiso), Ze21(Z21.array().colwise()*e21);
     Eigen::MatrixXd Ze22(Z22.array().colwise()*e22), Ze21Ze22(Ze21.transpose()*Ze22);
     VF.block(0, 0, K1, K1) = Xe1.transpose()*Xe1;
-    VF.block(K1, K1, Kins1 + 1, Kins1 + 1) = Ze21.transpose()*Ze21;
-    VF.block(K1, K1 + Kins1 + 1, Kins1 + 1, Kins2 + 1) = Ze21Ze22;
-    VF.block(K1 + Kins1 + 1, K1, Kins2 + 1, Kins1 + 1) = Ze21Ze22.transpose();
-    VF.block(K1 + Kins1 + 1, K1 + Kins1 + 1, Kins2 + 1, Kins2 + 1) = Ze22.transpose()*Ze22;
+    VF.block(K1, K1, Kins1, Kins1) = Ze21.transpose()*Ze21;
+    VF.block(K1, K1 + Kins1, Kins1, Kins2) = Ze21Ze22;
+    VF.block(K1 + Kins1, K1, Kins2, Kins1) = Ze21Ze22.transpose();
+    VF.block(K1 + Kins1, K1 + Kins1, Kins2, Kins2) = Ze22.transpose()*Ze22;
   }
   if (HAC == 2) {
     X1   = Eigen::MatrixXd::Zero(n, K1);
     X1(Is, Eigen::all) = X(Is, idX1);
-    Z21   = Eigen::MatrixXd::Zero(n, 1 + Kins1);
-    Z21(nIs, Eigen::all) << Xb2, Z1(nIs, Eigen::all);
-    Z22   = Eigen::MatrixXd::Zero(n, 1 + Kins2);
-    Z22(nIs, Eigen::all) << Xb2, Z2(nIs, Eigen::all);
+    Z21   = Eigen::MatrixXd::Zero(n, Kins1);
+    Z21(nIs, Eigen::all) = Z1(nIs, Eigen::all);
+    Z22   = Eigen::MatrixXd::Zero(n, Kins2);
+    Z22(nIs, Eigen::all) = Z2(nIs, Eigen::all);
     Eigen::VectorXd eps1(Eigen::VectorXd::Zero(n)), eps2(Eigen::VectorXd::Zero(n));
     eps1(Is)  = eiso; eps1(nIs) = e21;
     eps2(Is)  = eiso; eps2(nIs) = e22;
     for (int r(0); r < ngroup; ++ r) {
       int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
-      Eigen::VectorXd tp(K1 + Kins + 2);
+      Eigen::VectorXd tp(K1 + Kins);
       tp << X1(Eigen::seq(n1, n2), Eigen::all).transpose() * eps1.segment(n1, n2), 
             Z21(Eigen::seq(n1, n2), Eigen::all).transpose() * eps1.segment(n1, n2),
             Z22(Eigen::seq(n1, n2), Eigen::all).transpose() * eps2.segment(n1, n2);
@@ -253,12 +268,11 @@ Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& Z1,
   
   Eigen::ArrayXi seltp(1 + ntau + K2);
   seltp << Eigen::ArrayXi::LinSpaced(1 + ntau, 0, ntau), 1 + ntau + idX2;
+  
   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(2 + 2*ntau + 2*K2, 2 + 2*ntau + K + K2));
   R.block(0, 0, 1 + ntau + K2, 1 + ntau + K) = R1(seltp, Eigen::all);
   R.block(1 + ntau + K2, 1 + ntau + K, 1 + ntau + K2, 1 + ntau + K2) = 
     R2(seltp, Eigen::seqN(K1, 1 + ntau + K2));
-  // cout<<(R * Vpa * R.transpose()).diagonal().array().sqrt()<<endl;
-  // cout<<Vpa<<endl;
   
   // theta 
   Eigen::VectorXd theta(2*K2 + 2*ntau + 2);
@@ -283,16 +297,26 @@ Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& Z1,
     itheta << Eigen::ArrayXi::LinSpaced(ntau, 2, 1 + ntau);
   }
   
+  // R for full 
+  Eigen::MatrixXd Rfull(Eigen::MatrixXd::Zero(1 + ntau + K2, 2 + 2*ntau + 2*K2));
+  Rfull <<  Eigen::MatrixXd::Identity(1 + ntau + K2, 1 + ntau + K2), 
+            -Eigen::MatrixXd::Identity(1 + ntau + K2, 1 + ntau + K2);
+  
   // test statistic
   Eigen::VectorXd Rtheta(Rt * theta);
   Eigen::MatrixXd RtR(Rt * R);
   Eigen::MatrixXd VarRtheta(RtR * Vpa * RtR.transpose());
   Eigen::VectorXd stat(Rtheta.transpose() * ginv(VarRtheta) * Rtheta);
   
+  
+  Eigen::VectorXd Rfulltheta(Rfull * theta);
+  Eigen::MatrixXd RfullR(Rfull * R);
+  Eigen::MatrixXd VarRfulltheta(RfullR * Vpa * RfullR.transpose());
+  
   return Rcpp::List::create(_["stat"]    = stat, 
                             _["df"]      = df, 
-                            _["dtheta"]  = Rtheta,
-                            _["Vdtheta"] = VarRtheta,
+                            _["dtheta"]  = Rfulltheta,
+                            _["Vdtheta"] = VarRfulltheta,
                             _["itheta"]  = itheta);
 }
 
@@ -311,7 +335,7 @@ Rcpp::List validZ2SarganRed(const Eigen::MatrixXd& Z1,
                             const int& Kest, //common to both models
                             const int& ngroup, //common to both models
                             const Eigen::ArrayXi& cumsn, //common to both models
-                            const int& HAC = 0, //common to both models
+                            const int& HAC = 0,
                             const bool& full = false) {
   int ntau(qy.cols()), Kins2(Z2.cols()), n(X.rows());
   Eigen::MatrixXd H(Z2 - Z1*(Z1.transpose() * Z1).colPivHouseholderQr().solve(Z1.transpose() * Z2));
@@ -368,26 +392,23 @@ Rcpp::List validZ2SarganStruc(const Eigen::MatrixXd& Z1,
                               const Eigen::ArrayXi& Is, //common to both models
                               const int& ngroup, //common to both models
                               const Eigen::ArrayXi& cumsn, //common to both models
-                              const int& HAC = 0, //common to both models
+                              const int& HAC = 0,
                               const bool& full = false) {
-  int Kins1(Z1.cols()), Kins2(Z2.cols()), n(X.rows()), ntau(qy.cols()), n_iso(Is.size()), n_niso(n - n_iso);
+  int Kins2(Z2.cols()), n(X.rows()), ntau(qy.cols()), n_iso(Is.size()), n_niso(n - n_iso);
   
   // First stage
   Eigen::VectorXd b(theta1(1 + ntau + idX1));
   
   // Instruments
-  Eigen::VectorXd Xb(X(Eigen::all, idX1)*b), Xb2(Xb(nIs));
-  Eigen::MatrixXd Z21(n_niso, 1 + Kins1);
-  Z21 << Xb2, Z1(nIs, Eigen::all);
-  Eigen::MatrixXd Z22(n_niso, 1 + Kins2);
-  Z22 << Xb2, Z2(nIs, Eigen::all);
+  Eigen::MatrixXd Z21(Z1(nIs, Eigen::all));
+  Eigen::MatrixXd Z22(Z2(nIs, Eigen::all));
   
   Eigen::MatrixXd H(Z22 - Z21*(Z21.transpose() * Z21).colPivHouseholderQr().solve(Z21.transpose() * Z22));
   Eigen::FullPivLU<Eigen::MatrixXd> lu(H);
   int df(lu.rank());
   
   // variance of He
-  Eigen::MatrixXd VHe(Eigen::MatrixXd::Zero(Kins2 + 1, Kins2 + 1));
+  Eigen::MatrixXd VHe(Eigen::MatrixXd::Zero(Kins2, Kins2));
   if (HAC == 0) {
     double s2(e1(nIs).square().sum()/(n_niso - Kest2));
     VHe = s2 * (H.transpose() * H);
@@ -397,7 +418,7 @@ Rcpp::List validZ2SarganStruc(const Eigen::MatrixXd& Z1,
     VHe    = He.transpose()*He;
   }
   if (HAC == 2) {
-    Eigen::ArrayXXd He(Eigen::MatrixXd::Zero(n, Kins2 + 1));
+    Eigen::ArrayXXd He(Eigen::MatrixXd::Zero(n, Kins2));
     He(nIs, Eigen::all) << H.array().colwise() * e1(nIs);
     for (int r(0); r < ngroup; ++ r) {
       int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
@@ -474,10 +495,10 @@ Rcpp::List fTestMonotone(const Eigen::VectorXd& thetahat,
                          const Eigen::MatrixXd& Sigma,
                          const Eigen::VectorXd& a,
                          const Eigen::MatrixXd& thetasimu,
-                         const int& Boot = 1e4,
-                         const int& maxit = 1e6,
-                         const double& eps_f = 1e-9,
-                         const double& eps_g = 1e-9){
+                         const int& Boot,
+                         const int& maxit,
+                         const double& eps_f,
+                         const double& eps_g){
   int K(thetahat.size());
   Rcpp::List tpopt = fOptimTest(thetahat, Sigma, a, K, maxit, eps_f, eps_g);
   
@@ -494,9 +515,6 @@ Rcpp::List fTestMonotone(const Eigen::VectorXd& thetahat,
     Eigen::ArrayXd thetab = tp["lambda"];
     Eigen::ArrayXi tp1((((thetab.segment(1, K - 1) - thetab.segment(0, K - 1)) * a.array())
                           > (1e5 * (eps_f + eps_g))).cast<int>());
-    // cout<<thetab.transpose()<<endl;
-    // cout<<tp1.transpose()<<endl;
-    // cout<<tp1.sum()<<endl;
     countPos(b) = tp1.sum();
   }
   return Rcpp::List::create(_["optim"] = tpopt, _["count"] = countPos);
@@ -504,411 +522,227 @@ Rcpp::List fTestMonotone(const Eigen::VectorXd& thetahat,
 
 
 // Encompassing test
-// Estimating delta and its variance
-Rcpp::List fEncompassingStrucDelta(const Eigen::MatrixXd& qy1,
-                                   const Eigen::MatrixXd& Z1,
-                                   const Eigen::MatrixXd& W21,
-                                   const Eigen::VectorXd& e1,
-                                   const Eigen::VectorXd& theta1,
-                                   const int& Kest21,
-                                   const Eigen::MatrixXd& qy2,
-                                   const Eigen::MatrixXd& Z2,
-                                   const Eigen::MatrixXd& W22,
-                                   const Eigen::VectorXd& e2,
-                                   const Eigen::VectorXd theta2,
-                                   const int& Kest22,
-                                   const Eigen::MatrixXd& X, //common to both models
-                                   const Eigen::MatrixXd& W1, //common to both models
-                                   const Eigen::ArrayXi& idX1, //common to both models
-                                   const Eigen::ArrayXi& idX2, //common to both models
-                                   const int& Kest1, //common to both models
-                                   const Eigen::ArrayXi& nIs, //common to both models
-                                   const Eigen::ArrayXi& Is, //common to both models
-                                   const int& ngroup, //common to both models
-                                   const Eigen::ArrayXi& cumsn, //common to both models
-                                   const int& HAC = 0) { //common to both models
-  int n(X.rows()), n_iso(Is.size()), n_niso(n - n_iso), 
-  ntau1(qy1.cols()), ntau2(qy2.cols()),
-  K1(idX1.size()), K2(idX2.size()), 
-  Kins1(Z1.cols()), Kins2(Z2.cols()), Kins(Kins1 + Kins2),
-  Kv1(1 + ntau1 + K2), Kv2(1 + ntau2 + K2), Kv(Kv1 + Kv2);
+// Estimation one delta given selected groups
+Eigen::VectorXd fEncompassingStrucDeltaCoef(const Eigen::VectorXd& y,
+                                            const Eigen::MatrixXd& qy1,
+                                            const Eigen::MatrixXd& Z1,
+                                            const Eigen::MatrixXd& qy2,
+                                            const Eigen::MatrixXd& Z2,
+                                            const Eigen::MatrixXd& X, //common to both models
+                                            const Eigen::ArrayXi& idX1, //common to both models
+                                            const Eigen::ArrayXi& idX2, //common to both models
+                                            const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
+                                            const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
+                                            const int& ngroup,
+                                            const int& ntau1,
+                                            const int& ntau2,
+                                            const int& K2,
+                                            const int& Kins1,
+                                            const int& Kins2,
+                                            const int& Kv1,
+                                            const int& Kv2,
+                                            const bool& iv1,
+                                            const bool& iv2){
+  // Find iso and nisolated
+  int n_iso(0), n_niso(0);
+  for (int s = 0; s < ngroup; ++s) {
+    n_iso  += LIs[s].size();
+    n_niso += LnIs[s].size();
+  }
+  
+  Eigen::ArrayXi Is(n_iso), nIs(n_niso);
+  int pos_iso(0), pos_niso(0);
+  for (int s = 0; s < ngroup; ++s) {
+    int n1(LIs[s].size());
+    if (n1 > 0) {
+      Is.segment(pos_iso, n1) = LIs[s];
+      pos_iso += n1;
+    }
+    
+    int n2(LnIs[s].size());
+    if (n2 > 0) {
+      nIs.segment(pos_niso, n2) = LnIs[s];
+      pos_niso += n2;
+    }
+  }
   
   // First stage
-  Eigen::MatrixXd X1(X(Is, idX1)), XX1(X1.transpose()*X1), XXW1(XX1*W1), XXWXX1(XXW1*XX1);
-  Eigen::VectorXd b(theta1(1 + ntau1 + idX1));// b2(theta2(1 + ntau + idX1));
+  Eigen::VectorXd b(X(Is, idX1).colPivHouseholderQr().solve(y(Is)));
   
   // Variables and Instruments
-  Eigen::VectorXd Xb(X(Eigen::all, idX1)*b), Xb1(Xb(Is)), Xb2(Xb(nIs));
+  Eigen::VectorXd Xb2(X(nIs, idX1) * b);
+  Eigen::MatrixXd V21(n_niso, Kv1), V22(n_niso, Kv2);
+  V21 << Xb2, qy1(nIs, Eigen::all), X(nIs, idX2);
+  V22 << Xb2, qy2(nIs, Eigen::all), X(nIs, idX2);
   
-  Eigen::MatrixXd X21(X(nIs, idX1)), X22(X(nIs, idX2)), V21(n_niso, Kv1), V22(n_niso, Kv2);
-  V21 << Xb2, qy1(nIs, Eigen::all), X22;
-  V22 << Xb2, qy2(nIs, Eigen::all), X22;
-  
-  Eigen::MatrixXd Z21(n_niso, 1 + Kins1);
-  Z21 << Xb2, Z1(nIs, Eigen::all);
-  Eigen::MatrixXd Z22(n_niso, 1 + Kins2);
-  Z22 << Xb2, Z2(nIs, Eigen::all);
+  Eigen::MatrixXd Z21(Z1(nIs, Eigen::all));
+  Eigen::MatrixXd Z22(Z2(nIs, Eigen::all));
   
   Eigen::MatrixXd ZV21(Z21.transpose()*V21);
   Eigen::MatrixXd ZV22(Z22.transpose()*V22);
   
+  // Weights
+  Eigen::MatrixXd W21 = Eigen::MatrixXd::Identity(Kins1, Kins1);
+  Eigen::MatrixXd W22 = Eigen::MatrixXd::Identity(Kins2, Kins2);
+  if (iv1) {
+    W21 = (Z21.transpose()*Z21).inverse();
+  }
+  if (iv2) {
+    W22 = (Z22.transpose()*Z22).inverse();
+  }
+  
+  Eigen::VectorXd y2(y(nIs));
   Eigen::MatrixXd VZW21(ZV21.transpose()*W21), VZWZV21(VZW21*ZV21);
   Eigen::MatrixXd VZW22(ZV22.transpose()*W22), VZWZV22(VZW22*ZV22);
+  Eigen::VectorXd lambda1(VZWZV21.colPivHouseholderQr().solve(VZW21 * Z21.transpose() * y2));
+  Eigen::ArrayXd e21(y2 - V21 * lambda1);
   
-  Eigen::ArrayXd eiso(e1(Is)), e21(e1(nIs)*(1 - theta1(0))), e22(e2(nIs)*(1 - theta2(0)));
-  Eigen::VectorXd delta((VZWZV22).colPivHouseholderQr().solve(VZW22 * Z22.transpose() * e21.matrix()));
-  
-  Eigen::MatrixXd H(Eigen::MatrixXd::Zero(K1 + Kv, K1 + Kins + 2));
-  H.block(0, 0, K1, K1)  = XXW1;
-  H.block(K1, K1, Kv1, Kins1 + 1) = VZW21;
-  H.block(K1 + Kv1, K1 + Kins1 + 1, Kv2, Kins2 + 1) = VZW22;
-  
-  Eigen::MatrixXd dF(Eigen::MatrixXd::Zero(K1 + Kins + 2, K1 + Kv));
-  dF.block(0, 0, K1, K1) = XX1;
-  dF.block(K1, 0, Kins1 + 1, K1 + Kv1) << (Z21.transpose()*X21*(1 - theta1(0))), ZV21;
-  dF(Eigen::seqN(K1 + Kins1 + 1, Kins2 + 1), Eigen::all) << Z22.transpose()*X21*(1 - theta1(0) + delta(0)),
-                                                            Z22.transpose()*V21, ZV22;
-  
-  Eigen::MatrixXd VF(Eigen::MatrixXd::Zero(K1 + Kins + 2, K1 + Kins + 2));
-  if (HAC <= 1) {
-    Eigen::MatrixXd Xe1(X1.array().colwise()*eiso), Ze21(Z21.array().colwise()*e21);
-    Eigen::MatrixXd Z22edelta(Z22.array().colwise()*(e21 - (V22 * delta).array()));
-    Eigen::MatrixXd Ze21Z22delta(Ze21.transpose()*Z22edelta);
-    VF.block(0, 0, K1, K1) = Xe1.transpose()*Xe1;
-    VF.block(K1, K1, Kins1 + 1, Kins1 + 1) = Ze21.transpose()*Ze21;
-    VF.block(K1, K1 + Kins1 + 1, Kins1 + 1, Kins2 + 1) = Ze21Z22delta;
-    VF.block(K1 + Kins1 + 1, K1, Kins2 + 1, Kins1 + 1) = Ze21Z22delta.transpose();
-    VF.block(K1 + Kins1 + 1, K1 + Kins1 + 1, Kins2 + 1, Kins2 + 1) = Z22edelta.transpose()*Z22edelta;
-  }
-  if (HAC == 2) {
-    X1    = Eigen::MatrixXd::Zero(n, K1);
-    X1(Is, Eigen::all) = X(Is, idX1);
-    Z21   = Eigen::MatrixXd::Zero(n, 1 + Kins1);
-    Z21(nIs, Eigen::all) << Xb2, Z1(nIs, Eigen::all);
-    Z22   = Eigen::MatrixXd::Zero(n, 1 + Kins2);
-    Z22(nIs, Eigen::all) << Xb2, Z2(nIs, Eigen::all);
-    Eigen::VectorXd eps1(Eigen::VectorXd::Zero(n)), eps2(Eigen::VectorXd::Zero(n));
-    eps1(Is)  = eiso; eps1(nIs) = e21;
-    eps2(Is)  = eiso; eps2(nIs) = e21.matrix() - V22 * delta;
-    for (int r(0); r < ngroup; ++ r) {
-      int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
-      Eigen::VectorXd tp(K1 + Kins + 2);
-      tp << X1(Eigen::seq(n1, n2), Eigen::all).transpose() * eps1.segment(n1, n2), 
-            Z21(Eigen::seq(n1, n2), Eigen::all).transpose() * eps1.segment(n1, n2),
-            Z22(Eigen::seq(n1, n2), Eigen::all).transpose() * eps2.segment(n1, n2);
-      VF += tp*tp.transpose();
-    }
-  }
-  
-  Eigen::MatrixXd iHdF((H*dF).inverse()); 
-  Eigen::MatrixXd HVFH(H*VF*H.transpose());
-  Eigen::MatrixXd Vdelta(iHdF * HVFH * iHdF.transpose());
-  // cout<<Vdelta<<endl;
-  
-  return Rcpp::List::create(_["delta"]  = delta, 
-                            _["Vdelta"] = Vdelta(Eigen::seqN(K1 + Kv1, Kv2), Eigen::seqN(K1 + Kv1, Kv2)));
+  return (VZWZV22).colPivHouseholderQr().solve(VZW22 * Z22.transpose() * e21.matrix());
 }
 
-Rcpp::List fEncompassingRedDelta(const Eigen::MatrixXd& qy1,
-                                 const Eigen::MatrixXd& Z1,
-                                 const Eigen::MatrixXd& W1,
-                                 const Eigen::VectorXd& e1,
-                                 const Eigen::VectorXd& theta1,
-                                 const int& Kest1,
-                                 const Eigen::MatrixXd& qy2,
-                                 const Eigen::MatrixXd& Z2,
-                                 const Eigen::MatrixXd& W2,
-                                 const Eigen::VectorXd& e2,
-                                 const Eigen::VectorXd& theta2,
-                                 const int& Kest2,
-                                 const Eigen::MatrixXd& X, //common to both models
-                                 const int& ngroup, //common to both models
-                                 const Eigen::ArrayXi& cumsn, //common to both models
-                                 const int& HAC = 0) { //common to both models
-  int n(X.rows()), ntau1(qy1.cols()), ntau2(qy2.cols()), K(X.cols()),  
-  Kins1(Z1.cols()), Kins2(Z2.cols()), Kins(Kins1 + Kins2),
-  Kv1(K + ntau1), Kv2(K + ntau2), Kv(Kv1 + Kv2);
+
+// Estimating delta and its variance using bootstreap
+Rcpp::List fEncompassingStrucDelta(const Eigen::VectorXd& y,
+                                   const Eigen::MatrixXd& qy1,
+                                   const Eigen::MatrixXd& Z1,
+                                   const Eigen::MatrixXd& qy2,
+                                   const Eigen::MatrixXd& Z2,
+                                   const Eigen::MatrixXd& X, //common to both models
+                                   const Eigen::ArrayXi& idX1, //common to both models
+                                   const Eigen::ArrayXi& idX2, //common to both models
+                                   const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
+                                   const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
+                                   const int& ngroup,
+                                   const bool& iv1,
+                                   const bool& iv2, //common to both models
+                                   const int& boot,
+                                   const int& nthreads,
+                                   const unsigned long long seed,
+                                   const bool& print) { 
+  // Fixed variables
+  int ntau1(qy1.cols()), ntau2(qy2.cols()), K2(idX2.size()), 
+  Kins1(Z1.cols()), Kins2(Z2.cols()),
+  Kv1(1 + ntau1 + K2), Kv2(1 + ntau2 + K2);
   
-  // Variables and Instruments
-  Eigen::MatrixXd V1(n, Kv1), V2(n, Kv2);
-  V1 << qy1, X;
-  V2 << qy2, X;
+  Progress Prog(boot + 1, print);
   
-  Eigen::MatrixXd ZV1(Z1.transpose() * V1), VZW1(ZV1.transpose() * W1), VZWZV1(VZW1 * ZV1);
-  Eigen::MatrixXd ZV2(Z2.transpose() * V2), VZW2(ZV2.transpose() * W2), VZWZV2(VZW2 * ZV2);
-  Eigen::VectorXd delta(VZWZV2.colPivHouseholderQr().solve(VZW2 * Z2.transpose() * e1));
+  // Where to save ldelta
+  Eigen::MatrixXd ldelta(Kv2, boot + 1);
+  ldelta.col(0) = fEncompassingStrucDeltaCoef(y, qy1, Z1, qy2, Z2, X, idX1,
+             idX2, LnIs, LIs, ngroup, ntau1, ntau2, K2, Kins1, Kins2,
+             Kv1, Kv2, iv1, iv2);
+  Prog.increment();
   
-  Eigen::MatrixXd H(Eigen::MatrixXd::Zero(Kv, Kins));
-  H.block(0, 0, Kv1, Kins1) = VZW1;
-  H.block(Kv1, Kins1, Kv2, Kins2) = VZW2;
+  //setup parallel settings
+#ifdef _OPENMP
+  omp_set_num_threads(nthreads);
+#pragma omp parallel
+{
+  int tid = omp_get_thread_num();
+  std::mt19937 rng(seed + tid * 7919); 
   
-  Eigen::MatrixXd dF(Eigen::MatrixXd::Zero(Kins, Kv));
-  dF.block(0, 0, Kins1, Kv1) = ZV1;
-  dF(Eigen::seqN(Kins1, Kins2) , Eigen::all) << Z2.transpose() * V1, ZV2;
-  
-  Eigen::MatrixXd VF(Eigen::MatrixXd::Zero(Kins, Kins));
-  if (HAC <= 1) {
-    Eigen::MatrixXd Ze(n, Kins);
-    Ze << (Z1.array().colwise() * e1.array()).matrix(), (Z2.array().colwise() * (e1 - V2 * delta).array()).matrix();
-    VF    = Ze.transpose()*Ze;
-  }
-  if (HAC == 2) {
-    Eigen::ArrayXXd Ze(n, Kins);
-    Ze << (Z1.array().colwise() * e1.array()).matrix(), (Z2.array().colwise() * (e1 - V2 * delta).array()).matrix();
-    for (int r(0); r < ngroup; ++ r) {
-      int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
-      Eigen::VectorXd tp(Ze(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix());
-      VF += tp*tp.transpose();
+#pragma omp for
+  for (int k = 0; k < boot; ++ k) {
+    // Select subnets
+    std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
+    std::vector<Eigen::ArrayXi> LIs_boot(ngroup);
+    std::uniform_int_distribution<int> unidist(0, ngroup - 1);
+    for (int s = 0; s < ngroup; ++ s) {
+      int sboot    =  unidist(rng);
+      LIs_boot[s]  = LIs[sboot];
+      LnIs_boot[s] = LnIs[sboot];
     }
+    
+    ldelta.col(k + 1) = fEncompassingStrucDeltaCoef(y, qy1, Z1, qy2, Z2, X, idX1,
+               idX2, LnIs_boot, LIs_boot, ngroup, ntau1, ntau2, K2, Kins1, Kins2,
+               Kv1, Kv2, iv1, iv2);
+#pragma omp critical
+    Prog.increment();
+  }
+}
+#else
+for (int k = 0; k < boot; ++ k) {
+  // Select subnets
+  std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
+  std::vector<Eigen::ArrayXi> LIs_boot(ngroup);
+  std::uniform_int_distribution<int> unidist(0, ngroup - 1);
+  for (int s = 0; s < ngroup; ++ s) {
+    int sboot    =  unidist(rng);
+    LIs_boot[s]  = LIs[sboot];
+    LnIs_boot[s] = LnIs[sboot];
   }
   
-  Eigen::MatrixXd iHdF((H*dF).inverse());
-  Eigen::MatrixXd HVFH(H*VF*H.transpose());
-  Eigen::MatrixXd Vdelta(iHdF * HVFH * iHdF.transpose());
-  
-  return Rcpp::List::create(_["delta"]  = delta,
-                            _["Vdelta"] = Vdelta(Eigen::seqN(Kv1, Kv2), Eigen::seqN(Kv1, Kv2)));
+  ldelta.col(k + 1) = fEncompassingStrucDeltaCoef(y, qy1, Z1, qy2, Z2, X, idX1,
+             idX2, LnIs_boot, LIs_boot, ngroup, ntau1, ntau2, K2, Kins1, Kins2,
+             Kv1, Kv2, iv1, iv2);
+  Prog.increment();
+}
+#endif
+
+Eigen::ArrayXd mdelta(ldelta(Eigen::all, Eigen::seqN(1, boot)).array().rowwise().mean());
+Eigen::MatrixXd ddelta(ldelta(Eigen::all, Eigen::seqN(1, boot)).array().colwise() - mdelta);
+Eigen::MatrixXd Vdelta(ddelta * ddelta.transpose() / (boot - 1));
+return Rcpp::List::create(_["delta"]  = ldelta.col(0), 
+                          _["mdelta"] = mdelta,
+                          _["Vdelta"] = Vdelta);
 }
 
 // Encompassing test KP method
 //[[Rcpp::export]]
-Rcpp::List fEncompassingStrucKP(const Eigen::MatrixXd& qy1,
-                                const Eigen::MatrixXd& Z1,
-                                const Eigen::MatrixXd& W21,
-                                const Eigen::VectorXd& e1,
-                                const Eigen::VectorXd& theta1,
-                                const int& Kest21,
-                                const Eigen::MatrixXd& qy2,
-                                const Eigen::MatrixXd& Z2,
-                                const Eigen::MatrixXd& W22,
-                                const Eigen::VectorXd& e2,
-                                const Eigen::VectorXd theta2,
-                                const int& Kest22,
-                                const Eigen::MatrixXd& X, //common to both models
-                                const Eigen::MatrixXd& W1, //common to both models
-                                const Eigen::ArrayXi& idX1, //common to both models
-                                const Eigen::ArrayXi& idX2, //common to both models
-                                const int& Kest1, //common to both models
-                                const Eigen::ArrayXi& nIs, //common to both models
-                                const Eigen::ArrayXi& Is, //common to both models
-                                const int& ngroup, //common to both models
-                                const Eigen::ArrayXi& cumsn, //common to both models
-                                const int& HAC = 0, //common to both models
-                                const bool& full = false) {
-  int ntau2(qy2.cols()), Kv2(1 + ntau2 + idX2.size());
-  // Delta and its variable
-  Eigen::VectorXd deltaFull;
-  Eigen::MatrixXd VardeltaFull;
-  {
-    Rcpp::List tp = fEncompassingStrucDelta(qy1, Z1, W21, e1, theta1, Kest21,
-                                            qy2, Z2, W22, e2, theta2, Kest22,
-                                            X, W1, idX1, idX2, Kest1, nIs, Is, 
-                                            ngroup, cumsn, HAC);
-    deltaFull     = tp["delta"];
-    VardeltaFull  = tp["Vdelta"];
-    // cout<<VardeltaFull<<endl;
-  }
-  
-  
-  // R matrix
-  int Kdelta(ntau2);
-  if (full) {
-    Kdelta = Kv2;
-  }
-  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(Kdelta, Kv2));
-  if (full) {
-    R(Eigen::all, Eigen::seqN(0, Kdelta)) = Eigen::MatrixXd::Identity(Kdelta, Kdelta);
-  } else {
-    R(Eigen::all, Eigen::seqN(1, Kdelta)) = Eigen::MatrixXd::Identity(Kdelta, Kdelta);
-  }
-  
-  // delta
-  Eigen::VectorXd delta(R * deltaFull);
-  
-  // variance
-  Eigen::MatrixXd Vardelta(R * VardeltaFull * R.transpose());
-  // cout<<"KP - delta"<<endl;
-  // cout<<delta.transpose()<<endl;
-  // cout<<"KP - Vardelta"<<endl;
-  // cout<<Vardelta<<endl;
-  
-  
-  // Normalization
-  Eigen::LLT<Eigen::MatrixXd> tpOmega(Vardelta);
-  Eigen::MatrixXd Omega(tpOmega.matrixL());
-  Eigen::VectorXd deltatilde(Omega.colPivHouseholderQr().solve(delta));
-  // cout<<"KP - deltatilde"<<endl;
-  // cout<<deltatilde.transpose()<<endl;
-  // cout<<"KP - Vardeltatilde"<<endl;
-  // cout<<Omega.inverse() * Vardelta * Omega.inverse().transpose()<<endl;
-  // Test if variance is I
-  // Eigen::MatrixXd Vtp(Omega.colPivHouseholderQr().solve(Vardelta) * (Omega.transpose()).inverse());
-  // cout << Vtp << endl;
-  // cout << delta.transpose() << endl;
-  // cout << Vardelta.diagonal().array().sqrt().transpose() << endl;
-  // cout << deltatilde.transpose() << endl;
-  
-  // SDV decomposition of Theta
-  Eigen::JacobiSVD<Eigen::MatrixXd> svd(deltatilde.transpose(), Eigen::ComputeFullU | Eigen::ComputeFullV);
-  Eigen::MatrixXd U = svd.matrixU(); //ntau * ntau
-  Eigen::VectorXd d = svd.singularValues();
-  Eigen::MatrixXd ddiag = d.asDiagonal();
-  Eigen::MatrixXd D(1, Kdelta);
-  D << ddiag, Eigen::MatrixXd::Zero(1, Kdelta - 1); 
-  Eigen::MatrixXd V = svd.matrixV(); 
-  // cout << U << endl;
-  // cout << "**" << endl;
-  // cout << D << endl;
-  // cout << "**" << endl;
-  // cout << V << endl;
-  
-  // Aqper and Bqper
-  Eigen::MatrixXd Aper(matrixSqrt2(U * U.transpose()));
-  Eigen::MatrixXd Bper((matrixSqrt2(V * V.transpose())).transpose());
-  
-  
-  // lambda and its varianve
-  Eigen::MatrixXd BAper(Eigen::kroneckerProduct(Bper, Aper.transpose()));
-  Eigen::VectorXd lambda (BAper * deltatilde);
-  Eigen::MatrixXd varlambda (BAper * BAper.transpose());
-  
-  // statistic
-  double stat((lambda.transpose() * varlambda.colPivHouseholderQr().solve(lambda))(0, 0));
-  return Rcpp::List::create(_["stat"]  = stat, 
-                            _["df"]    = Kdelta);
-}
-
-
-//[[Rcpp::export]]
-Rcpp::List fEncompassingRedKP(const Eigen::MatrixXd& qy1,
+Rcpp::List fEncompassingStruc(const Eigen::VectorXd& y,
+                              const Eigen::MatrixXd& qy1,
                               const Eigen::MatrixXd& Z1,
-                              const Eigen::MatrixXd& W1,
-                              const Eigen::VectorXd& e1,
-                              const Eigen::VectorXd& theta1,
-                              const int& Kest1,
-                              const Eigen::MatrixXd& qy2,
-                              const Eigen::MatrixXd& Z2,
-                              const Eigen::MatrixXd& W2,
-                              const Eigen::VectorXd& e2,
-                              const Eigen::VectorXd& theta2,
-                              const int& Kest2,
-                              const Eigen::MatrixXd& X, //common to both models
-                              const int& ngroup, //common to both models
-                              const Eigen::ArrayXi& cumsn, //common to both models
-                              const int& HAC = 0, //common to both models
-                              const bool& full = false) {
-  int ntau2(qy2.cols()), Kv2(ntau2 + X.cols());
-  // Delta and its variable
-  Eigen::VectorXd deltaFull;
-  Eigen::MatrixXd VardeltaFull;
-  {
-    Rcpp::List tp = fEncompassingRedDelta(qy1, Z1, W1, e1, theta1, Kest1,
-                                          qy2, Z2, W2, e2, theta2, Kest2,
-                                          X, ngroup, cumsn, HAC);
-    deltaFull     = tp["delta"];
-    VardeltaFull  = tp["Vdelta"];
-  }
-  
-  // R matrix
-  int Kdelta(ntau2);
-  if (full) {
-    Kdelta = Kv2;
-  }
-  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(Kdelta, Kv2));
-  R(Eigen::all, Eigen::seqN(0, Kdelta)) = Eigen::MatrixXd::Identity(Kdelta, Kdelta);
-  
-  // delta
-  Eigen::VectorXd delta(R * deltaFull);
-  
-  // variance
-  Eigen::MatrixXd Vardelta(R * VardeltaFull * R.transpose());
-  
-  // Normalization
-  Eigen::LLT<Eigen::MatrixXd> tpOmega(Vardelta);
-  Eigen::MatrixXd Omega(tpOmega.matrixL());
-  Eigen::VectorXd deltatilde(Omega.colPivHouseholderQr().solve(delta));
-  
-  // Test if variance is I
-  // Eigen::MatrixXd Vtp(Omega.colPivHouseholderQr().solve(Vardelta) * (Omega.transpose()).inverse());
-  // cout << Vtp << endl;
-  // cout<< deltatilde.transpose() << endl;
-  
-  // SDV decomposition of Theta
-  Eigen::JacobiSVD<Eigen::MatrixXd> svd(deltatilde.transpose(), Eigen::ComputeFullU | Eigen::ComputeFullV);
-  Eigen::MatrixXd U = svd.matrixU(); //ntau * ntau
-  Eigen::VectorXd d = svd.singularValues();
-  Eigen::MatrixXd ddiag = d.asDiagonal();
-  Eigen::MatrixXd D(1, Kdelta);
-  D << ddiag, Eigen::MatrixXd::Zero(1, Kdelta - 1); 
-  Eigen::MatrixXd V = svd.matrixV(); 
-  // cout << U << endl;
-  // cout << "**" << endl;
-  // cout << D << endl;
-  // cout << "**" << endl;
-  // cout << V << endl;
-  
-  // Aqper and Bqper
-  Eigen::MatrixXd Aper(matrixSqrt2(U * U.transpose()));
-  Eigen::MatrixXd Bper((matrixSqrt2(V * V.transpose())).transpose());
-  
-  
-  // lambda and its varianve
-  Eigen::MatrixXd BAper(Eigen::kroneckerProduct(Bper, Aper.transpose()));
-  Eigen::VectorXd lambda (BAper * deltatilde);
-  Eigen::MatrixXd varlambda (BAper * BAper.transpose());
-  
-  // statistic
-  double stat((lambda.transpose() * varlambda.colPivHouseholderQr().solve(lambda))(0, 0));
-  return Rcpp::List::create(_["stat"]  = stat,
-                            _["df"]    = Kdelta);
-}
-
-// Encompassing test, F method
-//[[Rcpp::export]]
-Rcpp::List fEncompassingStruc(const Eigen::MatrixXd& qy1,
-                              const Eigen::MatrixXd& Z1,
-                              const Eigen::MatrixXd& W21,
-                              const Eigen::VectorXd& e1,
-                              const Eigen::VectorXd& theta1,
+                              const int& Kest11,
                               const int& Kest21,
                               const Eigen::MatrixXd& qy2,
                               const Eigen::MatrixXd& Z2,
-                              const Eigen::MatrixXd& W22,
-                              const Eigen::VectorXd& e2,
-                              const Eigen::VectorXd theta2,
+                              const int& Kest12,
                               const int& Kest22,
                               const Eigen::MatrixXd& X, //common to both models
-                              const Eigen::MatrixXd& W1, //common to both models
                               const Eigen::ArrayXi& idX1, //common to both models
                               const Eigen::ArrayXi& idX2, //common to both models
-                              const int& Kest1, //common to both models
-                              const Eigen::ArrayXi& nIs, //common to both models
-                              const Eigen::ArrayXi& Is, //common to both models
-                              const int& ngroup, //common to both models
-                              const Eigen::ArrayXi& cumsn, //common to both models
-                              const int& HAC = 0, //common to both models
-                              const bool& full = false) {
+                              const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
+                              const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
+                              const int& ngroup,
+                              const bool& iv1,
+                              const bool& iv2, //common to both models
+                              const int& boot,
+                              const int& nthreads,
+                              const unsigned long long seed,
+                              const bool& print,
+                              const bool& full) {
   int ntau2(qy2.cols()), Kv2(1 + ntau2 + idX2.size());
   // Delta and its variable
-  Eigen::VectorXd deltaFull;
-  Eigen::MatrixXd VardeltaFull;
+  Eigen::VectorXd delta;
+  Eigen::VectorXd mdelta;
+  Eigen::MatrixXd Vardelta;
   {
-    Rcpp::List tp = fEncompassingStrucDelta(qy1, Z1, W21, e1, theta1, Kest21,
-                                            qy2, Z2, W22, e2, theta2, Kest22,
-                                            X, W1, idX1, idX2, Kest1, nIs, Is, 
-                                            ngroup, cumsn, HAC);
-    deltaFull     = tp["delta"];
-    VardeltaFull  = tp["Vdelta"];
+    Rcpp::List tp = fEncompassingStrucDelta(y, qy1, Z1, qy2, Z2, X, idX1, idX2, 
+                                            LnIs, LIs, ngroup, iv1, iv2, boot, 
+                                            nthreads, seed, print);
+    delta     = tp["delta"];
+    mdelta    = tp["mdelta"];
+    Vardelta  = tp["Vdelta"];
   }
-  
   
   // R matrix
-  int df1(ntau2), df2(nIs.size() - Kest22);
+  int Kdeltasel(ntau2);
   if (full) {
-    df1 = Kv2;
+    Kdeltasel = Kv2;
   }
+  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(Kdeltasel, Kv2));
+  if (full) {
+    R(Eigen::all, Eigen::seqN(0, Kdeltasel)) = Eigen::MatrixXd::Identity(Kdeltasel, Kdeltasel);
+  } else {
+    R(Eigen::all, Eigen::seqN(1, Kdeltasel)) = Eigen::MatrixXd::Identity(Kdeltasel, Kdeltasel);
+  }
+  
+  // delta select
+  Eigen::VectorXd deltasel(R * delta);
+  Eigen::MatrixXd Vardeltasel(R * Vardelta * R.transpose());
+  
+  int df1(Kdeltasel), df2(y.size() - Kest12 - Kest22);
   Eigen::ArrayXi itheta(df1);
-  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(df1, Kv2));
   if (full) {
     R(Eigen::all, Eigen::seqN(0, df1)) = Eigen::MatrixXd::Identity(df1, df1);
     itheta << Eigen::ArrayXi::LinSpaced(1 + ntau2, 1, 1 + ntau2),  2 + ntau2 + idX2;
@@ -917,84 +751,245 @@ Rcpp::List fEncompassingStruc(const Eigen::MatrixXd& qy1,
     itheta << Eigen::ArrayXi::LinSpaced(ntau2, 2, 1 + ntau2);
   }
   
-  // delta
-  Eigen::VectorXd delta(R * deltaFull);
-  
-  // variance
-  Eigen::MatrixXd Vardelta(R * VardeltaFull * R.transpose());
-  // cout<<"F - delta"<<endl;
-  // cout<<delta.transpose()<<endl;
-  // cout<<"F - Vardelta"<<endl;
-  // cout<<Vardelta<<endl;
-  
   // statistic
-  double stat((delta.transpose()*ginv(Vardelta)*delta/R.rows())(0, 0));
+  // KP
+  double statKP(deltasel.dot(ginv(Vardeltasel)*deltasel));
+  // K
+  double statF(statKP / Kdeltasel);
   
-  return Rcpp::List::create(_["stat"]   = stat,
-                            _["df1"]    = df1, 
-                            _["df2"]    = df2, 
-                            _["delta"]  = delta,
-                            _["Vdelta"] = Vardelta,
-                            _["itheta"] = itheta);
+  return Rcpp::List::create(_["KP.stat"] = statKP,
+                            _["KP.df"]   = df1,
+                            _["F.stat"]  = statF,
+                            _["F.df1"]   = df1, 
+                            _["F.df2"]   = df2,  
+                            _["delta"]   = delta,
+                            _["Vdelta"]  = Vardelta,
+                            _["mdelta"]  = mdelta,
+                            _["itheta"]  = itheta);
 }
 
 
+
+// Same function for the reduxed form model
+Eigen::VectorXd fEncompassingRedDeltaCoef(const Eigen::VectorXd& y,
+                                          const Eigen::MatrixXd& qy1,
+                                          const Eigen::MatrixXd& Z1,
+                                          const Eigen::MatrixXd& qy2,
+                                          const Eigen::MatrixXd& Z2,
+                                          const Eigen::MatrixXd& X, //common to both models
+                                          const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
+                                          const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
+                                          const int& ngroup,
+                                          const int& ntau1,
+                                          const int& ntau2,
+                                          const int& K,
+                                          const int& Kv1,
+                                          const int& Kv2,
+                                          const int& Kins1,
+                                          const int& Kins2,
+                                          const bool& iv1,
+                                          const bool& iv2){
+  // Find iso and nisolated
+  int n = 0;
+  for (int s = 0; s < ngroup; ++s){
+    n += LIs[s].size() + LnIs[s].size();
+  }
+  
+  Eigen::ArrayXi sel(n);
+  int pos = 0;
+  for (int s = 0; s < ngroup; ++s) {
+    int n1 = LIs[s].size();
+    if (n1 > 0) {
+      sel.segment(pos, n1) = LIs[s];
+      pos += n1;
+    }
+    
+    int n2 = LnIs[s].size();
+    if (n2 > 0) {
+      sel.segment(pos, n2) = LnIs[s];
+      pos += n2;
+    }
+  }
+  
+  // Variables and Instruments
+  Eigen::MatrixXd V1(n, Kv1), V2(n, Kv2);
+  V1 << qy1(sel, Eigen::all), X(sel, Eigen::all);
+  V2 << qy2(sel, Eigen::all), X(sel, Eigen::all);
+  Eigen::MatrixXd Z1sel = Z1(sel, Eigen::all);
+  Eigen::MatrixXd Z2sel = Z2(sel, Eigen::all);
+  Eigen::VectorXd ysel = y(sel);
+  
+  // Weights
+  Eigen::MatrixXd W1 = Eigen::MatrixXd::Identity(Kins1, Kins1);
+  Eigen::MatrixXd W2 = Eigen::MatrixXd::Identity(Kins2, Kins2);
+  if (iv1) {
+    W1 = (Z1sel.transpose()*Z1sel).inverse();
+  }
+  if (iv2) {
+    W2 = (Z2sel.transpose()*Z2sel).inverse();
+  }
+  
+  Eigen::MatrixXd ZV1(Z1sel.transpose() * V1), 
+  VZW1(ZV1.transpose() * W1), VZWZV1(VZW1 * ZV1);
+  Eigen::MatrixXd ZV2(Z2sel.transpose() * V2), 
+  VZW2(ZV2.transpose() * W2), VZWZV2(VZW2 * ZV2);
+  Eigen::VectorXd Z1y(Z1sel.transpose() * ysel);
+  
+  Eigen::VectorXd lambda1(VZWZV1.colPivHouseholderQr().solve(VZW1 * Z1y));
+  // cout << lambda1.transpose() << endl;
+  Eigen::VectorXd e1(ysel - V1 * lambda1);
+  
+  Eigen::VectorXd Z2e1(Z2sel.transpose() * e1);
+  
+  return VZWZV2.colPivHouseholderQr().solve(VZW2 * Z2e1);
+}
+
+Rcpp::List fEncompassingRedDelta(const Eigen::VectorXd& y,
+                                 const Eigen::MatrixXd& qy1,
+                                 const Eigen::MatrixXd& Z1,
+                                 const Eigen::MatrixXd& qy2,
+                                 const Eigen::MatrixXd& Z2,
+                                 const Eigen::MatrixXd& X, //common to both models
+                                 const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
+                                 const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
+                                 const int& ngroup,
+                                 const bool& iv1,
+                                 const bool& iv2, //common to both models
+                                 const int& boot,
+                                 const int& nthreads,
+                                 const unsigned long long seed,
+                                 const bool& print) { 
+  // Fixed variables
+  int ntau1(qy1.cols()), ntau2(qy2.cols()), K(X.cols()), 
+  Kv1(ntau1 + K), Kv2(ntau2 + K),
+  Kins1(Z1.cols()), Kins2(Z2.cols());
+  
+  Progress Prog(boot + 1, print);
+  
+  // Where to save ldelta
+  Eigen::MatrixXd ldelta(Kv2, boot + 1);
+  ldelta.col(0) = fEncompassingRedDeltaCoef(y, qy1, Z1, qy2, Z2, X, LnIs, LIs, ngroup,
+             ntau1, ntau2, K, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
+  Prog.increment();
+  
+  //setup parallel settings
+#ifdef _OPENMP
+  omp_set_num_threads(nthreads);
+#pragma omp parallel
+{
+  int tid = omp_get_thread_num();
+  std::mt19937 rng(seed + tid * 7919); 
+  
+#pragma omp for
+  for (int k = 0; k < boot; ++ k) {
+    // Select subnets
+    std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
+    std::vector<Eigen::ArrayXi> LIs_boot(ngroup);
+    std::uniform_int_distribution<int> unidist(0, ngroup - 1);
+    for (int s = 0; s < ngroup; ++ s) {
+      int sboot    =  unidist(rng);
+      LIs_boot[s]  = LIs[sboot];
+      LnIs_boot[s] = LnIs[sboot];
+    }
+    
+    ldelta.col(k + 1) = fEncompassingRedDeltaCoef(y, qy1, Z1, qy2, Z2, X, LnIs_boot, LIs_boot, ngroup,
+               ntau1, ntau2, K, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
+#pragma omp critical
+    Prog.increment();
+  }
+}
+#else
+for (int k = 0; k < boot; ++ k) {
+  // Select subnets
+  std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
+  std::vector<Eigen::ArrayXi> LIs_boot(ngroup);
+  std::uniform_int_distribution<int> unidist(0, ngroup - 1);
+  for (int s = 0; s < ngroup; ++ s) {
+    int sboot    =  unidist(rng);
+    LIs_boot[s]  = LIs[sboot];
+    LnIs_boot[s] = LnIs[sboot];
+  }
+  
+  ldelta.col(k + 1) = fEncompassingRedDeltaCoef(y, qy1, Z1, qy2, Z2, X, LnIs_boot, LIs_boot, ngroup,
+             ntau1, ntau2, K, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
+#pragma omp critical
+}
+#endif
+
+Eigen::ArrayXd mdelta(ldelta(Eigen::all, Eigen::seqN(1, boot)).array().rowwise().mean());
+Eigen::MatrixXd ddelta(ldelta(Eigen::all, Eigen::seqN(1, boot)).array().colwise() - mdelta);
+Eigen::MatrixXd Vdelta(ddelta * ddelta.transpose() / (boot - 1));
+return Rcpp::List::create(_["delta"]  = ldelta.col(0), 
+                          _["mdelta"] = mdelta,
+                          _["Vdelta"] = Vdelta);
+}
+
 //[[Rcpp::export]]
-Rcpp::List fEncompassingRed(const Eigen::MatrixXd& qy1,
+Rcpp::List fEncompassingRed(const Eigen::VectorXd& y,
+                            const Eigen::MatrixXd& qy1,
                             const Eigen::MatrixXd& Z1,
-                            const Eigen::MatrixXd& W1,
-                            const Eigen::VectorXd& e1,
-                            const Eigen::VectorXd& theta1,
                             const int& Kest1,
                             const Eigen::MatrixXd& qy2,
                             const Eigen::MatrixXd& Z2,
-                            const Eigen::MatrixXd& W2,
-                            const Eigen::VectorXd& e2,
-                            const Eigen::VectorXd& theta2,
                             const int& Kest2,
                             const Eigen::MatrixXd& X, //common to both models
-                            const int& ngroup, //common to both models
-                            const Eigen::ArrayXi& cumsn, //common to both models
-                            const int& HAC = 0, //common to both models
-                            const bool& full = false) {
+                            const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
+                            const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
+                            const int& ngroup,
+                            const bool& iv1,
+                            const bool& iv2, //common to both models
+                            const int& boot,
+                            const int& nthreads,
+                            const unsigned long long seed,
+                            const bool& print,
+                            const bool& full) {
   int ntau2(qy2.cols()), Kv2(ntau2 + X.cols());
   // Delta and its variable
-  Eigen::VectorXd deltaFull;
-  Eigen::MatrixXd VardeltaFull;
+  Eigen::VectorXd delta;
+  Eigen::VectorXd mdelta;
+  Eigen::MatrixXd Vardelta;
   {
-    Rcpp::List tp = fEncompassingRedDelta(qy1, Z1, W1, e1, theta1, Kest1,
-                                          qy2, Z2, W2, e2, theta2, Kest2,
-                                          X, ngroup, cumsn, HAC);
-    deltaFull     = tp["delta"];
-    VardeltaFull  = tp["Vdelta"];
+    Rcpp::List tp = fEncompassingRedDelta(y, qy1, Z1, qy2, Z2, X, 
+                                          LnIs, LIs, ngroup, iv1, iv2, 
+                                          boot, nthreads, seed, print);
+    delta     = tp["delta"];
+    mdelta    = tp["mdelta"];
+    Vardelta  = tp["Vdelta"];
   }
   
   // R matrix
-  int df1(ntau2), df2(qy2.rows() - Kest2);
+  int Kdeltasel(ntau2);
   if (full) {
-    df1 = Kv2;
+    Kdeltasel = Kv2;
   }
+  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(Kdeltasel, Kv2));
+  R(Eigen::all, Eigen::seqN(0, Kdeltasel)) = Eigen::MatrixXd::Identity(Kdeltasel, Kdeltasel);
+  
+  // delta select
+  Eigen::VectorXd deltasel(R * delta);
+  // variance
+  Eigen::MatrixXd Vardeltasel(R * Vardelta * R.transpose());
+  
+  
+  int df1(Kdeltasel), df2(y.rows() - Kest2);
   Eigen::ArrayXi itheta(df1);
   itheta << Eigen::ArrayXi::LinSpaced(df1, 1, df1);
-  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(df1, Kv2));
-  R(Eigen::all, Eigen::seqN(0, df1)) = Eigen::MatrixXd::Identity(df1, df1);
-  
-  // delta
-  Eigen::VectorXd delta(R * deltaFull);
-  
-  // variance
-  Eigen::MatrixXd Vardelta(R * VardeltaFull * R.transpose());
-  
   // statistic
-  double stat((delta.transpose()*ginv(Vardelta)*delta/R.rows())(0, 0));
-  
-  return Rcpp::List::create(_["stat"]   = stat,
-                            _["df1"]    = df1, 
-                            _["df2"]    = df2,  
-                            _["delta"]  = delta,
-                            _["Vdelta"] = Vardelta,
-                            _["itheta"] = itheta);
+  // KP
+  double statKP(deltasel.dot(ginv(Vardeltasel)*deltasel));
+  // F stat
+  double statF(statKP / Kdeltasel);
+  return Rcpp::List::create(_["KP.stat"] = statKP,
+                            _["KP.df"]   = df1,
+                            _["F.stat"]  = statF,
+                            _["F.df1"]   = df1, 
+                            _["F.df2"]   = df2,  
+                            _["delta"]   = delta,
+                            _["Vdelta"]  = Vardelta,
+                            _["mdelta"]  = mdelta,
+                            _["itheta"]  = itheta);
 }
+
 
 
 

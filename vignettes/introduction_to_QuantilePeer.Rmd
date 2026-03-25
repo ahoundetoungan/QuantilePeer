@@ -226,7 +226,7 @@ QtR5  <- qpeer(formula = y1 ~ X, excluded.instruments = ~ Z1, Glist = G,
 summary(QtR5)
 
 QtS5 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G,
-              tau = tau, structural = TRUE, estimator = "gmm.optimal",
+              tau = tau, structural = TRUE, estimator = "iv",
               HAC = "cluster", fixed.effects = "separate")
 summary(QtS5)
 ```
@@ -258,15 +258,15 @@ Choosing suitable quantile levels is important. The `qpeer.test` function offers
 ```{r}
 # Estimating QtS6 with a misspecified tau
 QtS6 <- qpeer(formula = y2 ~ X, excluded.instruments = ~ Z1, Glist = G,
-              tau = c(0, 1), structural = TRUE, estimator = "gmm.optimal",
+              tau = c(0, 1), structural = TRUE, estimator = "iv",
               HAC = "cluster", fixed.effects = "separate")
-qpeer.test(model1 = QtS6, model2 = QtS5, which = "encompassing")
+qpeer.test(model1 = QtS6, model2 = QtS5, which = "encompassing", boot = 100)
 ```
 In the preceding code, the null hypothesis is that the specification which includes only the minimum and the maximum as quantile levels does not perform worse. The hypothesis is rejected, which is expected since the data are simulated with more quantile levels. Consequently, the model with only two quantile levels is not a good choice.
 
 In the following code, the null hypothesis is that the model with four quantile levels is not worse than the competing model with two quantile levels:
 ```{r}
-qpeer.test(model1 = QtS5, model2 = QtS6, which = "encompassing")
+qpeer.test(model1 = QtS5, model2 = QtS6, which = "encompassing", boot = 100)
 ```
 Here, the null hypothesis is not rejected. However, this does not directly imply that the other model with four quantiles is well specified. The model should also be compared with alternative specifications that include, for example, five or six quantile levels. Indeed, encompassing tests only compare two models and do not imply that one of them is correctly specified. Of course, in this example, we know that the model with four quantile levels is well specified because we know the data-generating process. Therefore, the model with four quantile levels cannot be rejected, in general, against other well-specified competing models.
 
@@ -392,7 +392,7 @@ qy2 <- qpeer.inst(formula = y2 ~ 1, Glist = G, tau = c(0, 1))$qy #min and max
 Ot2 <- genpeer(formula = y2 ~ X, excluded.instruments = ~ Z + GX + GGX,
                endogenous.variables = ~ Gy2 + qy2, Glist = G, structural = TRUE,
                estimator = "gmm.optimal", fixed.effects = "separate",
-               HAC = "cluster") # includes average, min, and max of peers
+               HAC = "iid") # includes average, min, and max of peers
 summary(Ot2, diagnostic = TRUE)
 ```
 

@@ -1,8 +1,11 @@
 #' @rdname qpeer
 #' @export
 linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV", 
-                    structural = FALSE, drop = NULL, fixed.effects = FALSE, HAC = "iid", checkrank = FALSE, 
-                    compute.cov = TRUE, tol = 1e-10){
+                    structural = FALSE, drop = NULL, fixed.effects = FALSE, HAC = "iid", 
+                    checkrank = FALSE, compute.cov = TRUE, boot = 5e2, nthreads = 1, tol = 1e-10,
+                    print = TRUE){
+  nthreads   <- fnthreads(nthreads = nthreads)
+  
   # Estimator
   estimator <- tolower(estimator)
   stopifnot(estimator %in% c("iv", "gmm.optimal", "gmm.identity", "jive", "jive2"))
@@ -10,8 +13,17 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   
   # Variance structure
   HAC        <- tolower(HAC[1])
-  stopifnot(HAC %in% c("iid", "hetero", "cluster"))
-  HACnum     <- (0:2)[HAC == c("iid", "hetero", "cluster")]
+  stopifnot(HAC %in% c("iid", "hetero", "cluster", "cluster-bootstrap", "cluster-boot", "cboot", "c-boot"))
+  HACnum     <- c(0:2, rep(3, 4))[HAC == c("iid", "hetero", "cluster", "cluster-bootstrap", "cluster-boot", "cboot", "c-boot")]
+  HAC        <- c("iid", "hetero", "cluster", "cluster-bootstrap")[HACnum + 1]
+  
+  if ((HACnum == 3) & !(estimator %in% c("IV", "GMM.identity"))) {
+    stop("Clustered bootstrap is implemented only for IV and for the GMM estimator with the identity weighting matrix.")
+  }
+  
+  if ((HACnum == 3) & structural) {
+    stop("Clustered bootstrap is not implemented for the structural model.")
+  }
   
   # Fixed effects
   if (is.character(fixed.effects[1])) fixed.effects <- tolower(fixed.effects)
@@ -65,6 +77,7 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   zename     <- f.t.data$xname
   if (xint) {
     ins      <- ins[, zename != "(Intercept)"]
+    zename   <- zename[zename != "(Intercept)"]
   } else {
     ins      <- ins
   }
@@ -135,20 +148,11 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   }
   
   
-  if (structural) {
-    ins      <- cbind(X[, idX2 + 1], ins)
-    ins0     <- cbind(X0[, idX2 + 1], ins0)
-    zename   <- c(xname[idX2 + 1], zename)
-    if (checkrank) {
-      tlm    <- fcheckrank(X = ins[nIs + 1,], tol = tol)
-    }
-  } else {
-    ins      <- cbind(X, ins)
-    ins0     <- cbind(X0, ins0)
-    zename   <- c(xname, zename)
-    if (checkrank) {
-      tlm    <- fcheckrank(X = ins, tol = tol)
-    }
+  ins        <- cbind(X, ins)
+  ins0       <- cbind(X0, ins0)
+  zename     <- c(xname, zename)
+  if (checkrank) {
+    tlm      <- fcheckrank(X = ins, tol = tol)
   }
   if (checkrank) {
     ins      <- ins[, tlm + 1, drop = FALSE]
@@ -158,6 +162,7 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   Kins       <- ncol(ins)
   
   # GMM
+  seed       <- round(runif(1, 0, 1e9))
   GMMe       <- list()
   iv         <- (estimator %in% c("IV", "GMM.optimal"))
   estname    <- NULL
@@ -172,7 +177,7 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
     if (length(nIs) <= Kest2) stop("Insufficient number of nonisolated nodes for estimating the structural model.")
     Kest     <- Kest1 + Kest2
     if (HACnum == 2 && (Kx1 >= MIs || Kins + 1 >= MnIs) && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
-      stop("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. HAC is set to 'iid' or 'hetero'.")
+      stop("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. Set HAC to 'iid' or 'hetero'.")
     }
     estname  <- c(paste0(c("G(conformity):", "G(total):"), yname), xname)
     
@@ -186,7 +191,7 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
     Kest     <- ifelse(FEnum == 0, Kx + 1, ifelse(FEnum == 1, Kx + 1 + M, Kx + 1 + MIs + MnIs))
     if (n <= Kest) stop("Insufficient number of observations.")
     if (HACnum == 2 && Kins >= M && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
-      stop("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. HAC is set to 'iid' or 'hetero'.")
+      stop("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. Set HAC to 'iid' or 'hetero', or use Bootstrap.")
     }
     estname  <- c(paste0("G:", yname), xname)
     V        <- cbind(Gy, X)
@@ -194,16 +199,17 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
     # Estimation
     GMMe     <- freduce(y = y, V = V, ins = ins, igr = igr, nvec = nvec, M = M, Kins = Kins, Kx = Kx, ntau = 1, 
                         Kest = Kest, n = n, HACnum = HACnum, iv = iv, estimator = estimator, compute.cov = compute.cov, 
-                        estname = estname)
+                        estname = estname, LnIs = lnIs, LIs = lIs, boot = boot, nthreads = nthreads, seed = seed,
+                        print = print)
   }
   
   out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
                                        excluded.instruments = excluded.instruments, estimator = estimator, 
                                        fixed.effects = fixed.effects, idXiso = idX1 + 1, idXniso = idX2 + 1, HAC = HAC, 
-                                       yname = yname, xnames = xname, znames = zename),
+                                       yname = yname, xnames = xname, znames = zename, seed = seed, boot = boot),
                     gmm         = GMMe,
-                    data        = list(y = y0, Gy = c(Gy0), X = X0, instruments = ins0, isolated = Is + 1, 
-                                       non.isolated = nIs + 1, degree = dg))
+                    data        = list(y = y0, Gy = c(Gy0), X = X0, instruments = ins0, isolated = lapply(lIs, \(s) s + 1), 
+                                       non.isolated = lapply(lnIs, \(s) s + 1), degree = ldg))
   class(out) <- "linpeer"
   out
 }
@@ -211,15 +217,20 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
 
 #' @rdname summary.qpeer
 #' @export
-summary.linpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, diagnostics = FALSE, ...) {
+summary.linpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, diagnostics = FALSE, 
+                            boot = NULL, nthreads = 1L, print = TRUE, ...) {
   stopifnot(inherits(object, "linpeer"))
   if (is.null(object$gmm$cov)) {
     stop("The covariance matrix is not estimated.")
   }
   diagn          <- NULL
   cvKP           <- NULL
+  seed           <- round(runif(1, 0, 1e9))
+  boot           <- ifelse(is.null(boot), object$model.info$boot, boot)
+  nthreads       <- fnthreads(nthreads = nthreads)
   if (diagnostic || diagnostics) {
-    diagn        <- fdiagnostic(object, nendo = "Gy")
+    diagn        <- fdiagnostic(object, nendo = "Gy", seed = seed, boot = boot, 
+                                nthreads = nthreads, print = print)
     cvKP         <- diagn$cvKP
     diagn        <- diagn$diag
   }
@@ -254,7 +265,7 @@ print.summary.linpeer <- function(x, ...) {
                         ifelse(esti == "IV", "IV", 
                                ifelse(esti == "JIVE", "JIVE", "JIVE2"))))
   hete <- x$model.info$HAC
-  hete <- ifelse(hete == "iid", "IID", ifelse(hete == "hetero", "Individual", "Cluster"))
+  hete <- ifelse(hete == "iid", "IID", ifelse(hete == "hetero", "Individual", ifelse(hete == "cluster", "Cluster", "Cluster (Bootstrap)")))
   sig  <- x$gmm$sigma
   sig1 <- x$gmm$sigma1
   sig2 <- x$gmm$sigma2
@@ -303,7 +314,7 @@ print.summary.linpeer <- function(x, ...) {
 #' @rdname summary.qpeer
 #' @export
 print.linpeer <- function(x, ...) {
-  print(summary(x))
+  print(summary(x, ...))
 }
 
 
