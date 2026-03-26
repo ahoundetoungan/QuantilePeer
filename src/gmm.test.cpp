@@ -661,6 +661,7 @@ Rcpp::List fEncompassingStrucDelta(const Eigen::VectorXd& y,
   }
 }
 #else
+std::mt19937 rng(seed); 
 for (int k = 0; k < boot; ++ k) {
   // Select subnets
   std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
@@ -899,6 +900,7 @@ Rcpp::List fEncompassingRedDelta(const Eigen::VectorXd& y,
   }
 }
 #else
+std::mt19937 rng(seed); 
 for (int k = 0; k < boot; ++ k) {
   // Select subnets
   std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
