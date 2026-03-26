@@ -642,6 +642,10 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
   }
 }
 #else
+std::mt19937 rng(seed); 
+
+Eigen::VectorXd theta_loc, Ze_loc;
+Eigen::MatrixXd W_loc;
 for (int k = 0; k < boot; ++ k) {
   W_loc = W;
   // Select subnets
@@ -797,6 +801,7 @@ Rcpp::List fKPstat_boot(const Eigen::MatrixXd& qy,
   }
 }
 #else
+std::mt19937 rng(seed); 
 for (int k = 0; k < boot; ++ k) {
   // Select subnets
   std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
