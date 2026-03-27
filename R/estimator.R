@@ -117,7 +117,7 @@ freduce <- function(y, V, ins, igr, nvec, M, Kins, Kx, ntau, Kest, n, HACnum, iv
   }
   fv          <- c(GMMe$yhat)
   res         <- y - fv
-  rs          <- sum((fv - mean(fv))^2)/sum((y - mean(y))^2)
+  rs          <- 1 - sum(res^2)/sum((y - mean(y))^2)
   ars         <- 1 - (1 -rs)*(n - 1)/(n - length(c(GMMe$parms)))
   sigma       <- sqrt(GMMe$sigma2);  if(is.na(sigma)) sigma = NULL
   

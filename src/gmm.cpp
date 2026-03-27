@@ -882,7 +882,7 @@ for (int k = 0; k < boot; ++ k) {
   for (int s = 0; s < ngroup; ++ s) {
     sgroup(s)   =  unidist(rng);
   }
-  lpi.col(k) = fKPstat_bootCoef(LZZ, LZqy; index, sgroup, ngroup, Kins, l, ntau);
+  lpi.col(k) = fKPstat_bootCoef(LZZ, LZqy, index, sgroup, ngroup, Kins, l, ntau);
   Prog.increment();
 }
 #endif
