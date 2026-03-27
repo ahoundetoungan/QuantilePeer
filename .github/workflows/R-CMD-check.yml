@@ -20,9 +20,9 @@ jobs:
           - os: windows-latest
             r: release
             http-user-agent: ''
-          - os: ubuntu-latest
-            r: devel
-            http-user-agent: 'release'
+          #- os: ubuntu-latest
+          #  r: devel
+          #  http-user-agent: 'release'
           - os: ubuntu-latest
             r: release
             http-user-agent: ''
