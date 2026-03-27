@@ -120,12 +120,26 @@ freduce <- function(y, V, ins, igr, nvec, M, Kins, Kx, ntau, Kest, n, HACnum, iv
   rs          <- sum((fv - mean(fv))^2)/sum((y - mean(y))^2)
   ars         <- 1 - (1 -rs)*(n - 1)/(n - length(c(GMMe$parms)))
   sigma       <- sqrt(GMMe$sigma2);  if(is.na(sigma)) sigma = NULL
-  GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
-                      residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
-                      info.criteria = GMMe$criterion,
-                      Jtest = c("statistic" = ifelse(is.null(GMMe$Overident), NA, GMMe$Overident), 
-                                "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))), W = GMMe$W)
-  names(GMMe$Estimate)  <- colnames(GMMe$cov) <- rownames(GMMe$cov)    <- estname
-  GMMe$Jtest["p-value"] <- ifelse(GMMe$Jtest["df"] > 0, 1 - pchisq(GMMe$Jtest["statistic"], GMMe$Jtest["df"]), NA)
+  
+  if (HACnum == 3) {
+    GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
+                        residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
+                        info.criteria = GMMe$criterion,
+                        Jtest = c("statistic" = GMMe$Overident.stat, 
+                                  "df" = as.integer(GMMe$df),
+                                  "p-value" = as.numeric(GMMe$Overident.pvalue)), 
+                        W = GMMe$W)
+    names(GMMe$Estimate)  <- colnames(GMMe$cov) <- rownames(GMMe$cov)    <- estname
+  } else {
+    GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
+                        residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
+                        info.criteria = GMMe$criterion,
+                        Jtest = c("statistic" = ifelse(is.null(GMMe$Overident), NA, GMMe$Overident), 
+                                  "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))), W = GMMe$W)
+    
+    names(GMMe$Estimate)  <- colnames(GMMe$cov) <- rownames(GMMe$cov)    <- estname
+    GMMe$Jtest["p-value"] <- ifelse(GMMe$Jtest["df"] > 0, 1 - pchisq(GMMe$Jtest["statistic"], GMMe$Jtest["df"]), NA)
+  }
+
   GMMe
 }

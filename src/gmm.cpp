@@ -542,6 +542,7 @@ Rcpp::List fParamFull(const arma::vec& param,
 // This function implements the GMM estimator (reduced-form), for one iteration of bootstrap
 void fgmm_red_bootcoef0(Eigen::VectorXd& theta,
                         Eigen::VectorXd& Ze,
+                        double& Jstat,
                         const std::vector<Eigen::MatrixXd>& LZV,
                         const std::vector<Eigen::VectorXd>& LZy,
                         const std::vector<Eigen::MatrixXd>& LZZ,
@@ -561,18 +562,25 @@ void fgmm_red_bootcoef0(Eigen::VectorXd& theta,
     if (iv) ZZ += LZZ[s];
   }
   if (iv) {
-    W = (ZZ / ngroup).inverse();
+    W = (ZZ / ngroup).ldlt().solve(Eigen::MatrixXd::Identity(Kins, Kins));
   }
   Eigen::MatrixXd VZW(ZV.transpose()*W), VZWZV(VZW*ZV);
   
   // estimate
   theta = VZWZV.colPivHouseholderQr().solve(VZW*Zy);
-  Ze    =  (Zy - ZV * theta) / ngroup;
+  Ze    =  (Zy - ZV * theta);
+  Eigen::MatrixXd VZe = Eigen::MatrixXd::Zero(Kins, Kins);
+  for (int s = 0; s < ngroup; ++s) {
+    Eigen::VectorXd Zes(LZy[s] -  LZV[s] * theta);
+    VZe += Zes * Zes.transpose();
+  }
+  Jstat = Ze.dot(ginv_gmm(VZe) * Ze);
 }
 
 
 void fgmm_red_bootcoef(Eigen::VectorXd& theta,
-                       Eigen::VectorXd& Ze,
+                       double& Jstat,
+                       const Eigen::VectorXd& Ze0,
                        const std::vector<Eigen::MatrixXd>& LZV,
                        const std::vector<Eigen::VectorXd>& LZy,
                        const std::vector<Eigen::MatrixXd>& LZZ,
@@ -593,13 +601,19 @@ void fgmm_red_bootcoef(Eigen::VectorXd& theta,
     if (iv) ZZ += LZZ[sgroup(s)];
   }
   if (iv) {
-    W = (ZZ / ngroup).inverse();
+    W = (ZZ / ngroup).ldlt().solve(Eigen::MatrixXd::Identity(Kins, Kins));
   }
   Eigen::MatrixXd VZW(ZV.transpose()*W), VZWZV(VZW*ZV);
   
   // estimate
   theta = VZWZV.colPivHouseholderQr().solve(VZW*Zy);
-  Ze    = (LZy[sgroup(0)] -  LZV[sgroup(0)] * theta);
+  Eigen::VectorXd Ze  =  Zy - ZV * theta - Ze0;
+  Eigen::MatrixXd VZe = Eigen::MatrixXd::Zero(Kins, Kins);
+  for (int s = 0; s < ngroup; ++s) {
+    Eigen::VectorXd Zes(LZy[sgroup(s)] -  LZV[sgroup(s)] * theta - Ze0 / ngroup);
+    VZe += Zes * Zes.transpose();
+  }
+  Jstat = Ze.dot(ginv_gmm(VZe) * Ze);
 }
 
 
@@ -651,11 +665,13 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
   // First iteration
   Eigen::MatrixXd W0(W);
   Eigen::VectorXd theta, Ze;
-  fgmm_red_bootcoef0(theta, Ze, LZV, LZy, LZZ, W0, ngroup, Kins, Kv, iv);
+  double stat;
+  fgmm_red_bootcoef0(theta, Ze, stat, LZV, LZy, LZZ, W0, ngroup, Kins, Kv, iv);
   Prog.increment();
   
   // Where to save ltheta
-  Eigen::MatrixXd ltheta(ntau + Kx, boot), lZe(Kins, boot);
+  Eigen::MatrixXd ltheta(ntau + Kx, boot);
+  Eigen::ArrayXd lstat(boot);
   
   //setup parallel settings
 #ifdef _OPENMP
@@ -665,8 +681,9 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
   int tid = omp_get_thread_num();
   std::mt19937 rng(seed + tid * 7919); 
   
-  Eigen::VectorXd theta_loc, Ze_loc;
+  Eigen::VectorXd theta_loc;
   Eigen::MatrixXd W_loc;
+  double stat_loc;
   
 #pragma omp for
   for (int k = 0; k < boot; ++ k) {
@@ -678,10 +695,10 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
       sgroup(s)   =  unidist(rng);
     }
     
-    fgmm_red_bootcoef(theta_loc, Ze_loc, LZV, LZy, LZZ, W_loc, sgroup,
+    fgmm_red_bootcoef(theta_loc, stat_loc, Ze, LZV, LZy, LZZ, W_loc, sgroup,
                       ngroup, Kins, Kv, iv);
     ltheta.col(k) = theta_loc;
-    lZe.col(k)    = Ze_loc;
+    lstat(k)      = stat_loc;
     
 #pragma omp critical
     Prog.increment();
@@ -690,8 +707,9 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
 #else
 std::mt19937 rng(seed); 
 
-Eigen::VectorXd theta_loc, Ze_loc;
+Eigen::VectorXd theta_loc;
 Eigen::MatrixXd W_loc;
+double stat_loc;
 for (int k = 0; k < boot; ++ k) {
   W_loc = W;
   // Select subnets
@@ -701,10 +719,10 @@ for (int k = 0; k < boot; ++ k) {
     sgroup(s)   =  unidist(rng);
   }
   
-  fgmm_red_bootcoef(theta_loc, Ze_loc, theta, LZV, LZy, LZZ, W_loc, sgroup,
+  fgmm_red_bootcoef(theta_loc, stat_loc, Ze, LZV, LZy, LZZ, W_loc, sgroup,
                     ngroup, Kins, Kv, iv);
   ltheta.col(k) = theta_loc;
-  lZe.col(k)    = Ze_loc;
+  lstat(k)      = stat_loc;
   Prog.increment();
 }
 #endif
@@ -716,12 +734,8 @@ Eigen::ArrayXd mtheta(ltheta.array().rowwise().mean());
 Eigen::MatrixXd dtheta(ltheta.array().colwise() - mtheta);
 Eigen::MatrixXd Vpa(dtheta * dtheta.transpose() / (boot - 1));
 
-// Variance of Ze
-// Eigen::MatrixXd dZe(lZe.array().colwise() - Ze.array());
-Eigen::MatrixXd VZe(lZe * lZe.transpose() / boot);
-
 // overidentification
-double stat = ngroup * Ze.dot(ginv_gmm(VZe) * Ze);
+double pval = (lstat > stat).count() / static_cast<double>(boot);
 
 // criterion
 double cri, BIC, AIC, HQIC;
@@ -734,7 +748,7 @@ Rcpp::List critLis = Rcpp::List::create(_["criterion"] = cri,
                                         _["AIC"]       = AIC,
                                         _["HQIC"]      = HQIC);
 
-return Rcpp::List::create(_["parms"] = theta, _["Vpa"] = Vpa, _["VZe"] = VZe, _["Overident"] = stat, 
+return Rcpp::List::create(_["parms"] = theta, _["Vpa"] = Vpa, _["Overident.stat"] = stat, _["Overident.pvalue"] = pval,
                           _["df"] = Kins - Kx - ntau, _["yhat"] = yhat, _["sigma2"] = R_NaN, _["W"] = W0,
                             _["criterion"] = critLis);
 }
