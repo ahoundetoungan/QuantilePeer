@@ -576,7 +576,7 @@ void fgmm_red_bootcoef(Eigen::VectorXd& theta,
   
   // Ze
   Eigen::VectorXd e = y(sel) - V(sel, Eigen::all) * theta;
-  Ze = ins.transpose() * e / ngroup;
+  Ze = ins(sel, Eigen::all).transpose() * e / ngroup;
 }
 
 
@@ -678,6 +678,9 @@ Eigen::MatrixXd Vpa(dtheta * dtheta.transpose() / (boot - 1));
 Eigen::MatrixXd VZe(lZe * lZe.transpose() / (boot - 1));
 
 // overidentification
+// cout<<Ze<<endl;
+// cout<<VZe<<endl;
+// cout<<ginv_gmm(VZe)<<endl;
 double stat = Ze.dot(ginv_gmm(VZe) * Ze);
 
 // criterion
