@@ -189,12 +189,12 @@ fParamFull <- function(param, covp, ntau, Kx1, Kx2) {
     .Call(`_QuantilePeer_fParamFull`, param, covp, ntau, Kx1, Kx2)
 }
 
-fgmm_red_boot <- function(y, V, ins, W, LnIs, LIs, ngroup, Kx, Kins, ntau, Kest, iv, boot, nthreads, seed, print) {
-    .Call(`_QuantilePeer_fgmm_red_boot`, y, V, ins, W, LnIs, LIs, ngroup, Kx, Kins, ntau, Kest, iv, boot, nthreads, seed, print)
+fgmm_red_boot <- function(y, V, ins, W, igroup, LnIs, LIs, ngroup, Kx, Kins, ntau, Kest, iv, boot, nthreads, seed, print) {
+    .Call(`_QuantilePeer_fgmm_red_boot`, y, V, ins, W, igroup, LnIs, LIs, ngroup, Kx, Kins, ntau, Kest, iv, boot, nthreads, seed, print)
 }
 
-fKPstat_boot <- function(qy, Z, index, LnIs, LIs, ngroup, boot, nthreads, seed, print) {
-    .Call(`_QuantilePeer_fKPstat_boot`, qy, Z, index, LnIs, LIs, ngroup, boot, nthreads, seed, print)
+fKPstat_boot <- function(qy, Z, index, igroup, LnIs, LIs, ngroup, boot, nthreads, seed, print) {
+    .Call(`_QuantilePeer_fKPstat_boot`, qy, Z, index, igroup, LnIs, LIs, ngroup, boot, nthreads, seed, print)
 }
 
 Cov2ThetaRed <- function(Z1, W1, e1, theta1, Z2, W2, e2, theta2, X, qy, Kest, ngroup, cumsn, HAC = 0L, full = FALSE) {
@@ -221,7 +221,7 @@ fEncompassingStruc <- function(y, qy1, Z1, Kest11, Kest21, qy2, Z2, Kest12, Kest
     .Call(`_QuantilePeer_fEncompassingStruc`, y, qy1, Z1, Kest11, Kest21, qy2, Z2, Kest12, Kest22, X, idX1, idX2, LnIs, LIs, ngroup, iv1, iv2, boot, nthreads, seed, print, full)
 }
 
-fEncompassingRed <- function(y, qy1, Z1, Kest1, qy2, Z2, Kest2, X, LnIs, LIs, ngroup, iv1, iv2, boot, nthreads, seed, print, full) {
-    .Call(`_QuantilePeer_fEncompassingRed`, y, qy1, Z1, Kest1, qy2, Z2, Kest2, X, LnIs, LIs, ngroup, iv1, iv2, boot, nthreads, seed, print, full)
+fEncompassingRed <- function(y, qy1, Z1, Kest1, qy2, Z2, Kest2, X, igroup, LnIs, LIs, ngroup, iv1, iv2, boot, nthreads, seed, print, full) {
+    .Call(`_QuantilePeer_fEncompassingRed`, y, qy1, Z1, Kest1, qy2, Z2, Kest2, X, igroup, LnIs, LIs, ngroup, iv1, iv2, boot, nthreads, seed, print, full)
 }
 

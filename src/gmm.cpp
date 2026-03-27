@@ -176,7 +176,7 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   if (iv) {
     W2 = (ZZ2/n_niso).inverse();
   }
-
+  
   Eigen::MatrixXd VZW2(ZV2.transpose()*W2), VZWZV2(VZW2*ZV2);
   Eigen::VectorXd Zy2(Z2.transpose()*y2);
   Eigen::VectorXd lambda(VZWZV2.colPivHouseholderQr().solve(VZW2*Zy2));
@@ -387,7 +387,7 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy,
     }
   }
   
-
+  
   Eigen::MatrixXd vecZe(n, Kins*ntau);
   for (int s(0); s < ntau; ++ s) {
     vecZe.block(0, s*Kins, n, Kins) = Z.array().colwise()*eps.col(s).array();
@@ -540,43 +540,66 @@ Rcpp::List fParamFull(const arma::vec& param,
 
 /////////////////////////////////////// Bootstrap
 // This function implements the GMM estimator (reduced-form), for one iteration of bootstrap
-void fgmm_red_bootcoef(Eigen::VectorXd& theta,
-                       Eigen::VectorXd& Ze,
-                       const Eigen::VectorXd& y,
-                       const Eigen::MatrixXd& V,
-                       const Eigen::MatrixXd& ins,
-                       Eigen::MatrixXd& W,
-                       const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
-                       const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
-                       const int& ngroup,
-                       const bool& iv){
-  // Find iso and nisolated
-  Eigen::ArrayXi sel(0);
-  for (int s = 0; s < ngroup; ++s) {
-    int n_Is(LIs[s].size()), n_nIs(LnIs[s].size());
-    if (n_Is > 0) {
-      sel.conservativeResize(sel.size() + n_Is);
-      sel.tail(n_Is) = LIs[s];
-    }
-    if (n_nIs > 0) {
-      sel.conservativeResize(sel.size() + n_nIs);
-      sel.tail(n_nIs) = LnIs[s];
-    }
-  }
+void fgmm_red_bootcoef0(Eigen::VectorXd& theta,
+                        Eigen::VectorXd& Ze,
+                        const std::vector<Eigen::MatrixXd>& LZV,
+                        const std::vector<Eigen::VectorXd>& LZy,
+                        const std::vector<Eigen::MatrixXd>& LZZ,
+                        Eigen::MatrixXd& W,
+                        const int& ngroup,
+                        const int& Kins,
+                        const int& Kv,
+                        const bool& iv){
+  Eigen::MatrixXd ZV = Eigen::MatrixXd::Zero(Kins, Kv);
+  Eigen::MatrixXd ZZ = Eigen::MatrixXd::Zero(Kins, Kins);
+  Eigen::VectorXd Zy = Eigen::VectorXd::Zero(Kins);
   
-  Eigen::MatrixXd ZV(ins(sel, Eigen::all).transpose()*V(sel, Eigen::all)), 
-  Zy(ins(sel, Eigen::all).transpose()*y(sel));
+  // Find iso and nisolated
+  for (int s = 0; s < ngroup; ++s) {
+    ZV += LZV[s];
+    Zy += LZy[s];
+    if (iv) ZZ += LZZ[s];
+  }
   if (iv) {
-    W = (ins(sel, Eigen::all).transpose()*ins(sel, Eigen::all) / ngroup).inverse();
+    W = (ZZ / ngroup).inverse();
   }
   Eigen::MatrixXd VZW(ZV.transpose()*W), VZWZV(VZW*ZV);
   
   // estimate
   theta = VZWZV.colPivHouseholderQr().solve(VZW*Zy);
+  Ze    =  (Zy - ZV * theta) / ngroup;
+}
+
+
+void fgmm_red_bootcoef(Eigen::VectorXd& theta,
+                       Eigen::VectorXd& Ze,
+                       const std::vector<Eigen::MatrixXd>& LZV,
+                       const std::vector<Eigen::VectorXd>& LZy,
+                       const std::vector<Eigen::MatrixXd>& LZZ,
+                       Eigen::MatrixXd& W,
+                       const Eigen::ArrayXi& sgroup,
+                       const int& ngroup,
+                       const int& Kins,
+                       const int& Kv,
+                       const bool& iv){
+  Eigen::MatrixXd ZV = Eigen::MatrixXd::Zero(Kins, Kv);
+  Eigen::MatrixXd ZZ = Eigen::MatrixXd::Zero(Kins, Kins);
+  Eigen::VectorXd Zy = Eigen::VectorXd::Zero(Kins);
   
-  // Ze
-  Eigen::VectorXd e = y(sel) - V(sel, Eigen::all) * theta;
-  Ze = ins(sel, Eigen::all).transpose() * e / ngroup;
+  // Find iso and nisolated
+  for (int s = 0; s < ngroup; ++s) {
+    ZV += LZV[sgroup(s)];
+    Zy += LZy[sgroup(s)];
+    if (iv) ZZ += LZZ[sgroup(s)];
+  }
+  if (iv) {
+    W = (ZZ / ngroup).inverse();
+  }
+  Eigen::MatrixXd VZW(ZV.transpose()*W), VZWZV(VZW*ZV);
+  
+  // estimate
+  theta = VZWZV.colPivHouseholderQr().solve(VZW*Zy);
+  Ze    = (LZy[sgroup(0)] -  LZV[sgroup(0)] * theta);
 }
 
 
@@ -585,6 +608,7 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
                          const Eigen::MatrixXd& V,
                          const Eigen::MatrixXd& ins,
                          const Eigen::MatrixXd& W,
+                         const Eigen::ArrayXi& igroup,
                          const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
                          const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
                          const int& ngroup,
@@ -597,17 +621,42 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
                          const int& nthreads,
                          const unsigned long long seed,
                          const bool& print){
+  int Kv(ntau + Kx);
+  
+  // Compute blocks
+  std::vector<Eigen::MatrixXd> LZV(ngroup);
+  std::vector<Eigen::VectorXd> LZy(ngroup);
+  std::vector<Eigen::MatrixXd> LZZ(ngroup);
+  
+#ifdef _OPENMP
+  omp_set_num_threads(nthreads);
+#pragma omp parallel for
+  for (int s = 0; s < ngroup; ++s) {
+    auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
+    LZV[s] = ins(idx, Eigen::all).transpose() * V(idx, Eigen::all);
+    LZy[s] = ins(idx, Eigen::all).transpose() * y(idx);
+    if (iv) LZZ[s] = ins(idx, Eigen::all).transpose() * ins(idx, Eigen::all);
+  }
+#else
+  for (int s = 0; s < ngroup; ++s) {
+    auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
+    LZV[s] = ins(idx, Eigen::all).transpose() * V(idx, Eigen::all);
+    LZy[s] = ins(idx, Eigen::all).transpose() * y(idx);
+    if (iv) LZZ[s] = ins(idx, Eigen::all).transpose() * ins(idx, Eigen::all);
+  }
+#endif
+  
   Progress Prog(boot + 1, print);
   
   // First iteration
-  Eigen::VectorXd theta, Ze;
   Eigen::MatrixXd W0(W);
-  fgmm_red_bootcoef(theta, Ze, y, V, ins, W0, LnIs, LIs, ngroup, iv);
+  Eigen::VectorXd theta, Ze;
+  fgmm_red_bootcoef0(theta, Ze, LZV, LZy, LZZ, W0, ngroup, Kins, Kv, iv);
   Prog.increment();
   
   // Where to save ltheta
   Eigen::MatrixXd ltheta(ntau + Kx, boot), lZe(Kins, boot);
-
+  
   //setup parallel settings
 #ifdef _OPENMP
   omp_set_num_threads(nthreads);
@@ -618,22 +667,19 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
   
   Eigen::VectorXd theta_loc, Ze_loc;
   Eigen::MatrixXd W_loc;
-
+  
 #pragma omp for
   for (int k = 0; k < boot; ++ k) {
     W_loc = W;
     // Select subnets
-    std::vector<Eigen::ArrayXi> lnIs_boot(ngroup);
-    std::vector<Eigen::ArrayXi> lIs_boot(ngroup);
+    Eigen::ArrayXi sgroup(ngroup);
     std::uniform_int_distribution<int> unidist(0, ngroup - 1);
     for (int s = 0; s < ngroup; ++ s) {
-      int sboot    =  unidist(rng);
-      lIs_boot[s]  = LIs[sboot];
-      lnIs_boot[s] = LnIs[sboot];
+      sgroup(s)   =  unidist(rng);
     }
     
-    fgmm_red_bootcoef(theta_loc, Ze_loc, y, V, ins, W_loc, lnIs_boot, lIs_boot,
-                      ngroup, iv);
+    fgmm_red_bootcoef(theta_loc, Ze_loc, LZV, LZy, LZZ, W_loc, sgroup,
+                      ngroup, Kins, Kv, iv);
     ltheta.col(k) = theta_loc;
     lZe.col(k)    = Ze_loc;
     
@@ -649,19 +695,17 @@ Eigen::MatrixXd W_loc;
 for (int k = 0; k < boot; ++ k) {
   W_loc = W;
   // Select subnets
-  std::vector<Eigen::ArrayXi> lnIs_boot(ngroup);
-  std::vector<Eigen::ArrayXi> lIs_boot(ngroup);
+  Eigen::ArrayXi sgroup(ngroup);
   std::uniform_int_distribution<int> unidist(0, ngroup - 1);
   for (int s = 0; s < ngroup; ++ s) {
-    int sboot    =  unidist(rng);
-    lIs_boot[s]  = LIs[sboot];
-    lnIs_boot[s] = LnIs[sboot];
+    sgroup(s)   =  unidist(rng);
   }
   
-  fgmm_red_bootcoef(theta_loc, Ze_loc, y, V, ins, W_loc, lnIs_boot, lIs_boot,
-                    ngroup, iv);
+  fgmm_red_bootcoef(theta_loc, Ze_loc, theta, LZV, LZy, LZZ, W_loc, sgroup,
+                    ngroup, Kins, Kv, iv);
   ltheta.col(k) = theta_loc;
   lZe.col(k)    = Ze_loc;
+  Prog.increment();
 }
 #endif
 
@@ -673,15 +717,11 @@ Eigen::MatrixXd dtheta(ltheta.array().colwise() - mtheta);
 Eigen::MatrixXd Vpa(dtheta * dtheta.transpose() / (boot - 1));
 
 // Variance of Ze
-// Eigen::ArrayXd mZe(lZe.array().rowwise().mean());
-// Eigen::MatrixXd dZe(lZe.array().colwise() - mZe);
-Eigen::MatrixXd VZe(lZe * lZe.transpose() / (boot - 1));
+// Eigen::MatrixXd dZe(lZe.array().colwise() - Ze.array());
+Eigen::MatrixXd VZe(lZe * lZe.transpose() / boot);
 
 // overidentification
-// cout<<Ze<<endl;
-// cout<<VZe<<endl;
-// cout<<ginv_gmm(VZe)<<endl;
-double stat = Ze.dot(ginv_gmm(VZe) * Ze);
+double stat = ngroup * Ze.dot(ginv_gmm(VZe) * Ze);
 
 // criterion
 double cri, BIC, AIC, HQIC;
@@ -705,13 +745,23 @@ void fKPstat_bootCoef0(Eigen::MatrixXd& selPi,
                        Eigen::MatrixXd& selZZ,
                        Eigen::MatrixXd& covz,
                        Eigen::MatrixXd& covqy,
+                       const std::vector<Eigen::MatrixXd>& LZZ,
+                       const std::vector<Eigen::MatrixXd>& LZqy,
                        const Eigen::MatrixXd& qy,
                        const Eigen::MatrixXd& Z,
                        const Eigen::ArrayXi& index,
                        const int& ngroup,
+                       const int& Kins,
+                       const int& ntau,
                        const int& boot) {
-  Eigen::MatrixXd ZZ = Z.transpose() * Z;
-  Eigen::MatrixXd Pi = ZZ.colPivHouseholderQr().solve(Z.transpose() * qy);
+  Eigen::MatrixXd ZZ  = Eigen::MatrixXd::Zero(Kins, Kins);
+  Eigen::MatrixXd Zqy = Eigen::MatrixXd::Zero(Kins, ntau);
+  for (int s = 0; s < ngroup; ++s) {
+    ZZ  += LZZ[s];
+    Zqy += LZqy[s];
+  }
+  
+  Eigen::MatrixXd Pi = ZZ.colPivHouseholderQr().solve(Zqy);
   selPi = Pi(index, Eigen::all).transpose();
   selZZ = ZZ(index, Eigen::all);
   
@@ -723,39 +773,23 @@ void fKPstat_bootCoef0(Eigen::MatrixXd& selPi,
 
 
 
-Eigen::VectorXd fKPstat_bootCoef(const Eigen::MatrixXd& qy,
-                                 const Eigen::MatrixXd& Z,
+Eigen::VectorXd fKPstat_bootCoef(const std::vector<Eigen::MatrixXd>& LZZ,
+                                 const std::vector<Eigen::MatrixXd>& LZqy,
                                  const Eigen::ArrayXi& index,
-                                 const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
-                                 const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
+                                 const Eigen::ArrayXi& sgroup,
                                  const int& ngroup,
+                                 const int& Kins,
                                  const int& l,
                                  const int& ntau) {
-  // Find iso and nisolated
-  int n = 0;
-  for (int s = 0; s < ngroup; ++s){
-    n += LIs[s].size() + LnIs[s].size();
-  }
-  
-  Eigen::ArrayXi sel(n);
-  int pos = 0;
+  Eigen::MatrixXd ZZ  = Eigen::MatrixXd::Zero(Kins, Kins);
+  Eigen::MatrixXd Zqy = Eigen::MatrixXd::Zero(Kins, ntau);
   for (int s = 0; s < ngroup; ++s) {
-    int n1 = LIs[s].size();
-    if (n1 > 0) {
-      sel.segment(pos, n1) = LIs[s];
-      pos += n1;
-    }
-    
-    int n2 = LnIs[s].size();
-    if (n2 > 0) {
-      sel.segment(pos, n2) = LnIs[s];
-      pos += n2;
-    }
+    ZZ  += LZZ[sgroup(s)];
+    Zqy += LZqy[sgroup(s)];
   }
   
   // Pi
-  Eigen::MatrixXd Pi  = Z(sel, Eigen::all).colPivHouseholderQr().solve(qy(sel, Eigen::all));
-  
+  Eigen::MatrixXd Pi  = ZZ.colPivHouseholderQr().solve(Zqy);
   return Pi(index, Eigen::all).transpose().reshaped(l * ntau, 1); // pi as a vector
 }
 
@@ -764,6 +798,7 @@ Eigen::VectorXd fKPstat_bootCoef(const Eigen::MatrixXd& qy,
 Rcpp::List fKPstat_boot(const Eigen::MatrixXd& qy,
                         const Eigen::MatrixXd& Z,
                         const Eigen::ArrayXi& index,
+                        const Eigen::ArrayXi& igroup,
                         const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
                         const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
                         const int& ngroup,
@@ -771,33 +806,54 @@ Rcpp::List fKPstat_boot(const Eigen::MatrixXd& qy,
                         const int& nthreads,
                         const unsigned long long seed,
                         const bool& print) {
-  int ntau(qy.cols()), l(index.size());
-  Eigen::ArrayXi selgroup(boot);
-  Progress Prog(boot + 1, print);
+  int ntau(qy.cols()), Kins(Z.cols()), l(index.size());
+  Eigen::MatrixXd selPi, selZZ, covz, covqy;
   Eigen::MatrixXd lpi(l * ntau, boot);
-
-  //setup parallel settings
+  
+  {
+    // Compute blocks
+    std::vector<Eigen::MatrixXd> LZZ(ngroup);
+    std::vector<Eigen::MatrixXd> LZqy(ngroup);
+    
 #ifdef _OPENMP
-  omp_set_num_threads(nthreads);
+    omp_set_num_threads(nthreads);
+#pragma omp parallel for
+    for (int s = 0; s < ngroup; ++s) {
+      auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
+      LZZ[s]  = Z(idx, Eigen::all).transpose() * Z(idx, Eigen::all);
+      LZqy[s] = Z(idx, Eigen::all).transpose() * qy(idx, Eigen::all);
+    }
+#else
+    for (int s = 0; s < ngroup; ++s) {
+      auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
+      LZZ[s]  = Z(idx, Eigen::all).transpose() * Z(idx, Eigen::all);
+      LZqy[s] = Z(idx, Eigen::all).transpose() * qy(idx, Eigen::all);
+    }
+#endif
+    
+    // For the main sample
+    Progress Prog(boot + 1, print);
+    fKPstat_bootCoef0(selPi, selZZ, covz, covqy, LZZ, LZqy, qy, Z, index,
+                      ngroup, Kins, ntau, boot);
+    Prog.increment();
+    
+    //setup parallel settings
+#ifdef _OPENMP
+    omp_set_num_threads(nthreads);
 #pragma omp parallel
 {
   int tid = omp_get_thread_num();
   std::mt19937 rng(seed + tid * 7919); 
   
 #pragma omp for
- for (int k = 0; k < boot; ++ k) {
+  for (int k = 0; k < boot; ++ k) {
     // Select subnets
-    std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
-    std::vector<Eigen::ArrayXi> LIs_boot(ngroup);
+    Eigen::ArrayXi sgroup(ngroup);
     std::uniform_int_distribution<int> unidist(0, ngroup - 1);
     for (int s = 0; s < ngroup; ++ s) {
-      int sboot    = unidist(rng);
-      LIs_boot[s]  = LIs[sboot];
-      LnIs_boot[s] = LnIs[sboot];
+      sgroup(s)   =  unidist(rng);
     }
-    
-    lpi.col(k) = fKPstat_bootCoef(qy, Z, index, LnIs_boot, LIs_boot, ngroup, 
-            l, ntau);
+    lpi.col(k) = fKPstat_bootCoef(LZZ, LZqy, index, sgroup, ngroup, Kins, l, ntau);
     
 #pragma omp critical
     Prog.increment();
@@ -807,76 +863,67 @@ Rcpp::List fKPstat_boot(const Eigen::MatrixXd& qy,
 std::mt19937 rng(seed); 
 for (int k = 0; k < boot; ++ k) {
   // Select subnets
-  std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
-  std::vector<Eigen::ArrayXi> LIs_boot(ngroup);
+  Eigen::ArrayXi sgroup(ngroup);
   std::uniform_int_distribution<int> unidist(0, ngroup - 1);
   for (int s = 0; s < ngroup; ++ s) {
-    int sboot    = unidist(rng);
-    LIs_boot[s]  = LIs[sboot];
-    LnIs_boot[s] = LnIs[sboot];
+    sgroup(s)   =  unidist(rng);
   }
-  
-  lpi.col(k) = fKPstat_bootCoef(qy, Z, index, LnIs_boot, LIs_boot, ngroup, 
-          l, ntau);
+  lpi.col(k) = fKPstat_bootCoef(LZZ, LZqy; index, sgroup, ngroup, Kins, l, ntau);
   Prog.increment();
 }
 #endif
-
-// For the main sample
-Eigen::MatrixXd selPi, selZZ, covz, covqy;
-fKPstat_bootCoef0(selPi, selZZ, covz, covqy, qy, Z, index, ngroup, boot);
-Prog.increment();
-
-// Variance of pi
-Eigen::ArrayXd mpi(lpi.array().rowwise().mean());
-Eigen::MatrixXd dpi(lpi.array().colwise() - mpi);
-Eigen::MatrixXd varpi(dpi * dpi.transpose() / (boot - 1));
-
-// normalisation
-Eigen::LLT<Eigen::MatrixXd> tpF(selZZ * ginv_gmm(covz) * selZZ.transpose()), tpG(covqy.inverse());
-Eigen::MatrixXd F(tpF.matrixL()); // O(1/sqrt(n))
-Eigen::MatrixXd G(tpG.matrixL().transpose()); // O(1)
-
-
-// Theta and its variance
-Eigen::MatrixXd Theta(G * selPi * F.transpose());
-Eigen::VectorXd theta(Theta.reshaped(l*ntau, 1));
-Eigen::MatrixXd FG(Eigen::kroneckerProduct(F, G));
-Eigen::MatrixXd vartheta(FG * varpi * FG.transpose());
-// cout << vartheta << endl;
-// Until this, replicate using bootstrap
-
-// SDV decomposition of Theta
-Eigen::JacobiSVD<Eigen::MatrixXd> svd(Theta, Eigen::ComputeFullU | Eigen::ComputeFullV);
-Eigen::MatrixXd U = svd.matrixU(); //ntau * ntau
-Eigen::VectorXd d = svd.singularValues();
-Eigen::MatrixXd ddiag = d.asDiagonal();
-Eigen::MatrixXd D(ntau, l);
-D << ddiag, Eigen::MatrixXd::Zero(ntau, l - ntau); //l*ntau
-Eigen::MatrixXd V = svd.matrixV(); //ntau * ntau
-
-//U12, U22, V12, V22
-int q(ntau - 1);
-Eigen::MatrixXd U12(U.block(0, q, q, ntau - q));
-Eigen::MatrixXd U22(U.block(q, q, ntau - q, ntau - q));
-Eigen::MatrixXd V12(V.block(0, q, q, l - q));
-Eigen::MatrixXd V22(V.block(q, q, l - q, l - q));
-
-// Aqper and Bqper
-Eigen::MatrixXd U12U22(ntau, ntau - q), V12V22(l, l - q);
-U12U22 << U12, U22;
-V12V22 << V12, V22;
-
-Eigen::MatrixXd Aper(U12U22 * U22.colPivHouseholderQr().solve(matrixSqrt(U22 * U22.transpose())));
-Eigen::MatrixXd Bper((V12V22 * V22.colPivHouseholderQr().solve(matrixSqrt(V22 * V22.transpose()))).transpose());
-
-// lambda and its varianve
-Eigen::MatrixXd BAper(Eigen::kroneckerProduct(Bper, Aper.transpose()));
-Eigen::VectorXd lambda (BAper * theta);
-Eigen::MatrixXd varlambda (BAper * vartheta * BAper.transpose());
-
-// statistic
-double stat = lambda.dot(ginv_gmm(varlambda) * lambda);
-
-return Rcpp::List::create(_["stat"] = stat, _["df"] = (ntau - q)*(l - q));
+  }
+  
+  // Variance of pi
+  Eigen::ArrayXd mpi(lpi.array().rowwise().mean());
+  Eigen::MatrixXd dpi(lpi.array().colwise() - mpi);
+  Eigen::MatrixXd varpi(dpi * dpi.transpose() / (boot - 1));
+  
+  // normalisation
+  Eigen::LLT<Eigen::MatrixXd> tpF(selZZ * ginv_gmm(covz) * selZZ.transpose()), tpG(covqy.inverse());
+  Eigen::MatrixXd F(tpF.matrixL()); // O(1/sqrt(n))
+  Eigen::MatrixXd G(tpG.matrixL().transpose()); // O(1)
+  
+  
+  // Theta and its variance
+  Eigen::MatrixXd Theta(G * selPi * F.transpose());
+  Eigen::VectorXd theta(Theta.reshaped(l*ntau, 1));
+  Eigen::MatrixXd FG(Eigen::kroneckerProduct(F, G));
+  Eigen::MatrixXd vartheta(FG * varpi * FG.transpose());
+  // cout << vartheta << endl;
+  // Until this, replicate using bootstrap
+  
+  // SDV decomposition of Theta
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(Theta, Eigen::ComputeFullU | Eigen::ComputeFullV);
+  Eigen::MatrixXd U = svd.matrixU(); //ntau * ntau
+  Eigen::VectorXd d = svd.singularValues();
+  Eigen::MatrixXd ddiag = d.asDiagonal();
+  Eigen::MatrixXd D(ntau, l);
+  D << ddiag, Eigen::MatrixXd::Zero(ntau, l - ntau); //l*ntau
+  Eigen::MatrixXd V = svd.matrixV(); //ntau * ntau
+  
+  //U12, U22, V12, V22
+  int q(ntau - 1);
+  Eigen::MatrixXd U12(U.block(0, q, q, ntau - q));
+  Eigen::MatrixXd U22(U.block(q, q, ntau - q, ntau - q));
+  Eigen::MatrixXd V12(V.block(0, q, q, l - q));
+  Eigen::MatrixXd V22(V.block(q, q, l - q, l - q));
+  
+  // Aqper and Bqper
+  Eigen::MatrixXd U12U22(ntau, ntau - q), V12V22(l, l - q);
+  U12U22 << U12, U22;
+  V12V22 << V12, V22;
+  
+  Eigen::MatrixXd Aper(U12U22 * U22.colPivHouseholderQr().solve(matrixSqrt(U22 * U22.transpose())));
+  Eigen::MatrixXd Bper((V12V22 * V22.colPivHouseholderQr().solve(matrixSqrt(V22 * V22.transpose()))).transpose());
+  
+  // lambda and its varianve
+  Eigen::MatrixXd BAper(Eigen::kroneckerProduct(Bper, Aper.transpose()));
+  Eigen::VectorXd lambda (BAper * theta);
+  Eigen::MatrixXd varlambda (BAper * vartheta * BAper.transpose());
+  
+  // statistic
+  double stat = lambda.dot(ginv_gmm(varlambda) * lambda);
+  
+  return Rcpp::List::create(_["stat"] = stat, _["df"] = (ntau - q)*(l - q));
 }

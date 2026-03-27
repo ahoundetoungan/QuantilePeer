@@ -215,9 +215,9 @@ fdiagnostic  <- function(object, nendo, seed, boot, nthreads, print) {
     rownames(out) <- rn
   } else if (HACnum == 3) {
     ## Weak instrument test
-    tpKP   <- fKPstat_boot(qy = endo, Z = ins, index = index, LnIs = lnIs, 
-                           LIs = lIs, ngroup = M, boot = boot, nthreads = nthreads,
-                           seed = seed, print = print)
+    tpKP   <- fKPstat_boot(qy = endo, Z = ins, index = index, igroup = ncs,
+                           LnIs = lnIs, LIs = lIs, ngroup = M, boot = boot, 
+                           nthreads = nthreads, seed = seed, print = print)
     
     ## Endogeneity test
     # not implemented!

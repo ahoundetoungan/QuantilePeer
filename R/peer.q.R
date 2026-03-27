@@ -1062,7 +1062,8 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE, boot = 5e2, n
         CTT   <- fEncompassingRed(y = y1, 
                                   qy1 = qy1, Z1 = Z1, Kest1 = Kest1, 
                                   qy2 = qy2, Z2 = Z2, Kest2 = Kest2, 
-                                  X = X1, LnIs = LnIs1, LIs = LIs1, ngroup = ngr1, 
+                                  igroup = igr, X = X1, LnIs = LnIs1, 
+                                  LIs = LIs1, ngroup = ngr1, 
                                   iv1 = iv1, iv2 = iv2, boot = boot, 
                                   nthreads = nthreads, seed = seed, print = print,
                                   full)

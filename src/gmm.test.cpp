@@ -523,81 +523,85 @@ Rcpp::List fTestMonotone(const Eigen::VectorXd& thetahat,
 
 // Encompassing test
 // Estimation one delta given selected groups
-Eigen::VectorXd fEncompassingStrucDeltaCoef(const Eigen::VectorXd& y,
-                                            const Eigen::MatrixXd& qy1,
-                                            const Eigen::MatrixXd& Z1,
-                                            const Eigen::MatrixXd& qy2,
-                                            const Eigen::MatrixXd& Z2,
-                                            const Eigen::MatrixXd& X, //common to both models
-                                            const Eigen::ArrayXi& idX1, //common to both models
-                                            const Eigen::ArrayXi& idX2, //common to both models
-                                            const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
-                                            const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
+Eigen::VectorXd fEncompassingStrucDeltaCoef(const std::vector<Eigen::MatrixXd>& LXX1, 
+                                            const std::vector<Eigen::VectorXd>& LXy1,
+                                            const std::vector<Eigen::MatrixXd>& LZZ21, 
+                                            const std::vector<Eigen::MatrixXd>& LZZ22,
+                                            const std::vector<Eigen::MatrixXd>& LZ21X2,
+                                            const std::vector<Eigen::MatrixXd>& LZ22X2,
+                                            const std::vector<Eigen::MatrixXd>& LZU21, 
+                                            const std::vector<Eigen::MatrixXd>& LZU22, 
+                                            const std::vector<Eigen::MatrixXd>& LZ22U21,
+                                            const std::vector<Eigen::VectorXd>& LZ21y2, 
+                                            const std::vector<Eigen::VectorXd>& LZ22y2,
+                                            const Eigen::ArrayXi& sgroup,
+                                            const Eigen::ArrayXi& has_iso, 
+                                            const Eigen::ArrayXi& has_niso,
                                             const int& ngroup,
                                             const int& ntau1,
                                             const int& ntau2,
+                                            const int& K1,
                                             const int& K2,
-                                            const int& Kins1,
-                                            const int& Kins2,
                                             const int& Kv1,
                                             const int& Kv2,
+                                            const int& Kins1,
+                                            const int& Kins2,
                                             const bool& iv1,
                                             const bool& iv2){
-  // Find iso and nisolated
-  int n_iso(0), n_niso(0);
+  Eigen::MatrixXd XX1    = Eigen::MatrixXd::Zero(K1, K1);
+  Eigen::VectorXd Xy1    = Eigen::VectorXd::Zero(K1);
+  Eigen::MatrixXd ZZ21   = Eigen::MatrixXd::Zero(Kins1, Kins1);
+  Eigen::MatrixXd ZZ22   = Eigen::MatrixXd::Zero(Kins2, Kins2);
+  Eigen::MatrixXd Z21X2  = Eigen::MatrixXd::Zero(Kins1, K1);
+  Eigen::MatrixXd Z22X2  = Eigen::MatrixXd::Zero(Kins2, K1);
+  Eigen::MatrixXd ZU21   = Eigen::MatrixXd::Zero(Kins1, Kv1 - 1);
+  Eigen::MatrixXd ZU22   = Eigen::MatrixXd::Zero(Kins2, Kv2 - 1);
+  Eigen::MatrixXd Z22U21 = Eigen::MatrixXd::Zero(Kins2, Kv1 - 1);
+  Eigen::VectorXd Z21y2  = Eigen::VectorXd::Zero(Kins1);
+  Eigen::VectorXd Z22y2  = Eigen::VectorXd::Zero(Kins2);
   for (int s = 0; s < ngroup; ++s) {
-    n_iso  += LIs[s].size();
-    n_niso += LnIs[s].size();
-  }
-  
-  Eigen::ArrayXi Is(n_iso), nIs(n_niso);
-  int pos_iso(0), pos_niso(0);
-  for (int s = 0; s < ngroup; ++s) {
-    int n1(LIs[s].size());
-    if (n1 > 0) {
-      Is.segment(pos_iso, n1) = LIs[s];
-      pos_iso += n1;
+    if (has_iso(sgroup(s))) {
+      XX1  += LXX1[sgroup(s)];
+      Xy1  += LXy1[sgroup(s)];
     }
-    
-    int n2(LnIs[s].size());
-    if (n2 > 0) {
-      nIs.segment(pos_niso, n2) = LnIs[s];
-      pos_niso += n2;
+    if (has_niso(sgroup(s))) {
+      if (iv1) ZZ21  += LZZ21[sgroup(s)];
+      if (iv2) ZZ22  += LZZ22[sgroup(s)];
+      Z21X2  += LZ21X2[sgroup(s)];
+      Z22X2  += LZ22X2[sgroup(s)];
+      ZU21   += LZU21[sgroup(s)];
+      ZU22   += LZU22[sgroup(s)];
+      Z22U21 += LZ22U21[sgroup(s)];
+      Z21y2  += LZ21y2[sgroup(s)];
+      Z22y2  += LZ22y2[sgroup(s)];
     }
   }
   
   // First stage
-  Eigen::VectorXd b(X(Is, idX1).colPivHouseholderQr().solve(y(Is)));
+  Eigen::VectorXd b(XX1.colPivHouseholderQr().solve(Xy1));
   
   // Variables and Instruments
-  Eigen::VectorXd Xb2(X(nIs, idX1) * b);
-  Eigen::MatrixXd V21(n_niso, Kv1), V22(n_niso, Kv2);
-  V21 << Xb2, qy1(nIs, Eigen::all), X(nIs, idX2);
-  V22 << Xb2, qy2(nIs, Eigen::all), X(nIs, idX2);
-  
-  Eigen::MatrixXd Z21(Z1(nIs, Eigen::all));
-  Eigen::MatrixXd Z22(Z2(nIs, Eigen::all));
-  
-  Eigen::MatrixXd ZV21(Z21.transpose()*V21);
-  Eigen::MatrixXd ZV22(Z22.transpose()*V22);
+  Eigen::VectorXd Z22X2b = Z22X2 * b;
+  Eigen::MatrixXd ZV21(Kins1, Kv1), ZV22(Kins2, Kv2), Z22V21(Kins2, Kv1);
+  ZV21 << Z21X2 * b, ZU21;
+  ZV22 << Z22X2b, ZU22;
+  Z22V21 << Z22X2b, Z22U21;
   
   // Weights
   Eigen::MatrixXd W21 = Eigen::MatrixXd::Identity(Kins1, Kins1);
   Eigen::MatrixXd W22 = Eigen::MatrixXd::Identity(Kins2, Kins2);
   if (iv1) {
-    W21 = (Z21.transpose()*Z21).inverse();
+    W21 = ZZ21.inverse();
   }
   if (iv2) {
-    W22 = (Z22.transpose()*Z22).inverse();
+    W22 = ZZ22.inverse();
   }
   
-  Eigen::VectorXd y2(y(nIs));
   Eigen::MatrixXd VZW21(ZV21.transpose()*W21), VZWZV21(VZW21*ZV21);
   Eigen::MatrixXd VZW22(ZV22.transpose()*W22), VZWZV22(VZW22*ZV22);
-  Eigen::VectorXd lambda1(VZWZV21.colPivHouseholderQr().solve(VZW21 * Z21.transpose() * y2));
-  Eigen::ArrayXd e21(y2 - V21 * lambda1);
-  
-  return (VZWZV22).colPivHouseholderQr().solve(VZW22 * Z22.transpose() * e21.matrix());
+  Eigen::VectorXd lambda1(VZWZV21.colPivHouseholderQr().solve(VZW21 * Z21y2));
+  Eigen::VectorXd Z22e21(Z22y2 - Z22V21 * lambda1);
+  return (VZWZV22).colPivHouseholderQr().solve(VZW22 * Z22e21);
 }
 
 
@@ -620,17 +624,90 @@ Rcpp::List fEncompassingStrucDelta(const Eigen::VectorXd& y,
                                    const unsigned long long seed,
                                    const bool& print) { 
   // Fixed variables
-  int ntau1(qy1.cols()), ntau2(qy2.cols()), K2(idX2.size()), 
+  int n(y.size()), K1(idX1.size()), K2(idX2.size()), 
+  ntau1(qy1.cols()), ntau2(qy2.cols()), 
   Kins1(Z1.cols()), Kins2(Z2.cols()),
   Kv1(1 + ntau1 + K2), Kv2(1 + ntau2 + K2);
+  
+  // determine if has iso ans niso
+  Eigen::ArrayXi has_iso  = Eigen::ArrayXi::Zero(ngroup);
+  Eigen::ArrayXi has_niso = Eigen::ArrayXi::Zero(ngroup);
+  
+  // Block variables
+  std::vector<Eigen::MatrixXd> LXX1(ngroup);
+  std::vector<Eigen::MatrixXd> LZZ21(ngroup), LZZ22(ngroup);
+  std::vector<Eigen::MatrixXd> LZ21X2(ngroup), LZ22X2(ngroup);
+  std::vector<Eigen::MatrixXd> LZU21(ngroup), LZU22(ngroup), LZ22U21(ngroup);
+  std::vector<Eigen::VectorXd> LZ21y2(ngroup), LZ22y2(ngroup), LXy1(ngroup);
+  
+  {
+    Eigen::MatrixXd U1(n, Kv1 - 1), U2(n, Kv2 - 1); // missing the Xb part
+    U1 << qy1, X(Eigen::all, idX2);
+    U2 << qy2, X(Eigen::all, idX2);
+    
+#ifdef _OPENMP
+    omp_set_num_threads(nthreads);
+#pragma omp parallel for
+    for (int s = 0; s < ngroup; ++s) {
+      // For isolated
+      int n_iso(LIs[s].size());
+      if (n_iso > 0) {
+        has_iso(s) = 1;
+        LXX1[s]    = X(LIs[s], idX1).transpose() * X(LIs[s], idX1);
+        LXy1[s]    = X(LIs[s], idX1).transpose() * y(LIs[s]);
+      }
+      
+      // For non isolated
+      int n_niso(LnIs[s].size());
+      if (n_niso > 0) {
+        has_niso(s) = 1;
+        if (iv1) LZZ21[s]  = Z1(LnIs[s], Eigen::all).transpose() * Z1(LnIs[s], Eigen::all);
+        if (iv2) LZZ22[s]  = Z2(LnIs[s], Eigen::all).transpose() * Z2(LnIs[s], Eigen::all);
+        LZ21X2[s]  = Z1(LnIs[s], Eigen::all).transpose() * X(LnIs[s], idX1);
+        LZ22X2[s]  = Z2(LnIs[s], Eigen::all).transpose() * X(LnIs[s], idX1);
+        LZU21[s]   = Z1(LnIs[s], Eigen::all).transpose() * U1(LnIs[s], Eigen::all);
+        LZU22[s]   = Z2(LnIs[s], Eigen::all).transpose() * U2(LnIs[s], Eigen::all);
+        LZ22U21[s] = Z2(LnIs[s], Eigen::all).transpose() * U1(LnIs[s], Eigen::all);
+        LZ21y2[s]  = Z1(LnIs[s], Eigen::all).transpose() * y(LnIs[s]);
+        LZ22y2[s]  = Z2(LnIs[s], Eigen::all).transpose() * y(LnIs[s]);
+      }
+    }
+#else
+    for (int s = 0; s < ngroup; ++s) {
+      // For isolated
+      int n_iso(LIs[s].size());
+      if (n_iso > 0) {
+        has_iso(s) = 1;
+        LXX1[s]    = X(LIs[s], idX1).transpose() * X(LIs[s], idX1);
+        LXy1[s]    = X(LIs[s], idX1).transpose() * y(LIs[s]);
+      }
+      
+      // For non isolated
+      int n_niso(LnIs[s].size());
+      if (n_niso > 0) {
+        has_niso(s) = 1;
+        if (iv1) LZZ21[s]  = Z1(LnIs[s], Eigen::all).transpose() * Z1(LnIs[s], Eigen::all);
+        if (iv2) LZZ22[s]  = Z2(LnIs[s], Eigen::all).transpose() * Z2(LnIs[s], Eigen::all);
+        LZ21X2[s]  = Z1(LnIs[s], Eigen::all).transpose() * X(LnIs[s], idX1);
+        LZ22X2[s]  = Z2(LnIs[s], Eigen::all).transpose() * X(LnIs[s], idX1);
+        LZU21[s]   = Z1(LnIs[s], Eigen::all).transpose() * U1(LnIs[s], Eigen::all);
+        LZU22[s]   = Z2(LnIs[s], Eigen::all).transpose() * U2(LnIs[s], Eigen::all);
+        LZ22U21[s] = Z2(LnIs[s], Eigen::all).transpose() * U1(LnIs[s], Eigen::all);
+        LZ21y2[s]  = Z1(LnIs[s], Eigen::all).transpose() * y(LnIs[s]);
+        LZ22y2[s]  = Z2(LnIs[s], Eigen::all).transpose() * y(LnIs[s]);
+      }
+    }
+#endif
+  }  
   
   Progress Prog(boot + 1, print);
   
   // Where to save ldelta
+  Eigen::ArrayXi sgroup = Eigen::ArrayXi::LinSpaced(ngroup, 0, ngroup - 1);
   Eigen::MatrixXd ldelta(Kv2, boot + 1);
-  ldelta.col(0) = fEncompassingStrucDeltaCoef(y, qy1, Z1, qy2, Z2, X, idX1,
-             idX2, LnIs, LIs, ngroup, ntau1, ntau2, K2, Kins1, Kins2,
-             Kv1, Kv2, iv1, iv2);
+  ldelta.col(0) = fEncompassingStrucDeltaCoef(LXX1, LXy1, LZZ21, LZZ22, LZ21X2,
+             LZ22X2, LZU21, LZU22, LZ22U21, LZ21y2, LZ22y2, sgroup, has_iso,
+             has_niso, ngroup, ntau1, ntau2, K1, K2, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
   Prog.increment();
   
   //setup parallel settings
@@ -644,18 +721,15 @@ Rcpp::List fEncompassingStrucDelta(const Eigen::VectorXd& y,
 #pragma omp for
   for (int k = 0; k < boot; ++ k) {
     // Select subnets
-    std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
-    std::vector<Eigen::ArrayXi> LIs_boot(ngroup);
+    Eigen::ArrayXi sgroup_loc(ngroup);
     std::uniform_int_distribution<int> unidist(0, ngroup - 1);
     for (int s = 0; s < ngroup; ++ s) {
-      int sboot    =  unidist(rng);
-      LIs_boot[s]  = LIs[sboot];
-      LnIs_boot[s] = LnIs[sboot];
+      sgroup_loc(s)   =  unidist(rng);
     }
     
-    ldelta.col(k + 1) = fEncompassingStrucDeltaCoef(y, qy1, Z1, qy2, Z2, X, idX1,
-               idX2, LnIs_boot, LIs_boot, ngroup, ntau1, ntau2, K2, Kins1, Kins2,
-               Kv1, Kv2, iv1, iv2);
+    ldelta.col(k + 1) = fEncompassingStrucDeltaCoef(LXX1, LXy1, LZZ21, LZZ22, LZ21X2,
+               LZ22X2, LZU21, LZU22, LZ22U21, LZ21y2, LZ22y2, sgroup_loc, has_iso,
+               has_niso, ngroup, ntau1, ntau2, K1, K2, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
 #pragma omp critical
     Prog.increment();
   }
@@ -664,18 +738,15 @@ Rcpp::List fEncompassingStrucDelta(const Eigen::VectorXd& y,
 std::mt19937 rng(seed); 
 for (int k = 0; k < boot; ++ k) {
   // Select subnets
-  std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
-  std::vector<Eigen::ArrayXi> LIs_boot(ngroup);
+  Eigen::ArrayXi sgroup_loc(ngroup);
   std::uniform_int_distribution<int> unidist(0, ngroup - 1);
   for (int s = 0; s < ngroup; ++ s) {
-    int sboot    =  unidist(rng);
-    LIs_boot[s]  = LIs[sboot];
-    LnIs_boot[s] = LnIs[sboot];
+    sgroup_loc(s)   =  unidist(rng);
   }
   
-  ldelta.col(k + 1) = fEncompassingStrucDeltaCoef(y, qy1, Z1, qy2, Z2, X, idX1,
-             idX2, LnIs_boot, LIs_boot, ngroup, ntau1, ntau2, K2, Kins1, Kins2,
-             Kv1, Kv2, iv1, iv2);
+  ldelta.col(k + 1) = fEncompassingStrucDeltaCoef(LXX1, LXy1, LZZ21, LZZ22, LZ21X2,
+             LZ22X2, LZU21, LZU22, LZ22U21, LZ21y2, LZ22y2, sgroup_loc, has_iso,
+             has_niso, ngroup, ntau1, ntau2, Kx, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
   Prog.increment();
 }
 #endif
@@ -772,76 +843,52 @@ Rcpp::List fEncompassingStruc(const Eigen::VectorXd& y,
 
 
 // Same function for the reduxed form model
-Eigen::VectorXd fEncompassingRedDeltaCoef(const Eigen::VectorXd& y,
-                                          const Eigen::MatrixXd& qy1,
-                                          const Eigen::MatrixXd& Z1,
-                                          const Eigen::MatrixXd& qy2,
-                                          const Eigen::MatrixXd& Z2,
-                                          const Eigen::MatrixXd& X, //common to both models
-                                          const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
-                                          const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
+Eigen::VectorXd fEncompassingRedDeltaCoef(const std::vector<Eigen::MatrixXd>& LZZ1, 
+                                          const std::vector<Eigen::MatrixXd>& LZZ2,
+                                          const std::vector<Eigen::MatrixXd>& LZV1, 
+                                          const std::vector<Eigen::MatrixXd>& LZV2, 
+                                          const std::vector<Eigen::MatrixXd>& LZ2V1,
+                                          const std::vector<Eigen::VectorXd>& LZ1y, 
+                                          const std::vector<Eigen::VectorXd>& LZ2y,
+                                          const Eigen::ArrayXi& sgroup,
                                           const int& ngroup,
-                                          const int& ntau1,
-                                          const int& ntau2,
-                                          const int& K,
                                           const int& Kv1,
                                           const int& Kv2,
                                           const int& Kins1,
                                           const int& Kins2,
                                           const bool& iv1,
                                           const bool& iv2){
-  // Find iso and nisolated
-  int n = 0;
-  for (int s = 0; s < ngroup; ++s){
-    n += LIs[s].size() + LnIs[s].size();
-  }
-  
-  Eigen::ArrayXi sel(n);
-  int pos = 0;
+  Eigen::MatrixXd ZZ1  = Eigen::MatrixXd::Zero(Kins1, Kins1);
+  Eigen::MatrixXd ZZ2  = Eigen::MatrixXd::Zero(Kins2, Kins2);
+  Eigen::MatrixXd ZV1  = Eigen::MatrixXd::Zero(Kins1, Kv1);
+  Eigen::MatrixXd ZV2  = Eigen::MatrixXd::Zero(Kins2, Kv2);
+  Eigen::MatrixXd Z2V1 = Eigen::MatrixXd::Zero(Kins2, Kv1);
+  Eigen::VectorXd Z1y  = Eigen::VectorXd::Zero(Kins1);
+  Eigen::VectorXd Z2y  = Eigen::VectorXd::Zero(Kins2);
   for (int s = 0; s < ngroup; ++s) {
-    int n1 = LIs[s].size();
-    if (n1 > 0) {
-      sel.segment(pos, n1) = LIs[s];
-      pos += n1;
-    }
-    
-    int n2 = LnIs[s].size();
-    if (n2 > 0) {
-      sel.segment(pos, n2) = LnIs[s];
-      pos += n2;
-    }
+    if (iv1) ZZ1  += LZZ1[sgroup(s)];
+    if (iv2) ZZ2  += LZZ2[sgroup(s)];
+    ZV1  += LZV1[sgroup(s)];
+    ZV2  += LZV2[sgroup(s)];
+    Z2V1 += LZ2V1[sgroup(s)];
+    Z1y  += LZ1y[sgroup(s)];
+    Z2y  += LZ2y[sgroup(s)];
   }
-  
-  // Variables and Instruments
-  Eigen::MatrixXd V1(n, Kv1), V2(n, Kv2);
-  V1 << qy1(sel, Eigen::all), X(sel, Eigen::all);
-  V2 << qy2(sel, Eigen::all), X(sel, Eigen::all);
-  Eigen::MatrixXd Z1sel = Z1(sel, Eigen::all);
-  Eigen::MatrixXd Z2sel = Z2(sel, Eigen::all);
-  Eigen::VectorXd ysel = y(sel);
   
   // Weights
   Eigen::MatrixXd W1 = Eigen::MatrixXd::Identity(Kins1, Kins1);
   Eigen::MatrixXd W2 = Eigen::MatrixXd::Identity(Kins2, Kins2);
   if (iv1) {
-    W1 = (Z1sel.transpose()*Z1sel).inverse();
+    W1 = (ZZ1).inverse();
   }
   if (iv2) {
-    W2 = (Z2sel.transpose()*Z2sel).inverse();
+    W2 = (ZZ2).inverse();
   }
   
-  Eigen::MatrixXd ZV1(Z1sel.transpose() * V1), 
-  VZW1(ZV1.transpose() * W1), VZWZV1(VZW1 * ZV1);
-  Eigen::MatrixXd ZV2(Z2sel.transpose() * V2), 
-  VZW2(ZV2.transpose() * W2), VZWZV2(VZW2 * ZV2);
-  Eigen::VectorXd Z1y(Z1sel.transpose() * ysel);
-  
+  Eigen::MatrixXd VZW1(ZV1.transpose() * W1), VZWZV1(VZW1 * ZV1);
+  Eigen::MatrixXd VZW2(ZV2.transpose() * W2), VZWZV2(VZW2 * ZV2);
   Eigen::VectorXd lambda1(VZWZV1.colPivHouseholderQr().solve(VZW1 * Z1y));
-  // cout << lambda1.transpose() << endl;
-  Eigen::VectorXd e1(ysel - V1 * lambda1);
-  
-  Eigen::VectorXd Z2e1(Z2sel.transpose() * e1);
-  
+  Eigen::VectorXd Z2e1(Z2y - Z2V1 * lambda1);
   return VZWZV2.colPivHouseholderQr().solve(VZW2 * Z2e1);
 }
 
@@ -851,6 +898,7 @@ Rcpp::List fEncompassingRedDelta(const Eigen::VectorXd& y,
                                  const Eigen::MatrixXd& qy2,
                                  const Eigen::MatrixXd& Z2,
                                  const Eigen::MatrixXd& X, //common to both models
+                                 const Eigen::ArrayXi& igroup,
                                  const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
                                  const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
                                  const int& ngroup,
@@ -861,16 +909,55 @@ Rcpp::List fEncompassingRedDelta(const Eigen::VectorXd& y,
                                  const unsigned long long seed,
                                  const bool& print) { 
   // Fixed variables
-  int ntau1(qy1.cols()), ntau2(qy2.cols()), K(X.cols()), 
+  int n(y.size()), ntau1(qy1.cols()), ntau2(qy2.cols()), K(X.cols()), 
   Kv1(ntau1 + K), Kv2(ntau2 + K),
   Kins1(Z1.cols()), Kins2(Z2.cols());
+  
+  // Block variable
+  std::vector<Eigen::MatrixXd> LZZ1(ngroup), LZZ2(ngroup);
+  std::vector<Eigen::MatrixXd> LZV1(ngroup), LZV2(ngroup), LZ2V1(ngroup);
+  std::vector<Eigen::VectorXd> LZ1y(ngroup), LZ2y(ngroup);
+
+  {
+    Eigen::MatrixXd V1(n, Kv1), V2(n, Kv2);
+    V1 << qy1, X;
+    V2 << qy2, X;
+    
+#ifdef _OPENMP
+    omp_set_num_threads(nthreads);
+#pragma omp parallel for
+    for (int s = 0; s < ngroup; ++s) {
+      auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
+      if (iv1) LZZ1[s]  = Z1(idx, Eigen::all).transpose() * Z1(idx, Eigen::all);
+      if (iv2) LZZ2[s]  = Z2(idx, Eigen::all).transpose() * Z2(idx, Eigen::all);
+      LZV1[s]  = Z1(idx, Eigen::all).transpose() * V1(idx, Eigen::all);
+      LZV2[s]  = Z2(idx, Eigen::all).transpose() * V2(idx, Eigen::all);
+      LZ2V1[s] = Z2(idx, Eigen::all).transpose() * V1(idx, Eigen::all);
+      LZ1y[s]  = Z1(idx, Eigen::all).transpose() * y(idx);
+      LZ2y[s]  = Z2(idx, Eigen::all).transpose() * y(idx);
+    }
+#else
+    for (int s = 0; s < ngroup; ++s) {
+      auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
+      LZZ1[s]  = Z1(idx, Eigen::all).transpose() * Z1(idx, Eigen::all);
+      LZZ2[s]  = Z2(idx, Eigen::all).transpose() * Z2(idx, Eigen::all);
+      LZV1[s]  = Z1(idx, Eigen::all).transpose() * V1(idx, Eigen::all);
+      LZV2[s]  = Z2(idx, Eigen::all).transpose() * V2(idx, Eigen::all);
+      LZ2V1[s] = Z2(idx, Eigen::all).transpose() * V1(idx, Eigen::all);
+      LZ1y[s]  = Z1(idx, Eigen::all).transpose() * y(idx);
+      LZ2y[s]  = Z2(idx, Eigen::all).transpose() * y(idx);
+    }
+#endif
+  }  
+
   
   Progress Prog(boot + 1, print);
   
   // Where to save ldelta
   Eigen::MatrixXd ldelta(Kv2, boot + 1);
-  ldelta.col(0) = fEncompassingRedDeltaCoef(y, qy1, Z1, qy2, Z2, X, LnIs, LIs, ngroup,
-             ntau1, ntau2, K, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
+  Eigen::ArrayXi sgroup = Eigen::ArrayXi::LinSpaced(ngroup, 0, ngroup - 1);
+  ldelta.col(0) = fEncompassingRedDeltaCoef(LZZ1, LZZ2, LZV1, LZV2, LZ2V1, LZ1y, LZ2y,
+             sgroup, ngroup, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
   Prog.increment();
   
   //setup parallel settings
@@ -884,17 +971,14 @@ Rcpp::List fEncompassingRedDelta(const Eigen::VectorXd& y,
 #pragma omp for
   for (int k = 0; k < boot; ++ k) {
     // Select subnets
-    std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
-    std::vector<Eigen::ArrayXi> LIs_boot(ngroup);
+    Eigen::ArrayXi sgroup_loc(ngroup);
     std::uniform_int_distribution<int> unidist(0, ngroup - 1);
     for (int s = 0; s < ngroup; ++ s) {
-      int sboot    =  unidist(rng);
-      LIs_boot[s]  = LIs[sboot];
-      LnIs_boot[s] = LnIs[sboot];
+      sgroup_loc(s)   =  unidist(rng);
     }
     
-    ldelta.col(k + 1) = fEncompassingRedDeltaCoef(y, qy1, Z1, qy2, Z2, X, LnIs_boot, LIs_boot, ngroup,
-               ntau1, ntau2, K, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
+    ldelta.col(k + 1) = fEncompassingRedDeltaCoef(LZZ1, LZZ2, LZV1, LZV2, LZ2V1, LZ1y, LZ2y,
+               sgroup_loc, ngroup, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
 #pragma omp critical
     Prog.increment();
   }
@@ -903,18 +987,15 @@ Rcpp::List fEncompassingRedDelta(const Eigen::VectorXd& y,
 std::mt19937 rng(seed); 
 for (int k = 0; k < boot; ++ k) {
   // Select subnets
-  std::vector<Eigen::ArrayXi> LnIs_boot(ngroup);
-  std::vector<Eigen::ArrayXi> LIs_boot(ngroup);
+  Eigen::ArrayXi sgroup_loc(ngroup);
   std::uniform_int_distribution<int> unidist(0, ngroup - 1);
   for (int s = 0; s < ngroup; ++ s) {
-    int sboot    =  unidist(rng);
-    LIs_boot[s]  = LIs[sboot];
-    LnIs_boot[s] = LnIs[sboot];
+    sgroup_loc(s)   =  unidist(rng);
   }
   
-  ldelta.col(k + 1) = fEncompassingRedDeltaCoef(y, qy1, Z1, qy2, Z2, X, LnIs_boot, LIs_boot, ngroup,
-             ntau1, ntau2, K, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
-#pragma omp critical
+  ldelta.col(k + 1) = fEncompassingRedDeltaCoef(LZZ1, LZZ2, LZV1, LZV2, LZ2V1, LZ1y, LZ2y,
+             sgroup_loc, ngroup, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
+  Prog.increment();
 }
 #endif
 
@@ -935,6 +1016,7 @@ Rcpp::List fEncompassingRed(const Eigen::VectorXd& y,
                             const Eigen::MatrixXd& Z2,
                             const int& Kest2,
                             const Eigen::MatrixXd& X, //common to both models
+                            const Eigen::ArrayXi& igroup,
                             const std::vector<Eigen::ArrayXi>& LnIs, //common to both models
                             const std::vector<Eigen::ArrayXi>& LIs,  //common to both models
                             const int& ngroup,
@@ -951,7 +1033,7 @@ Rcpp::List fEncompassingRed(const Eigen::VectorXd& y,
   Eigen::VectorXd mdelta;
   Eigen::MatrixXd Vardelta;
   {
-    Rcpp::List tp = fEncompassingRedDelta(y, qy1, Z1, qy2, Z2, X, 
+    Rcpp::List tp = fEncompassingRedDelta(y, qy1, Z1, qy2, Z2, X, igroup, 
                                           LnIs, LIs, ngroup, iv1, iv2, 
                                           boot, nthreads, seed, print);
     delta     = tp["delta"];
@@ -971,7 +1053,6 @@ Rcpp::List fEncompassingRed(const Eigen::VectorXd& y,
   Eigen::VectorXd deltasel(R * delta);
   // variance
   Eigen::MatrixXd Vardeltasel(R * Vardelta * R.transpose());
-  
   
   int df1(Kdeltasel), df2(y.rows() - Kest2);
   Eigen::ArrayXi itheta(df1);

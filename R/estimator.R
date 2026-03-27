@@ -89,9 +89,10 @@ freduce <- function(y, V, ins, igr, nvec, M, Kins, Kx, ntau, Kest, n, HACnum, iv
                           Kins = Kins, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = FALSE)
     }
   } else if (HACnum == 3) {
-    GMMe      <- fgmm_red_boot(y = y, V = V, ins = ins, W = diag(Kins), LnIs = LnIs, LIs = LIs,
-                               ngroup = M, Kx = Kx, Kins = Kins, ntau = ntau, Kest = Kest, iv = iv,
-                               boot = boot, nthreads = nthreads, seed = seed, print = print)
+    GMMe      <- fgmm_red_boot(y = y, V = V, ins = ins, W = diag(Kins), igroup = igr, 
+                               LnIs = LnIs, LIs = LIs, ngroup = M, Kx = Kx, Kins = Kins, 
+                               ntau = ntau, Kest = Kest, iv = iv, boot = boot, 
+                               nthreads = nthreads, seed = seed, print = print)
   } else if (estimator == "JIVE") {
     if (HACnum == 2) {
       GMMe    <- fJIVE_redClu(y = y, V = V, ins = ins, igroup = igr, nvec = nvec, ngroup = M, Kx = Kx, 
