@@ -746,7 +746,7 @@ for (int k = 0; k < boot; ++ k) {
   
   ldelta.col(k + 1) = fEncompassingStrucDeltaCoef(LXX1, LXy1, LZZ21, LZZ22, LZ21X2,
              LZ22X2, LZU21, LZU22, LZ22U21, LZ21y2, LZ22y2, sgroup_loc, has_iso,
-             has_niso, ngroup, ntau1, ntau2, Kx, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
+             has_niso, ngroup, ntau1, ntau2, K1, K2, Kv1, Kv2, Kins1, Kins2, iv1, iv2);
   Prog.increment();
 }
 #endif
