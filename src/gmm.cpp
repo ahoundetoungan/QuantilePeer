@@ -368,33 +368,39 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy,
                    const int& HAC = 0) {
   int n(qy.rows()), ntau(qy.cols()), l(index.size()), Kins(Z.cols()), 
   Kx(Kins - l), ngroup(igroup.size() - 1);
-  Eigen::MatrixXd ZZ(Z.transpose() * Z);
-  Eigen::MatrixXd iZZ(ZZ.inverse());
-  Eigen::MatrixXd Zqy(Z.transpose() * qy);
+  
+  // Partialling out X
+  Eigen::ColPivHouseholderQR <Eigen::MatrixXd> qrX(Z.leftCols(Kx).transpose() * Z.leftCols(Kx));
+  
+  Eigen::MatrixXd betaqy = qrX.solve(Z.leftCols(Kx).transpose() * qy);
+  Eigen::MatrixXd betaZ  = qrX.solve(Z.leftCols(Kx).transpose() * Z.rightCols(l));
+  
+  Eigen::MatrixXd rqy = qy - Z.leftCols(Kx) * betaqy;
+  Eigen::MatrixXd rZ  = Z.rightCols(l) - Z.leftCols(Kx) * betaZ;
+  
+  Eigen::MatrixXd ZZ(rZ.transpose() * rZ);
+  Eigen::MatrixXd iZZ(ZZ.ldlt().solve(Eigen::MatrixXd::Identity(l, l)));
+  Eigen::MatrixXd Zqy(rZ.transpose() * rqy);
   
   // estimator and residuals
   Eigen::MatrixXd Pi(Zqy.transpose() * iZZ);
-  Eigen::MatrixXd eps(qy - Z * Pi.transpose());
-  Eigen::MatrixXd selPi = Pi(Eigen::all, index);
-  Eigen::MatrixXd selZZ = ZZ(index, Eigen::all);
-  Eigen::VectorXd pi(selPi.reshaped(l * ntau, 1)); // Eigen::kroneckerProduct(Eigen::MatrixXd::Identity(l, l), Zqy.transpose()) * ZZ.inverse().reshaped(l*l, 1)
+  Eigen::MatrixXd eps(rqy - rZ * Pi.transpose());
   
   // vec(Ze)
-  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(l * ntau, Kins * ntau));
+  Eigen::MatrixXd R(Eigen::MatrixXd::Zero(l * ntau, l * ntau));
   for (int s1(0); s1 < l; ++ s1) {
     for (int s2(0); s2 < ntau; ++ s2) {
-      R(s1 * ntau + s2, s2 * Kins + s1 + Kx) = 1;
+      R(s1 * ntau + s2, s2 * l + s1) = 1;
     }
   }
   
-  
-  Eigen::MatrixXd vecZe(n, Kins*ntau);
+  Eigen::MatrixXd vecZe(n, l*ntau);
   for (int s(0); s < ntau; ++ s) {
-    vecZe.block(0, s*Kins, n, Kins) = Z.array().colwise()*eps.col(s).array();
+    vecZe.block(0, s*l, n, l) = rZ.array().colwise()*eps.col(s).array();
   }
   
   // Variance of vec(Ze), covqy and covz
-  Eigen::MatrixXd VvecZe(Eigen::MatrixXd::Zero(Kins*ntau, Kins*ntau));
+  Eigen::MatrixXd VvecZe(Eigen::MatrixXd::Zero(l*ntau, l*ntau));
   if (HAC <= 1) {
     VvecZe = vecZe.transpose() * vecZe;
   } else if (HAC == 2) {
@@ -407,21 +413,21 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy,
   
   // Variance of pi
   Eigen::MatrixXd H(R * Eigen::kroneckerProduct(Eigen::MatrixXd::Identity(ntau, ntau), iZZ));
-  Eigen::MatrixXd varpi(H * VvecZe * H.transpose()); // O(1/n)
+  Eigen::MatrixXd varpi(H * VvecZe * H.transpose()); 
   
   // covz and cove
-  Eigen::MatrixXd dZ    = Z.array().rowwise() - Z.array().colwise().mean();
-  Eigen::MatrixXd dqy   = qy.array().rowwise() - qy.array().colwise().mean();
-  Eigen::MatrixXd covz  = dZ.transpose() * dZ / ngroup;
-  Eigen::MatrixXd covqy = dqy.transpose() * dqy / ngroup;
+  // Eigen::MatrixXd dZ    = Z.array().rowwise() - Z.array().colwise().mean();
+  // Eigen::MatrixXd dqy   = qy.array().rowwise() - qy.array().colwise().mean();
+  // Eigen::MatrixXd covz  = rZ.transpose() * rZ / ngroup;
+  Eigen::MatrixXd covqy = rqy.transpose() * rqy / ngroup;
   
   // normalisation
-  Eigen::LLT<Eigen::MatrixXd> tpF(selZZ * covz.colPivHouseholderQr().solve(selZZ.transpose())), tpG(covqy.inverse());
+  Eigen::LLT<Eigen::MatrixXd> tpF(ZZ / ngroup), tpG(covqy.inverse());
   Eigen::MatrixXd F(tpF.matrixL()); // O(sqrt(n))
   Eigen::MatrixXd G(tpG.matrixL().transpose()); // O(1/sqrt(n))
   
   // Theta and its variance
-  Eigen::MatrixXd Theta(G * selPi * F.transpose());
+  Eigen::MatrixXd Theta(G * Pi * F.transpose());
   Eigen::VectorXd theta(Theta.reshaped(l*ntau, 1));
   Eigen::MatrixXd FG(Eigen::kroneckerProduct(F, G));
   Eigen::MatrixXd vartheta(FG * varpi * FG.transpose());
@@ -774,34 +780,34 @@ return Rcpp::List::create(_["parms"] = theta, _["Vpa"] = Vpa, _["Overident.stat"
 
 // Weak instrument Kp test with bootstrap
 // This estimates the pi
-void fKPstat_bootCoef0(Eigen::MatrixXd& selPi,
-                       Eigen::MatrixXd& selZZ,
-                       Eigen::MatrixXd& covz,
+void fKPstat_bootCoef0(Eigen::MatrixXd& Pi,
+                       Eigen::MatrixXd& ZZ,
                        Eigen::MatrixXd& covqy,
-                       const std::vector<Eigen::MatrixXd>& LZZ,
-                       const std::vector<Eigen::MatrixXd>& LZqy,
                        const Eigen::MatrixXd& qy,
                        const Eigen::MatrixXd& Z,
                        const Eigen::ArrayXi& index,
                        const int& ngroup,
-                       const int& Kins,
-                       const int& ntau,
-                       const int& boot) {
-  Eigen::MatrixXd ZZ  = Eigen::MatrixXd::Zero(Kins, Kins);
-  Eigen::MatrixXd Zqy = Eigen::MatrixXd::Zero(Kins, ntau);
-  for (int s = 0; s < ngroup; ++s) {
-    ZZ  += LZZ[s];
-    Zqy += LZqy[s];
-  }
+                       const int& Kins) {
+  int l(index.size()), Kx(Kins - l);
   
-  Eigen::MatrixXd Pi = ZZ.colPivHouseholderQr().solve(Zqy);
-  selPi = Pi(index, Eigen::all).transpose();
-  selZZ = ZZ(index, Eigen::all);
+  // Partialling out X
+  Eigen::ColPivHouseholderQR <Eigen::MatrixXd> qrX(Z.leftCols(Kx).transpose() * Z.leftCols(Kx));
   
-  Eigen::MatrixXd dZ  = Z.array().rowwise() - Z.array().colwise().mean();
-  Eigen::MatrixXd dqy = qy.array().rowwise() - qy.array().colwise().mean();
-  covz  = dZ.transpose() * dZ  / ngroup;
-  covqy = dqy.transpose() * dqy / ngroup;
+  Eigen::MatrixXd betaqy = qrX.solve(Z.leftCols(Kx).transpose() * qy);
+  Eigen::MatrixXd betaZ  = qrX.solve(Z.leftCols(Kx).transpose() * Z.rightCols(l));
+  
+  Eigen::MatrixXd rqy = qy - Z.leftCols(Kx) * betaqy;
+  Eigen::MatrixXd rZ  = Z.rightCols(l) - Z.leftCols(Kx) * betaZ;
+  
+
+  Eigen::MatrixXd Zqy(rZ.transpose() * rqy);
+  ZZ = rZ.transpose() * rZ;
+  Pi = (ZZ.colPivHouseholderQr().solve(Zqy)).transpose();
+
+  // Eigen::MatrixXd dZ  = Z.array().rowwise() - Z.array().colwise().mean();
+  // Eigen::MatrixXd dqy = qy.array().rowwise() - qy.array().colwise().mean();
+  // covz  = rZ.transpose() * rZ  / ngroup;
+  covqy = rqy.transpose() * rqy / ngroup;
 }
 
 
@@ -840,7 +846,7 @@ Rcpp::List fKPstat_boot(const Eigen::MatrixXd& qy,
                         const unsigned long long seed,
                         const bool& print) {
   int ntau(qy.cols()), Kins(Z.cols()), l(index.size());
-  Eigen::MatrixXd selPi, selZZ, covz, covqy;
+  Eigen::MatrixXd Pi, ZZ, covqy;
   Eigen::MatrixXd lpi(l * ntau, boot);
   
   {
@@ -866,8 +872,7 @@ Rcpp::List fKPstat_boot(const Eigen::MatrixXd& qy,
     
     // For the main sample
     Progress Prog(boot + 1, print);
-    fKPstat_bootCoef0(selPi, selZZ, covz, covqy, LZZ, LZqy, qy, Z, index,
-                      ngroup, Kins, ntau, boot);
+    fKPstat_bootCoef0(Pi, ZZ, covqy, qy, Z, index, ngroup, Kins);
     Prog.increment();
     
     //setup parallel settings
@@ -913,13 +918,13 @@ for (int k = 0; k < boot; ++ k) {
   Eigen::MatrixXd varpi(dpi * dpi.transpose() / (boot - 1));
   
   // normalisation
-  Eigen::LLT<Eigen::MatrixXd> tpF(selZZ * ginv_gmm(covz) * selZZ.transpose()), tpG(covqy.inverse());
+  Eigen::LLT<Eigen::MatrixXd> tpF(ZZ / ngroup), tpG(covqy.inverse());
   Eigen::MatrixXd F(tpF.matrixL()); // O(1/sqrt(n))
   Eigen::MatrixXd G(tpG.matrixL().transpose()); // O(1)
   
   
   // Theta and its variance
-  Eigen::MatrixXd Theta(G * selPi * F.transpose());
+  Eigen::MatrixXd Theta(G * Pi * F.transpose());
   Eigen::VectorXd theta(Theta.reshaped(l*ntau, 1));
   Eigen::MatrixXd FG(Eigen::kroneckerProduct(F, G));
   Eigen::MatrixXd vartheta(FG * varpi * FG.transpose());
