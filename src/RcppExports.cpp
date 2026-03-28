@@ -1041,8 +1041,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fgmm_red_boot
-Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y, const Eigen::MatrixXd& V, const Eigen::MatrixXd& ins, const Eigen::MatrixXd& W, const Eigen::ArrayXi& igroup, const std::vector<Eigen::ArrayXi>& LnIs, const std::vector<Eigen::ArrayXi>& LIs, const int& ngroup, const int& Kx, const int& Kins, const int& ntau, const int& Kest, const bool& iv, const int& boot, const int& nthreads, const unsigned long long seed, const bool& print);
-RcppExport SEXP _QuantilePeer_fgmm_red_boot(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP WSEXP, SEXP igroupSEXP, SEXP LnIsSEXP, SEXP LIsSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP KestSEXP, SEXP ivSEXP, SEXP bootSEXP, SEXP nthreadsSEXP, SEXP seedSEXP, SEXP printSEXP) {
+Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y, const Eigen::MatrixXd& V, const Eigen::MatrixXd& ins, const Eigen::MatrixXd& W, const Eigen::ArrayXi& igroup, const std::vector<Eigen::ArrayXi>& LnIs, const std::vector<Eigen::ArrayXi>& LIs, const int& ngroup, const int& Kx, const int& Kins, const int& ntau, const int& Kest, const bool& iv, const int& boot, const int& nthreads, const unsigned long long seed, const bool& print, const bool& overident);
+RcppExport SEXP _QuantilePeer_fgmm_red_boot(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP WSEXP, SEXP igroupSEXP, SEXP LnIsSEXP, SEXP LIsSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP KestSEXP, SEXP ivSEXP, SEXP bootSEXP, SEXP nthreadsSEXP, SEXP seedSEXP, SEXP printSEXP, SEXP overidentSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1063,7 +1063,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type nthreads(nthreadsSEXP);
     Rcpp::traits::input_parameter< const unsigned long long >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< const bool& >::type print(printSEXP);
-    rcpp_result_gen = Rcpp::wrap(fgmm_red_boot(y, V, ins, W, igroup, LnIs, LIs, ngroup, Kx, Kins, ntau, Kest, iv, boot, nthreads, seed, print));
+    Rcpp::traits::input_parameter< const bool& >::type overident(overidentSEXP);
+    rcpp_result_gen = Rcpp::wrap(fgmm_red_boot(y, V, ins, W, igroup, LnIs, LIs, ngroup, Kx, Kins, ntau, Kest, iv, boot, nthreads, seed, print, overident));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1328,7 +1329,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_QuantilePeer_fKPstat", (DL_FUNC) &_QuantilePeer_fKPstat, 5},
     {"_QuantilePeer_fStructParamFull", (DL_FUNC) &_QuantilePeer_fStructParamFull, 7},
     {"_QuantilePeer_fParamFull", (DL_FUNC) &_QuantilePeer_fParamFull, 5},
-    {"_QuantilePeer_fgmm_red_boot", (DL_FUNC) &_QuantilePeer_fgmm_red_boot, 17},
+    {"_QuantilePeer_fgmm_red_boot", (DL_FUNC) &_QuantilePeer_fgmm_red_boot, 18},
     {"_QuantilePeer_fKPstat_boot", (DL_FUNC) &_QuantilePeer_fKPstat_boot, 11},
     {"_QuantilePeer_Cov2ThetaRed", (DL_FUNC) &_QuantilePeer_Cov2ThetaRed, 15},
     {"_QuantilePeer_Cov2ThetaStruc", (DL_FUNC) &_QuantilePeer_Cov2ThetaStruc, 21},

@@ -223,9 +223,9 @@ fdiagnostic  <- function(object, nendo, seed, boot, nthreads, print) {
     # not implemented!
     
     out    <- cbind(df1        = c(tpKP$df, object$gmm$Jtest["df"]),
-                    df2        = c(NA, NA),
-                    statistic  = c(tpKP$stat, object$gmm$Jtest["statistic"]),
-                    "p-value"  = object$gmm$Jtest["p-value"])
+                      df2        = c(NA, NA),
+                      statistic  = c(tpKP$stat, object$gmm$Jtest["statistic"]),
+                      "p-value"  = object$gmm$Jtest["p-value"])
     out[1, 4]     <- pchisq(out[1, 3], out[1, 1], lower.tail = FALSE)
     rn            <- c("Kleibergen-Paap rk Wald", "Hansen J")
     rownames(out) <- rn

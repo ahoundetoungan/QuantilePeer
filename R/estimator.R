@@ -89,10 +89,12 @@ freduce <- function(y, V, ins, igr, nvec, M, Kins, Kx, ntau, Kest, n, HACnum, iv
                           Kins = Kins, ntau = ntau, Kest = Kest, n = n, HAC = HACnum, iv = FALSE)
     }
   } else if (HACnum == 3) {
-    GMMe      <- fgmm_red_boot(y = y, V = V, ins = ins, W = diag(Kins), igroup = igr, 
-                               LnIs = LnIs, LIs = LIs, ngroup = M, Kx = Kx, Kins = Kins, 
-                               ntau = ntau, Kest = Kest, iv = iv, boot = boot, 
-                               nthreads = nthreads, seed = seed, print = print)
+    overident <- (M >= Kins)
+    GMMe      <- fgmm_red_boot(y = y, V = V, ins = ins, W = diag(Kins), 
+                               igroup = igr, LnIs = LnIs, LIs = LIs, ngroup = M, 
+                               Kx = Kx, Kins = Kins, ntau = ntau, Kest = Kest, 
+                               iv = iv, boot = boot, nthreads = nthreads, 
+                               seed = seed, print = print, overident = overident)
   } else if (estimator == "JIVE") {
     if (HACnum == 2) {
       GMMe    <- fJIVE_redClu(y = y, V = V, ins = ins, igroup = igr, nvec = nvec, ngroup = M, Kx = Kx, 
@@ -122,24 +124,23 @@ freduce <- function(y, V, ins, igr, nvec, M, Kins, Kx, ntau, Kest, n, HACnum, iv
   sigma       <- sqrt(GMMe$sigma2);  if(is.na(sigma)) sigma = NULL
   
   if (HACnum == 3) {
-    GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
-                        residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
-                        info.criteria = GMMe$criterion,
-                        Jtest = c("statistic" = GMMe$Overident.stat, 
-                                  "df" = as.integer(GMMe$df),
-                                  "p-value" = as.numeric(GMMe$Overident.pvalue)), 
-                        W = GMMe$W)
-    names(GMMe$Estimate)  <- colnames(GMMe$cov) <- rownames(GMMe$cov)    <- estname
-  } else {
-    GMMe        <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
-                        residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
-                        info.criteria = GMMe$criterion,
-                        Jtest = c("statistic" = ifelse(is.null(GMMe$Overident), NA, GMMe$Overident), 
-                                  "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))), W = GMMe$W)
+    GMMe     <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
+                     residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
+                     info.criteria = GMMe$criterion,
+                     Jtest = c("statistic" = GMMe$Overident.stat, 
+                               "df" = as.integer(GMMe$df),
+                               "p-value" = as.numeric(GMMe$Overident.pvalue)), 
+                     W = GMMe$W)
     
-    names(GMMe$Estimate)  <- colnames(GMMe$cov) <- rownames(GMMe$cov)    <- estname
+  } else {
+    GMMe     <- list(Estimate = c(GMMe$parms), cov = GMMe$Vpa, sigma = sigma, fitted.values = fv, 
+                     residuals = res, rsquared = rs, adjusted.rsquared = ars, df.residual = n - Kest,
+                     info.criteria = GMMe$criterion,
+                     Jtest = c("statistic" = ifelse(is.null(GMMe$Overident), NA, GMMe$Overident), 
+                               "df" = ifelse(is.null(GMMe$df), NA, as.integer(GMMe$df))), W = GMMe$W)
     GMMe$Jtest["p-value"] <- ifelse(GMMe$Jtest["df"] > 0, 1 - pchisq(GMMe$Jtest["statistic"], GMMe$Jtest["df"]), NA)
   }
-
+  names(GMMe$Estimate) <- colnames(GMMe$cov) <- rownames(GMMe$cov)    <- estname
+  
   GMMe
 }

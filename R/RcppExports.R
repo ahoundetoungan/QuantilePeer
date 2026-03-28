@@ -189,8 +189,8 @@ fParamFull <- function(param, covp, ntau, Kx1, Kx2) {
     .Call(`_QuantilePeer_fParamFull`, param, covp, ntau, Kx1, Kx2)
 }
 
-fgmm_red_boot <- function(y, V, ins, W, igroup, LnIs, LIs, ngroup, Kx, Kins, ntau, Kest, iv, boot, nthreads, seed, print) {
-    .Call(`_QuantilePeer_fgmm_red_boot`, y, V, ins, W, igroup, LnIs, LIs, ngroup, Kx, Kins, ntau, Kest, iv, boot, nthreads, seed, print)
+fgmm_red_boot <- function(y, V, ins, W, igroup, LnIs, LIs, ngroup, Kx, Kins, ntau, Kest, iv, boot, nthreads, seed, print, overident) {
+    .Call(`_QuantilePeer_fgmm_red_boot`, y, V, ins, W, igroup, LnIs, LIs, ngroup, Kx, Kins, ntau, Kest, iv, boot, nthreads, seed, print, overident)
 }
 
 fKPstat_boot <- function(qy, Z, index, igroup, LnIs, LIs, ngroup, boot, nthreads, seed, print) {

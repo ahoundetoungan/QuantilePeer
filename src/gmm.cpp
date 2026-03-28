@@ -550,7 +550,8 @@ void fgmm_red_bootcoef0(Eigen::VectorXd& theta,
                         const int& ngroup,
                         const int& Kins,
                         const int& Kv,
-                        const bool& iv){
+                        const bool& iv,
+                        const bool& overident){
   Eigen::MatrixXd ZV = Eigen::MatrixXd::Zero(Kins, Kv);
   Eigen::MatrixXd ZZ = Eigen::MatrixXd::Zero(Kins, Kins);
   Eigen::VectorXd Zy = Eigen::VectorXd::Zero(Kins);
@@ -569,12 +570,14 @@ void fgmm_red_bootcoef0(Eigen::VectorXd& theta,
   // estimate
   theta = VZWZV.colPivHouseholderQr().solve(VZW*Zy);
   Ze    =  (Zy - ZV * theta);
-  Eigen::MatrixXd VZe = Eigen::MatrixXd::Zero(Kins, Kins);
-  for (int s = 0; s < ngroup; ++s) {
-    Eigen::VectorXd Zes(LZy[s] -  LZV[s] * theta);
-    VZe += Zes * Zes.transpose();
+  if (overident) {
+    Eigen::MatrixXd VZe = Eigen::MatrixXd::Zero(Kins, Kins);
+    for (int s = 0; s < ngroup; ++s) {
+      Eigen::VectorXd Zes(LZy[s] -  LZV[s] * theta);
+      VZe += Zes * Zes.transpose();
+    }
+    Jstat = Ze.dot(ginv_gmm(VZe) * Ze);
   }
-  Jstat = Ze.dot(ginv_gmm(VZe) * Ze);
 }
 
 
@@ -589,7 +592,8 @@ void fgmm_red_bootcoef(Eigen::VectorXd& theta,
                        const int& ngroup,
                        const int& Kins,
                        const int& Kv,
-                       const bool& iv){
+                       const bool& iv,
+                       const bool& overident){
   Eigen::MatrixXd ZV = Eigen::MatrixXd::Zero(Kins, Kv);
   Eigen::MatrixXd ZZ = Eigen::MatrixXd::Zero(Kins, Kins);
   Eigen::VectorXd Zy = Eigen::VectorXd::Zero(Kins);
@@ -606,14 +610,21 @@ void fgmm_red_bootcoef(Eigen::VectorXd& theta,
   Eigen::MatrixXd VZW(ZV.transpose()*W), VZWZV(VZW*ZV);
   
   // estimate
-  theta = VZWZV.colPivHouseholderQr().solve(VZW*Zy);
-  Eigen::VectorXd Ze  =  Zy - ZV * theta - Ze0;
-  Eigen::MatrixXd VZe = Eigen::MatrixXd::Zero(Kins, Kins);
-  for (int s = 0; s < ngroup; ++s) {
-    Eigen::VectorXd Zes(LZy[sgroup(s)] -  LZV[sgroup(s)] * theta - Ze0 / ngroup);
-    VZe += Zes * Zes.transpose();
+  Eigen::ColPivHouseholderQR <Eigen::MatrixXd> qr(VZWZV);
+  theta = qr.solve(VZW*Zy);
+  
+  // J distribution
+  if (overident) {
+    Eigen::VectorXd Zyc     = Zy - Ze0;
+    Eigen::VectorXd theta_c = qr.solve(VZW * Zyc);
+    Eigen::VectorXd Ze      =  Zyc - ZV * theta_c;
+    Eigen::MatrixXd VZe = Eigen::MatrixXd::Zero(Kins, Kins);
+    for (int s = 0; s < ngroup; ++s) {
+      Eigen::VectorXd Zes(LZy[sgroup(s)] -  LZV[sgroup(s)] * theta_c - Ze0 / ngroup);
+      VZe += Zes * Zes.transpose();
+    }
+    Jstat = Ze.dot(ginv_gmm(VZe) * Ze);
   }
-  Jstat = Ze.dot(ginv_gmm(VZe) * Ze);
 }
 
 
@@ -634,7 +645,8 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
                          const int& boot,
                          const int& nthreads,
                          const unsigned long long seed,
-                         const bool& print){
+                         const bool& print,
+                         const bool& overident){
   int Kv(ntau + Kx);
   
   // Compute blocks
@@ -665,8 +677,9 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
   // First iteration
   Eigen::MatrixXd W0(W);
   Eigen::VectorXd theta, Ze;
-  double stat;
-  fgmm_red_bootcoef0(theta, Ze, stat, LZV, LZy, LZZ, W0, ngroup, Kins, Kv, iv);
+  double stat = R_NaN;
+  fgmm_red_bootcoef0(theta, Ze, stat, LZV, LZy, LZZ, W0, ngroup, Kins, Kv, 
+                     iv, overident);
   Prog.increment();
   
   // Where to save ltheta
@@ -696,10 +709,11 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
     }
     
     fgmm_red_bootcoef(theta_loc, stat_loc, Ze, LZV, LZy, LZZ, W_loc, sgroup,
-                      ngroup, Kins, Kv, iv);
+                      ngroup, Kins, Kv, iv, overident);
     ltheta.col(k) = theta_loc;
-    lstat(k)      = stat_loc;
-    
+    if (overident) {
+      lstat(k)    = stat_loc;
+    }
 #pragma omp critical
     Prog.increment();
   }
@@ -722,7 +736,9 @@ for (int k = 0; k < boot; ++ k) {
   fgmm_red_bootcoef(theta_loc, stat_loc, Ze, LZV, LZy, LZZ, W_loc, sgroup,
                     ngroup, Kins, Kv, iv);
   ltheta.col(k) = theta_loc;
-  lstat(k)      = stat_loc;
+  if (overident) {
+    lstat(k)    = stat_loc;
+  }
   Prog.increment();
 }
 #endif
@@ -735,7 +751,10 @@ Eigen::MatrixXd dtheta(ltheta.array().colwise() - mtheta);
 Eigen::MatrixXd Vpa(dtheta * dtheta.transpose() / (boot - 1));
 
 // overidentification
-double pval = (lstat > stat).count() / static_cast<double>(boot);
+double pval = R_NaN;
+if (overident) {
+  pval = (lstat > stat).count() / static_cast<double>(boot);
+}
 
 // criterion
 double cri, BIC, AIC, HQIC;
