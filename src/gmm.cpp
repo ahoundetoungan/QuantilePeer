@@ -734,7 +734,7 @@ for (int k = 0; k < boot; ++ k) {
   }
   
   fgmm_red_bootcoef(theta_loc, stat_loc, Ze, LZV, LZy, LZZ, W_loc, sgroup,
-                    ngroup, Kins, Kv, iv);
+                    ngroup, Kins, Kv, iv, overident);
   ltheta.col(k) = theta_loc;
   if (overident) {
     lstat(k)    = stat_loc;
