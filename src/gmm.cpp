@@ -416,13 +416,13 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy,
   Eigen::MatrixXd varpi(H * VvecZe * H.transpose()); 
   
   // covz and cove
-  // Eigen::MatrixXd dZ    = Z.array().rowwise() - Z.array().colwise().mean();
-  // Eigen::MatrixXd dqy   = qy.array().rowwise() - qy.array().colwise().mean();
-  // Eigen::MatrixXd covz  = rZ.transpose() * rZ / ngroup;
-  Eigen::MatrixXd covqy = rqy.transpose() * rqy / ngroup;
+  Eigen::MatrixXd dZ    = rZ.array().rowwise() - rZ.array().colwise().mean();
+  Eigen::MatrixXd dqy   = rqy.array().rowwise() - rqy.array().colwise().mean();
+  Eigen::MatrixXd covz  = dZ.transpose() * dZ / ngroup;
+  Eigen::MatrixXd covqy = dqy.transpose() * dqy / ngroup;
   
   // normalisation
-  Eigen::LLT<Eigen::MatrixXd> tpF(ZZ / ngroup), tpG(covqy.inverse());
+  Eigen::LLT<Eigen::MatrixXd> tpF(ZZ * covz.colPivHouseholderQr().solve(ZZ.transpose())), tpG(covqy.inverse());
   Eigen::MatrixXd F(tpF.matrixL()); // O(sqrt(n))
   Eigen::MatrixXd G(tpG.matrixL().transpose()); // O(1/sqrt(n))
   
@@ -782,6 +782,7 @@ return Rcpp::List::create(_["parms"] = theta, _["Vpa"] = Vpa, _["Overident.stat"
 // This estimates the pi
 void fKPstat_bootCoef0(Eigen::MatrixXd& Pi,
                        Eigen::MatrixXd& ZZ,
+                       Eigen::MatrixXd& covz,
                        Eigen::MatrixXd& covqy,
                        const Eigen::MatrixXd& qy,
                        const Eigen::MatrixXd& Z,
@@ -804,10 +805,10 @@ void fKPstat_bootCoef0(Eigen::MatrixXd& Pi,
   ZZ = rZ.transpose() * rZ;
   Pi = (ZZ.colPivHouseholderQr().solve(Zqy)).transpose();
 
-  // Eigen::MatrixXd dZ  = Z.array().rowwise() - Z.array().colwise().mean();
-  // Eigen::MatrixXd dqy = qy.array().rowwise() - qy.array().colwise().mean();
-  // covz  = rZ.transpose() * rZ  / ngroup;
-  covqy = rqy.transpose() * rqy / ngroup;
+  Eigen::MatrixXd dZ  = rZ.array().rowwise() - rZ.array().colwise().mean();
+  Eigen::MatrixXd dqy = rqy.array().rowwise() - rqy.array().colwise().mean();
+  covz  = dZ.transpose() * dZ  / ngroup;
+  covqy = dqy.transpose() * dqy / ngroup;
 }
 
 
@@ -846,7 +847,7 @@ Rcpp::List fKPstat_boot(const Eigen::MatrixXd& qy,
                         const unsigned long long seed,
                         const bool& print) {
   int ntau(qy.cols()), Kins(Z.cols()), l(index.size());
-  Eigen::MatrixXd Pi, ZZ, covqy;
+  Eigen::MatrixXd Pi, ZZ, covz, covqy;
   Eigen::MatrixXd lpi(l * ntau, boot);
   
   {
@@ -872,7 +873,7 @@ Rcpp::List fKPstat_boot(const Eigen::MatrixXd& qy,
     
     // For the main sample
     Progress Prog(boot + 1, print);
-    fKPstat_bootCoef0(Pi, ZZ, covqy, qy, Z, index, ngroup, Kins);
+    fKPstat_bootCoef0(Pi, ZZ, covz, covqy, qy, Z, index, ngroup, Kins);
     Prog.increment();
     
     //setup parallel settings
@@ -918,7 +919,7 @@ for (int k = 0; k < boot; ++ k) {
   Eigen::MatrixXd varpi(dpi * dpi.transpose() / (boot - 1));
   
   // normalisation
-  Eigen::LLT<Eigen::MatrixXd> tpF(ZZ / ngroup), tpG(covqy.inverse());
+  Eigen::LLT<Eigen::MatrixXd> tpF(ZZ * ginv_gmm(covz) * ZZ), tpG(covqy.inverse());
   Eigen::MatrixXd F(tpF.matrixL()); // O(1/sqrt(n))
   Eigen::MatrixXd G(tpG.matrixL().transpose()); // O(1)
   
