@@ -104,7 +104,7 @@ Rcpp::List fgmm_red(const Eigen::VectorXd& y,
   
   // overidentification
   Eigen::VectorXd Ze(ins.transpose()*e.matrix());
-  double stat = Ze.dot(ginv_gmm(VZe) * Ze);
+  double stat = Ze.dot(VZe.colPivHouseholderQr().solve(Ze));
   
   // criterion
   double cri, BIC, AIC, HQIC;
@@ -239,7 +239,7 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   // overidentification
   Eigen::VectorXd F2(Z2.transpose()*e2.matrix());
   Eigen::MatrixXd VF1(VF.block(0, 0, Kx1, Kx1)), VF2(VF.block(Kx1, Kx1, Kins, Kins));
-  double stat = F2.dot(ginv_gmm(VF2) * F2);
+  double stat = F2.dot(VF2.colPivHouseholderQr().solve(F2));
   
   // criterion
   double cri, BIC, AIC, HQIC;
@@ -354,7 +354,7 @@ Rcpp::List fFstat(const Eigen::MatrixXd& y,
     Eigen::MatrixXd tp(iXX*V*iXX);
     V    = tp(index, index);
     Eigen::VectorXd bs(b(index, s));
-    F(s) = bs.dot(ginv_gmm(V) * bs) / df1;
+    F(s) = bs.dot(V.colPivHouseholderQr().solve(bs)) / df1;
   }
   return Rcpp::List::create(_["F"] = F, _["df1"] = df1, _["df2"] = df2, _["ru"] = e);
 }
@@ -468,7 +468,7 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy,
   // cout << theta << endl;
   // cout << varlambda << endl;
   // statistic
-  double stat = lambda.dot(ginv_gmm(varlambda) * lambda);
+  double stat = lambda.dot(varlambda.colPivHouseholderQr().solve(lambda));
   
   return Rcpp::List::create(_["stat"] = stat, _["df"] = (ntau - q)*(l - q));
 }
@@ -582,7 +582,7 @@ void fgmm_red_bootcoef0(Eigen::VectorXd& theta,
       Eigen::VectorXd Zes(LZy[s] -  LZV[s] * theta);
       VZe += Zes * Zes.transpose();
     }
-    Jstat = Ze.dot(ginv_gmm(VZe) * Ze);
+    Jstat = Ze.dot(VZe.colPivHouseholderQr().solve(Ze));
   }
 }
 
@@ -629,7 +629,7 @@ void fgmm_red_bootcoef(Eigen::VectorXd& theta,
       Eigen::VectorXd Zes(LZy[sgroup(s)] -  LZV[sgroup(s)] * theta_c - Ze0 / ngroup);
       VZe += Zes * Zes.transpose();
     }
-    Jstat = Ze.dot(ginv_gmm(VZe) * Ze);
+    Jstat = Ze.dot(VZe.colPivHouseholderQr().solve(Ze));
   }
 }
 
@@ -919,7 +919,7 @@ for (int k = 0; k < boot; ++ k) {
   Eigen::MatrixXd varpi(dpi * dpi.transpose() / (boot - 1));
   
   // normalisation
-  Eigen::LLT<Eigen::MatrixXd> tpF(ZZ * ginv_gmm(covz) * ZZ), tpG(covqy.inverse());
+  Eigen::LLT<Eigen::MatrixXd> tpF(ZZ * covz.colPivHouseholderQr().solve(ZZ)), tpG(covqy.inverse());
   Eigen::MatrixXd F(tpF.matrixL()); // O(1/sqrt(n))
   Eigen::MatrixXd G(tpG.matrixL().transpose()); // O(1)
   
@@ -962,7 +962,7 @@ for (int k = 0; k < boot; ++ k) {
   Eigen::MatrixXd varlambda (BAper * vartheta * BAper.transpose());
   
   // statistic
-  double stat = lambda.dot(ginv_gmm(varlambda) * lambda);
+  double stat = lambda.dot(varlambda.colPivHouseholderQr().solve(lambda));
   
   return Rcpp::List::create(_["stat"] = stat, _["df"] = (ntau - q)*(l - q));
 }
