@@ -25,8 +25,8 @@ library(openxlsx)
 OutResPath  <- "PATH/TO/WHERE/RESULTS/WILL/BE/SAVED"
 
 # I consider 2 explanatory variables and control for contextual variables
-# parameter beta
-beta       <- c(1.5, -0.8, -0.5, 1.2)
+# parameter gamma
+gamma       <- c(1.5, -0.8, -0.5, 1.2)
 # parameter sigma
 sigma      <- 1
 
@@ -81,12 +81,12 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE, nthreads = 
   y        <- NULL
   if (linear) {
     # If linear lambda is set to the sum of lambda
-    y      <- linpeer.sim(formula = ~ -1 + eff + X + GX, Glist = Gnorm, lambda = sum(lambda), 
-                          beta = c(ifelse(fixed.effects, 1, 0), beta), structural = FALSE, 
+    y      <- linpeer.sim(formula = ~ -1 + eff + X + GX, A = Gnorm, lambda = sum(lambda), 
+                          gamma = c(ifelse(fixed.effects, 1, 0), gamma), structural = FALSE, 
                           epsilon = rnorm(n, 0, sigma))$y 
   } else {
-    y      <- qpeer.sim(formula = ~ -1 + eff + X + GX, Glist = G, tau = tau, lambda = lambda, 
-                        beta = c(ifelse(fixed.effects, 1, 0), beta), structural = FALSE, 
+    y      <- qpeer.sim(formula = ~ -1 + eff + X + GX, A = G, tau = tau, lambda = lambda, 
+                        gamma = c(ifelse(fixed.effects, 1, 0), gamma), structural = FALSE, 
                         epsilon = rnorm(n, 0, sigma))$y 
   }
   
@@ -94,7 +94,7 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE, nthreads = 
   # linear model: G^2X
   GGX      <- peer.avg(Gnorm, GX) #GX where G is row-normalized
   # Quantile model
-  Z        <- qpeer.inst(formula = ~ X + GX, Glist = G, tau = seq(0, 1, 1/9), 
+  Z        <- qpeer.inst(formula = ~ X + GX, A = G, tau = seq(0, 1, 1/9), 
                          max.distance = 2, checkrank = TRUE)$instruments 
   # CES model: exogenous prediction of y
   Zces     <- NULL
@@ -108,27 +108,27 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE, nthreads = 
   # Linear model
   LIM     <- linpeer(formula = y ~ X + GX, 
                      excluded.instruments = ~ GGX, 
-                     Glist = Gnorm,
+                     A = Gnorm,
                      structural = FALSE,
                      fixed.effects = fixed.effects)
   
   # Quantile-based model using Z1 as instruments
   Quant   <- qpeer(formula = y ~ X + GX, 
                    excluded.instruments = ~ Z, 
-                   Glist = Gnorm,
+                   A = Gnorm,
                    structural = FALSE,
                    tau = tau,
                    fixed.effects = fixed.effects)
   
   # CES-based model
-  Ces     <- cespeer(formula = y ~ X + GX, instrument = ~ Zces, Glist = Gnorm, 
+  Ces     <- cespeer(formula = y ~ X + GX, instrument = ~ Zces, A = Gnorm, 
                      structural = FALSE, fixed.effects = fixed.effects, radius = 5,
                      grid.rho = seq(-100, 100, 1))
   
   # Quantile model with 2 quantiles
   Quant2  <- qpeer(formula = y ~ X + GX, 
                    excluded.instruments = ~ Z, 
-                   Glist = Gnorm,
+                   A = Gnorm,
                    structural = FALSE,
                    tau = seq(0, 1, 1),
                    fixed.effects = fixed.effects)
@@ -136,7 +136,7 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE, nthreads = 
   # Quantile model with 3 quantiles
   Quant3  <- qpeer(formula = y ~ X + GX, 
                    excluded.instruments = ~ Z, 
-                   Glist = Gnorm,
+                   A = Gnorm,
                    structural = FALSE,
                    tau = seq(0, 1, 1/2),
                    fixed.effects = fixed.effects)
@@ -144,7 +144,7 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE, nthreads = 
   # Quantile model with 5 quantiles
   Quant5  <- qpeer(formula = y ~ X + GX, 
                    excluded.instruments = ~ Z, 
-                   Glist = Gnorm,
+                   A = Gnorm,
                    structural = FALSE,
                    tau = seq(0, 1, 1/4),
                    fixed.effects = fixed.effects)
