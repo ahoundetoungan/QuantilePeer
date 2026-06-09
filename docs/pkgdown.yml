@@ -1,6 +1,0 @@
-pandoc: 3.8.3
-pkgdown: 2.2.0
-pkgdown_sha: ~
-articles:
-  introduction_to_QuantilePeer: introduction_to_QuantilePeer.html
-last_built: 2026-06-09T01:18Z
