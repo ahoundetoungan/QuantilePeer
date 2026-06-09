@@ -1,7 +1,9 @@
-##############################################################################################################
-##############################################################################################################
-########################### Quantile Peer Effect Models by Aristide Houndetoungan ############################
-##############################################################################################################
+################################################################################
+################################################################################
+################ Identification of Heterogeneous Peer Effects ##################
+########### Eyo I. Herstad, Aristide Houndetoungan, Myungkou Shin ##############
+################################################################################
+################################################################################
 
 # Last updated: 2025-05-16
 
@@ -15,8 +17,8 @@ rm(list = ls())
 library(dplyr)
 library(haven)
 
-InDataPath  <- "PATH/TO/DATA/LOCATION/" # Where Add Health data are saved (/ at the end is important)
-OutDataPath <- "PATH/TO/WHERE/PREPARED/DATA/IS/SAVED/" # Where prepared data for each outcome are saved (/ at the end is important)
+InDataPath  <- "PATH/TO/DATA/LOCATION" # Where Add Health data are saved
+OutDataPath <- "PATH/TO/WHERE/PREPARED/DATA/IS/SAVED" # Where prepared data for each outcome are saved (/ at the end is important)
 
 ##########################################################################################
 ##########################################################################################
@@ -27,12 +29,12 @@ OutDataPath <- "PATH/TO/WHERE/PREPARED/DATA/IS/SAVED/" # Where prepared data for
 ##########################################################################################
 # Importing data sets
 # Friendship data set (WAVE I)
-sfriend  <- read_xpt(paste0(InDataPath, "sfriend.xpt")) %>% arrange(SQID) %>% 
+sfriend  <- read_xpt(paste0(InDataPath, "/sfriend.xpt")) %>% arrange(SQID) %>% 
   filter(!(SQID %in% c("999999", ""))) %>%  # Remove student with missing questionnaire ID (cannot be matched)
   mutate(across(ends_with("AID"), as.character)) 
 
 # Inschool data set (WAVE I)
-Inschool <- read_xpt(paste0(InDataPath, "Inschool.xpt")) %>% arrange(SQID) %>% 
+Inschool <- read_xpt(paste0(InDataPath, "/Inschool.xpt")) %>% arrange(SQID) %>% 
   filter(!(SQID %in% c("999999", "")), AID != "") %>% # Remove student with missing questionnaire ID and missing student ID (cannot be matched)
   mutate(across(c("SQID", "AID", "SSCHLCDE"), as.character))
 
@@ -205,5 +207,5 @@ for (outcome in depvar) {
   data             <- data %>% select("AID", "SSCHLCDE", "SCID", "y", all_of(exovar))
   data[["match"]]  <- unlist(lapply(G, rowSums))
   data[["nmatch"]] <- unlist(nmatch)
-  save(data, G, exovar, file = paste0(OutDataPath, outcome, ".Rda")) # Saving data
+  save(data, G, exovar, file = paste0(OutDataPath, "/", outcome, ".Rda")) # Saving data
 }
