@@ -4,12 +4,12 @@
 \alias{cespeer.data}
 \title{Compute the CES Social Norm}
 \usage{
-cespeer.data(y, Glist, rho)
+cespeer.data(y, A, rho)
 }
 \arguments{
 \item{y}{A vector of outcomes used to compute the social norm.}
 
-\item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
+\item{A}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{A} must be a list of subnets, with the \code{g}-th element being an \eqn{n_g \times n_g} adjacency matrix, where \eqn{n_g} is the number of nodes in the \code{g}-th subnet.}
 
 \item{rho}{The CES substitution parameter.}
 }

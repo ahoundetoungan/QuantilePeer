@@ -7,7 +7,7 @@
 cespeer(
   formula,
   instrument,
-  Glist,
+  A,
   structural = FALSE,
   fixed.effects = FALSE,
   set.rho = NULL,
@@ -28,7 +28,7 @@ where \code{y} is the outcome and \code{x1} and \code{x2} are control variables,
 where \code{z} is the excluded instrument for the outcome. Following Boucher et al. (2024), it can be an OLS exogenous prediction of \code{y}.
 This prediction is used to compute instruments for the CES function of peer outcomes.}
 
-\item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
+\item{A}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{A} must be a list of subnets, with the \code{g}-th element being an \eqn{n_g \times n_g} adjacency matrix, where \eqn{n_g} is the number of nodes in the \code{g}-th subnet.}
 
 \item{structural}{A logical value indicating whether the reduced-form or structural specification should be estimated (see details).}
 
@@ -71,15 +71,15 @@ A list containing:
 }
 \details{
 Let \eqn{\mathcal{N}} be a set of \eqn{n} agents indexed by the integer \eqn{i \in [1, n]}.
-Agents are connected through a network characterized by an adjacency matrix \eqn{\mathbf{G} = [g_{ij}]} of dimension \eqn{n \times n}, where \eqn{g_{ij} = 1} if agent \eqn{j} is a friend of agent \eqn{i}, and \eqn{g_{ij} = 0} otherwise.
-In weighted networks, \eqn{g_{ij}} can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from \eqn{i} to \eqn{j}. The model can also accommodate such networks.
+Agents are connected through a network characterized by an adjacency matrix \eqn{\mathbf{A} = [a_{ij}]} of dimension \eqn{n \times n}, where \eqn{a_{ij} = 1} if agent \eqn{j} is a friend of agent \eqn{i}, and \eqn{a_{ij} = 0} otherwise.
+In weighted networks, \eqn{a_{ij}} can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from \eqn{i} to \eqn{j}. The model can also accommodate such networks.
 Note that the network generally consists of multiple independent subnets (e.g., schools).
-The \code{Glist} argument is the list of subnets. In the case of a single subnet, \code{Glist} should be a list containing one matrix.\cr
+The \code{A} argument is the list of subnets. In the case of a single subnet, \code{A} should be a list containing one matrix.\cr
 
 The reduced-form specification of the CES-based peer effects model is given by:
-\deqn{y_i = \lambda\left(\sum_{j = 1}^n g_{ij}y_j^{\rho}\right)^{1/\rho} + \mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
-where \eqn{\varepsilon_i} is an idiosyncratic error term, \eqn{\lambda} captures the effect of the social norm \eqn{\left(\sum_{j = 1}^n g_{ij}y_j^{\rho}\right)^{1/\rho}},
-and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. The parameter \eqn{\rho} determines the form of the social norm in the model.
+\deqn{y_i = \lambda\left(\sum_{j = 1}^n a_{ij}y_j^{\rho}\right)^{1/\rho} + \mathbf{x}_i^{\prime}\gamma + \varepsilon_i,}
+where \eqn{\varepsilon_i} is an idiosyncratic error term, \eqn{\lambda} captures the effect of the social norm \eqn{\left(\sum_{j = 1}^n a_{ij}y_j^{\rho}\right)^{1/\rho}},
+and \eqn{\gamma} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. The parameter \eqn{\rho} determines the form of the social norm in the model.
 \itemize{
 \item When \eqn{\rho > 1}, individuals are more sensitive to peers with high outcomes.
 \item When \eqn{\rho < 1}, individuals are more sensitive to peers with low outcomes.
@@ -88,11 +88,11 @@ and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. The para
 
 The structural specification of the model differs for isolated and non-isolated individuals.
 For an \strong{isolated} \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
-\deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
+\deqn{y_i = \mathbf{x}_i^{\prime}\gamma + \varepsilon_i.}
 If node \eqn{i} is \strong{non-isolated}, the specification is:
-\deqn{y_i = \lambda\left(\sum_{j = 1}^n g_{ij}y_j^{\rho}\right)^{1/\rho} + (1 - \lambda_2)\mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
+\deqn{y_i = \lambda\left(\sum_{j = 1}^n a_{ij}y_j^{\rho}\right)^{1/\rho} + (1 - \lambda_2)\mathbf{x}_i^{\prime}\gamma + \varepsilon_i,}
 where \eqn{\lambda_2} determines whether preferences exhibit conformity or complementarity/substitution.
-Identification of \eqn{\beta} and \eqn{\lambda_2} requires the network to include a sufficient number of isolated individuals.
+Identification of \eqn{\gamma} and \eqn{\lambda_2} requires the network to include a sufficient number of isolated individuals.
 }
 \examples{
 \donttest{
@@ -103,47 +103,47 @@ n    <- sum(nvec)
 
 ### Simulating Data
 ## Network matrix
-G <- lapply(1:ngr, function(z) {
-  Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
-  diag(Gz) <- 0
+A <- lapply(1:ngr, function(z) {
+  Ag <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
+  diag(Ag) <- 0
   # Adding isolated nodes (important for the structural model)
   niso <- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1))
   if (niso > 0) {
-    Gz[sample(1:nvec[z], niso), ] <- 0
+    Ag[sample(1:nvec[z], niso), ] <- 0
   }
   # Row-normalization
-  rs   <- rowSums(Gz); rs[rs == 0] <- 1
-  Gz/rs
+  rs   <- rowSums(Ag); rs[rs == 0] <- 1
+  Ag/rs
 })
 
 X   <- cbind(rnorm(n), rpois(n, 2))
-l   <- 0.55
-b   <- c(2, -0.5, 1)
+lam <- 0.55
+gam <- c(2, -0.5, 1)
 rho <- -2
 eps <- rnorm(n, 0, 0.4)
 
 ## Generating `y`
-y <- cespeer.sim(formula = ~ X, Glist = G, rho = rho, lambda = l,
-                 beta = b, epsilon = eps)$y
+y <- cespeer.sim(formula = ~ X, A = A, rho = rho, lambda = lam,
+                 gamma = gam, epsilon = eps)$y
 
 ### Estimation
 ## Computing instruments
 z <- fitted.values(lm(y ~ X))
 
 ## Reduced-form model
-rest <- cespeer(formula = y ~ X, instrument = ~ z, Glist = G, fixed.effects = "yes",
+rest <- cespeer(formula = y ~ X, instrument = ~ z, A = A, fixed.effects = "yes",
                 radius = 5, grid.rho = seq(-10, 10, 1))
 summary(rest)
 
 ## Structural model
-sest <- cespeer(formula = y ~ X, instrument = ~ z, Glist = G, fixed.effects = "yes",
+sest <- cespeer(formula = y ~ X, instrument = ~ z, A = A, fixed.effects = "yes",
                 radius = 5, structural = TRUE, grid.rho = seq(-10, 10, 1))
 summary(sest)
 
 ## Quantile model
-z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), max.distance = 2, 
+z    <- qpeer.inst(formula = ~ X, A = A, tau = seq(0, 1, 0.1), max.distance = 2, 
                    checkrank = TRUE)$instruments
-qest <- qpeer(formula = y ~ X, excluded.instruments  = ~ z, Glist = G, 
+qest <- qpeer(formula = y ~ X, excluded.instruments  = ~ z, A = A, 
               fixed.effects = "yes", tau = seq(0, 1, 1/3), structural = TRUE)
 summary(qest)
 }

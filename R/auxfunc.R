@@ -46,53 +46,29 @@ formula.to.data <- function(formula,
 
 #' @importFrom utils head
 #' @importFrom utils tail
-fnetwork   <- function(Glist, isol = NULL) {
-  # Isol is true isolated than can be removed. But this argument is no longer used. 
-  # See the more general argument which is now drop
-  M        <- length(Glist)
-  nvec     <- unlist(lapply(Glist, nrow))
+fnetwork   <- function(A, binary = FALSE) {
+  G        <- length(A)
+  nvec     <- unlist(lapply(A, nrow))
   n        <- sum(nvec)
   ncs      <- c(0, cumsum(nvec))
-  group    <- rep(0:(M - 1), nvec)
-  groupidx <- unlist(lapply(1:M, \(m) 0:(nvec[m] - 1)))
+  group    <- rep(0:(G - 1), nvec)
+  groupidx <- unlist(lapply(1:G, \(g) 0:(nvec[g] - 1)))
   
-  ldg      <- lapply(Glist, rowSums)
-  dg       <- unlist(ldg)
-  MIs      <- NULL
-  MnIs     <- NULL
-  lIs      <- NULL
-  Is       <- NULL
-  lnIs     <- NULL
-  nIs      <- NULL
-  if (length(isol) == 0) {
-    MIs    <- sum(sapply(ldg, function(s) any(s == 0)))
-    MnIs   <- sum(sapply(ldg, function(s) any(s != 0)))
-    lIs    <- lapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
-    Is     <- unlist(lIs)
-    lnIs   <- lapply(1:M, function(m) which(ldg[[m]] != 0) - 1 + ncs[m])
-    nIs    <- unlist(lnIs)
-  } else {
-    if (any(!(isol %in% 0:1) | !is.finite(isol))) {
-      stop("`isolated` must be a binary (0/1) variable.")
-    }
-    if (length(isol) != n) {
-      stop("`isolated` must be a vector of length n.")
-    }
-    lisol  <- lapply(1:M, function(m) isol[(ncs[m] + 1):ncs[m + 1]])
-    MIs    <- sum(sapply(lisol, function(s) any(s == 1)))
-    MnIs   <- sum(sapply(lisol, function(s) any(s != 1)))
-    lIs    <- lapply(1:M, function(m) which(lisol[[m]] == 1) - 1 + ncs[m])
-    Is     <- unlist(lIs)
-    lnIs   <- lapply(1:M, function(m) which(lisol[[m]] != 1) - 1 + ncs[m])
-    nIs    <- unlist(lnIs)
-  }
+  ld       <- lapply(A, rowSums)
+  d        <- unlist(ld)
+  GIs      <- sum(sapply(ld, function(g) any(g == 0)))
+  GnIs     <- sum(sapply(ld, function(g) any(g != 0)))
+  lIs      <- lapply(1:G, function(g) which(ld[[g]] == 0) - 1 + ncs[g])
+  Is       <- unlist(lIs)
+  lnIs     <- lapply(1:G, function(g) which(ld[[g]] != 0) - 1 + ncs[g])
+  nIs      <- unlist(lnIs)
   
-  list(dg = dg, ldg = ldg, M = M, nvec = nvec, n = n, igr = ncs, group = group,
-       groupidx = groupidx, Is = Is, nIs = nIs, lIs = lIs, lnIs = lnIs, MIs = MIs, 
-       MnIs = MnIs)
+  list(d = d, ld = ld, G = G, nvec = nvec, n = n, igr = ncs, group = group,
+       groupidx = groupidx, Is = Is, nIs = nIs, lIs = lIs, lnIs = lnIs, GIs = GIs, 
+       GnIs = GnIs)
 }
 
-fdrop <- function(drop, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
+fdrop <- function(drop, ld, nvec, G, lIs, lnIs, y, X, qy, ins) {
   n        <- sum(nvec)
   if (any(!(drop %in% 0:1) | !is.finite(drop))) {
     stop("`drop` must be a binary (0/1) variable.")
@@ -101,33 +77,34 @@ fdrop <- function(drop, ldg, nvec, M, lIs, lnIs, y, X, qy, ins) {
     stop("`drop` must be a vector of length n.")
   }
   ncs      <- c(0, cumsum(nvec))
-  olIs     <- lapply(1:M, function(m) ldg[[m]] == 0)
+  olIs     <- lapply(1:G, function(g) ld[[g]] == 0)
   oIs      <- unlist(olIs)
-  lkeep    <- lapply(1:M, function(m) drop[(ncs[m] + 1):ncs[m + 1]] != 1)
+  lkeep    <- lapply(1:G, function(g) drop[(ncs[g] + 1):ncs[g + 1]] != 1)
   keep     <- unlist(lkeep)
-  gkeep    <- sapply(1:M, function(m) sum(lkeep[[m]]) >= 1) # Groups I keep
-  ldg      <- lapply(1:M, function(m) ldg[[m]][lkeep[[m]]])[gkeep]
-  dg       <- unlist(ldg)
-  M        <- length(ldg)
-  nvec     <- sapply(ldg, length)
+  gkeep    <- sapply(1:G, function(g) sum(lkeep[[g]]) >= 1) # Groups I keep
+  ld       <- lapply(1:G, function(g) ld[[g]][lkeep[[g]]])[gkeep]
+  d        <- unlist(ld)
+  G        <- length(ld)
+  nvec     <- sapply(ld, length)
   n        <- sum(nvec)
   ncs      <- c(0, cumsum(nvec))
-  group    <- rep(0:(M - 1), nvec)
-  groupidx <- unlist(lapply(1:M, \(m) 0:(nvec[m] - 1)))
-  MIs      <- sum(sapply(ldg, function(s) any(s == 0)))
-  MnIs     <- sum(sapply(ldg, function(s) any(s != 0)))
-  lIs      <- lapply(1:M, function(m) which(ldg[[m]] == 0) - 1 + ncs[m])
+  group    <- rep(0:(G - 1), nvec)
+  groupidx <- unlist(lapply(1:G, \(g) 0:(nvec[g] - 1)))
+  GIs      <- sum(sapply(ld, function(g) any(g == 0)))
+  GnIs     <- sum(sapply(ld, function(g) any(g != 0)))
+  lIs      <- lapply(1:G, function(g) which(ld[[g]] == 0) - 1 + ncs[g])
   Is       <- unlist(lIs)
-  lnIs     <- lapply(1:M, function(m) which(ldg[[m]] != 0) - 1 + ncs[m])
+  lnIs     <- lapply(1:G, function(g) which(ld[[g]] != 0) - 1 + ncs[g])
   nIs      <- unlist(lnIs)
   y        <- y[keep]
   X        <- X[keep, , drop = FALSE]
   qy       <- qy[keep, , drop = FALSE]
   ins      <- ins[keep, , drop = FALSE]
-  list(dg = dg, ldg = ldg, M = M, nvec = nvec, n = n, igr = ncs, group = group,
-       groupidx = groupidx, Is = Is, nIs = nIs, lIs = lIs, lnIs = lnIs, MIs = MIs, 
-       MnIs = MnIs, y = y, X = X, qy = qy, ins = ins)
+  list(d = d, ld = ld, G = G, nvec = nvec, n = n, igr = ncs, group = group,
+       groupidx = groupidx, Is = Is, nIs = nIs, lIs = lIs, lnIs = lnIs, GIs = GIs, 
+       GnIs = GnIs, y = y, X = X, qy = qy, ins = ins)
 }
+
 
 fcheckrank <- function(X, tol = 1e-10) {
   which(fcheckrankEigen(X, tol)) - 1
@@ -156,7 +133,7 @@ fprintcoeft <- function(coef) {
 fdiagnostic  <- function(object, nendo, seed, boot, nthreads, print) {
   FE       <- object$model.info$fixed.effects
   struc    <- object$model.info$structural
-  M        <- object$model.info$ngroup
+  G        <- object$model.info$ngroup
   nvec     <- object$model.info$nvec
   n        <- object$model.info$n
   HAC      <- object$model.info$HAC
@@ -170,17 +147,17 @@ fdiagnostic  <- function(object, nendo, seed, boot, nthreads, print) {
   ntau     <- ncol(endo)
   X        <- object$data$X
   ins      <- object$data$instruments
-  dg       <- object$data$degree
+  d        <- object$data$degree
   index    <- which(!(colnames(ins) %in% colnames(X))) - 1
-  lIs      <- lapply(object$data$isolated, \(s) s - 1)
-  lnIs     <- lapply(object$data$non.isolated, \(s) s - 1)
+  lIs      <- lapply(object$data$isolated, \(g) g - 1)
+  lnIs     <- lapply(object$data$non.isolated, \(g) g - 1)
   Is       <- unlist(lIs)
   nIs      <- unlist(lnIs)
   nvc      <- sapply(lnIs, length)
   theta    <- object$gmm$Estimate
   
   ins      <- fdatadiagnostic(y = y, endo = endo, X = X, ins = ins, theta = theta, idX1 = idX1, idX2 = idX2, igroup = ncs, 
-                              nIs = nIs, LIs = lIs, LnIs = lnIs, n = n, ngroup = M, ntau = ntau, struc = struc, FE = FE)
+                              nIs = nIs, LIs = lIs, LnIs = lnIs, n = n, ngroup = G, ntau = ntau, struc = struc, FE = FE)
   y        <- ins$y
   endo     <- ins$endo
   X        <- ins$X
@@ -188,7 +165,7 @@ fdiagnostic  <- function(object, nendo, seed, boot, nthreads, print) {
   
   if (struc) {
     nvc    <- nvc[nvc > 0]
-    M      <- length(nvc)
+    G      <- length(nvc)
     ncs    <- c(0, cumsum(nvc))
   }
   
@@ -196,7 +173,7 @@ fdiagnostic  <- function(object, nendo, seed, boot, nthreads, print) {
   cvKP     <- NULL
   if (object$model.info$estimator %in% c("JIVE", "JIVE2")) {
     ## Weak instrument test
-    tpF    <- fFstat(y = endo, X = ins, index = index, igroup = ncs, ngroup = M, HAC = HACnum)
+    tpF    <- fFstat(y = endo, X = ins, index = index, igroup = ncs, ngroup = G, HAC = HACnum)
     tpKP   <- fKPstat(qy = endo, Z = ins, index = index, igroup = ncs, HAC = HACnum)
     ## Endogeneity test
     # Not implemented
@@ -216,7 +193,7 @@ fdiagnostic  <- function(object, nendo, seed, boot, nthreads, print) {
   } else if (HACnum == 3) {
     ## Weak instrument test
     tpKP   <- fKPstat_boot(qy = endo, Z = ins, index = index, igroup = ncs,
-                           LnIs = lnIs, LIs = lIs, ngroup = M, boot = boot, 
+                           LnIs = lnIs, LIs = lIs, ngroup = G, boot = boot, 
                            nthreads = nthreads, seed = seed, print = print)
     
     ## Endogeneity test
@@ -232,11 +209,11 @@ fdiagnostic  <- function(object, nendo, seed, boot, nthreads, print) {
     
   } else {
     ## Weak instrument test
-    tpF    <- fFstat(y = endo, X = ins, index = index, igroup = ncs, ngroup = M, HAC = HACnum)
+    tpF    <- fFstat(y = endo, X = ins, index = index, igroup = ncs, ngroup = G, HAC = HACnum)
     tpKP   <- fKPstat(qy = endo, Z = ins, index = index, igroup = ncs, HAC = HACnum)
     
     ## Endogeneity test
-    tpend  <- fFstat(y = y, X = cbind(tpF$ru, endo, X), index = (0:(ntau - 1)), igroup = ncs, ngroup = M, HAC = HACnum)
+    tpend  <- fFstat(y = y, X = cbind(tpF$ru, endo, X), index = (0:(ntau - 1)), igroup = ncs, ngroup = G, HAC = HACnum)
     
     out    <- cbind(df1        = c(rep(tpF$df1, ntau), tpKP$df, tpend$df1, object$gmm$Jtest["df"]),
                     df2        = c(rep(tpF$df2, ntau), NA, tpend$df2, NA),
@@ -255,7 +232,7 @@ fdiagnostic  <- function(object, nendo, seed, boot, nthreads, print) {
 }
 
 ## Create data to start optimization
-fCESdatainit  <- function (y, z, G, nvec, M, ldg, lIs, lnIs, drop) {
+fCESdatainit  <- function (y, z, A, nvec, G, ld, lIs, lnIs, drop) {
   n           <- sum(nvec)
   if (length(drop) == 0) {
     drop      <- rep(0, n)
@@ -267,57 +244,57 @@ fCESdatainit  <- function (y, z, G, nvec, M, ldg, lIs, lnIs, drop) {
     stop("`drop` must be a vector of length n.")
   }
   ncs         <- c(0, cumsum(nvec))
-  friendindex <- lapply(1:M, function(m) {
-    lapply(1:nvec[m], function(s) {
-      which(G[[m]][s,] > 0) - 1
+  friendindex <- lapply(1:G, function(g) {
+    lapply(1:nvec[g], function(i) {
+      which(A[[g]][i,] > 0) - 1
     })})
-  frzeroy     <- as.integer(unlist(lapply(1:M, function(m){
-    lapply(1:nvec[m], function(s){
-      any(y[friendindex[[m]][[s]] + ncs[m] + 1] <= 0)
+  frzeroy     <- as.integer(unlist(lapply(1:G, function(g){
+    lapply(1:nvec[g], function(i){
+      any(y[friendindex[[g]][[i]] + ncs[g] + 1] <= 0)
     })})))
-  frzeroz     <- as.integer(unlist(lapply(1:M, function(m){
-    lapply(1:nvec[m], function(s){
-      any(z[friendindex[[m]][[s]] + ncs[m] + 1] <= 0)
+  frzeroz     <- as.integer(unlist(lapply(1:G, function(g){
+    lapply(1:nvec[g], function(i){
+      any(z[friendindex[[g]][[i]] + ncs[g] + 1] <= 0)
     })})))
-  lsel        <- lapply(1:M, function(m) drop[(ncs[m] + 1):ncs[m + 1]] != 1)
+  lsel        <- lapply(1:G, function(g) drop[(ncs[g] + 1):ncs[g + 1]] != 1)
   
   # Max and Min of friend y and z
-  yFmax       <- unlist(lapply(1:M, function(m){
-    lapply(1:nvec[m], function(s){
-      ifelse(ldg[[m]][s] > 0, max(y[friendindex[[m]][[s]] + ncs[m] + 1]), NA)
+  yFmax       <- unlist(lapply(1:G, function(g){
+    lapply(1:nvec[g], function(i){
+      ifelse(ld[[g]][i] > 0, max(y[friendindex[[g]][[i]] + ncs[g] + 1]), NA)
     })
   }))
-  yFmin       <- unlist(lapply(1:M, function(m){
-    lapply(1:nvec[m], function(s){
-      ifelse(ldg[[m]][s] > 0, min(y[friendindex[[m]][[s]] + ncs[m] + 1]), NA)
+  yFmin       <- unlist(lapply(1:G, function(g){
+    lapply(1:nvec[g], function(i){
+      ifelse(ld[[g]][i] > 0, min(y[friendindex[[g]][[i]] + ncs[g] + 1]), NA)
     })
   }))
-  zFmax       <- unlist(lapply(1:M, function(m){
-    lapply(1:nvec[m], function(s){
-      ifelse(ldg[[m]][s] > 0, max(z[friendindex[[m]][[s]] + ncs[m] + 1]), NA)
+  zFmax       <- unlist(lapply(1:G, function(g){
+    lapply(1:nvec[g], function(i){
+      ifelse(ld[[g]][i] > 0, max(z[friendindex[[g]][[i]] + ncs[g] + 1]), NA)
     })
   }))
-  zFmin       <- unlist(lapply(1:M, function(m){
-    lapply(1:nvec[m], function(s){
-      ifelse(ldg[[m]][s] > 0, min(z[friendindex[[m]][[s]] + ncs[m] + 1]), NA)
+  zFmin       <- unlist(lapply(1:G, function(g){
+    lapply(1:nvec[g], function(i){
+      ifelse(ld[[g]][i] > 0, min(z[friendindex[[g]][[i]] + ncs[g] + 1]), NA)
     })
   }))
   
   # In selection variables
-  ldg         <- lapply(1:M, function(m) ldg[[m]][lsel[[m]]])
-  lIs         <- lapply(1:M, function(m) lIs[[m]][lsel[[m]][lIs[[m]] - ncs[m] + 1]])
-  lnIs        <- lapply(1:M, function(m) lnIs[[m]][lsel[[m]][lnIs[[m]] - ncs[m] + 1]])
+  ld          <- lapply(1:G, function(g) ld[[g]][lsel[[g]]])
+  lIs         <- lapply(1:G, function(g) lIs[[g]][lsel[[g]][lIs[[g]] - ncs[g] + 1]])
+  lnIs        <- lapply(1:G, function(g) lnIs[[g]][lsel[[g]][lnIs[[g]] - ncs[g] + 1]])
   Is          <- unlist(lIs)
   nIs         <- unlist(lnIs)
   
   # In selection variables if empty groups are removed
-  keepg       <- sapply(1:M, function(m) length(ldg[[m]]) > 0)
-  ldg         <- ldg[keepg]
-  M           <- length(ldg)
-  MIs         <- sum(sapply(lIs, function(s) length(s) > 0))
-  MnIs        <- sum(sapply(lnIs, function(s) length(s) > 0))
+  keepg       <- sapply(1:G, function(g) length(ld[[g]]) > 0)
+  ld          <- ld[keepg]
+  G           <- length(ld)
+  GIs         <- sum(sapply(lIs, function(g) length(g) > 0))
+  GnIs        <- sum(sapply(lnIs, function(g) length(g) > 0))
   
-  list(friendindex = friendindex, frzeroy = frzeroy, frzeroz = frzeroz, M = M, MIs = MIs, MnIs = MnIs,
-       ldg = ldg, dg = unlist(ldg), lIs = lIs, Is = Is, lnIs = lnIs, nIs = nIs, hasIso = (length(Is) > 0),
+  list(friendindex = friendindex, frzeroy = frzeroy, frzeroz = frzeroz, G = G, GIs = GIs, GnIs = GnIs,
+       ld = ld, d = unlist(ld), lIs = lIs, Is = Is, lnIs = lnIs, nIs = nIs, hasIso = (length(Is) > 0),
        yFmax = yFmax, yFmin = yFmin, zFmax = zFmax, zFmin = zFmin)
 }

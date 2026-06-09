@@ -10,7 +10,7 @@ genpeer(
   formula,
   excluded.instruments,
   endogenous.variables,
-  Glist,
+  A,
   data,
   estimator = "IV",
   structural = FALSE,
@@ -28,7 +28,7 @@ genpeer(
 linpeer(
   formula,
   excluded.instruments,
-  Glist,
+  A,
   data,
   estimator = "IV",
   structural = FALSE,
@@ -46,7 +46,7 @@ linpeer(
 qpeer(
   formula,
   excluded.instruments,
-  Glist,
+  A,
   tau,
   type = 7,
   data,
@@ -73,7 +73,7 @@ where \code{z1} and \code{z2} are excluded instruments for the quantile peer out
 \item{endogenous.variables}{An object of class \link[stats]{formula} that allows specifying endogenous variables. It is used to indicate the peer variables whose effects will be estimated. These can include average peer variables, quantile peer variables,
 or a combination of multiple variables. It should be specified as \code{~ y1 + y2}, where \code{y1} and \code{y2} are the endogenous peer variables.}
 
-\item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
+\item{A}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{A} must be a list of subnets, with the \code{g}-th element being an \eqn{n_g \times n_g} adjacency matrix, where \eqn{n_g} is the number of nodes in the \code{g}-th subnet.}
 
 \item{data}{An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 in the model. If not found in \code{data}, the variables are taken from \code{environment(formula)}, typically the environment from which \code{qpeer} is called.}
@@ -126,16 +126,16 @@ A list containing:
 }
 \details{
 Let \eqn{\mathcal{N}} be a set of \eqn{n} agents indexed by the integer \eqn{i \in [1, n]}.
-Agents are connected through a network that is characterized by an adjacency matrix \eqn{\mathbf{G} = [g_{ij}]} of dimension \eqn{n \times n}, where \eqn{g_{ij} = 1} if agent \eqn{j} is a friend of agent \eqn{i}, and \eqn{g_{ij} = 0} otherwise.
-In weighted networks, \eqn{g_{ij}} can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from \eqn{i} to \eqn{j}. The model can also accommodate such networks. Note that the network is generally constituted in many independent subnets (eg: schools).
-The \code{Glist} argument is the list of subnets. In the case of a single subnet, \code{Glist} will be a list containing one matrix.\cr
+Agents are connected through a network that is characterized by an adjacency matrix \eqn{\mathbf{A} = [a_{ij}]} of dimension \eqn{n \times n}, where \eqn{a_{ij} = 1} if agent \eqn{j} is a friend of agent \eqn{i}, and \eqn{a_{ij} = 0} otherwise.
+In weighted networks, \eqn{a_{ij}} can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from \eqn{i} to \eqn{j}. The model can also accommodate such networks. Note that the network is generally constituted in many independent subnets (eg: schools).
+The \code{A} argument is the list of subnets. In the case of a single subnet, \code{A} will be a list containing one matrix.\cr
 
 Let \eqn{\mathcal{T}} be a set of quantile levels. The reduced-form specification of quantile peer effect models is given by:
-\deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + \mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
+\deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + \mathbf{x}_i^{\prime}\gamma + \varepsilon_i,}
 where \eqn{\mathbf{y}_{-i} = (y_1, \ldots, y_{i-1}, y_{i+1}, \ldots, y_n)^{\prime}} is the vector of outcomes for other units, and \eqn{q_{\tau,i}(\mathbf{y}_{-i})} is the
 sample \eqn{\tau}-quantile of peer outcomes. The term \eqn{\varepsilon_i} is an idiosyncratic error term, \eqn{\lambda_{\tau}} captures the effect of the \eqn{\tau}-quantile of peer outcomes on \eqn{y_i},
-and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. For the definition of the sample \eqn{\tau}-quantile, see Hyndman and Fan (1996).
-If the network matrix is weighted, the sample weighted quantile can be used, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}. It can be shown that
+and \eqn{\gamma} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. For the definition of the sample \eqn{\tau}-quantile, see Hyndman and Fan (1996).
+If the network matrix is weighted, the sample weighted quantile can be used, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{a_{ij}}. It can be shown that
 the sample \eqn{\tau}-quantile is a weighted average of two peer outcomes. For more details, see the \link[stats]{quantile} and \code{\link{qpeer.instruments}} functions. \cr
 
 The quantile \eqn{q_{\tau,i}(\mathbf{y}_{-i})} can be replaced with the average peer variable in \code{\link{linpeer}} or with other measures in \code{\link{genpeer}} through the \code{endogenous.variables} argument.
@@ -146,12 +146,12 @@ One issue in linear peer effect models is that individual preferences with confo
 However, it is possible to disentangle both types of preferences using isolated individuals (individuals without friends).
 The structural specification of the model differs between isolated and nonisolated individuals.
 For isolated \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
-\deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
+\deqn{y_i = \mathbf{x}_i^{\prime}\gamma + \varepsilon_i.}
 If node \eqn{i} is non-isolated, the specification is given by:
-\deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda_2)(\mathbf{x}_i^{\prime}\beta  + \varepsilon_i),}
+\deqn{y_i = \sum_{\tau \in \mathcal{T}} \lambda_{\tau} q_{\tau,i}(\mathbf{y}_{-i}) + (1 - \lambda_2)(\mathbf{x}_i^{\prime}\gamma  + \varepsilon_i),}
 where \eqn{\lambda_2} determines whether preferences exhibit conformity or complementarity/substitution. In general, \eqn{\lambda_2 > 0} and this means that that preferences are conformist (anti-conformity may be possible in some models when \eqn{\lambda_2 < 0}).
 In contrast, when \eqn{\lambda_2 = 0}, there is complementarity/substitution between individuals depending on the signs of the \eqn{\lambda_{\tau}} parameters.
-It is obvious that \eqn{\beta} and \eqn{\lambda_2} can be identified only if the network includes enough isolated individuals.
+It is obvious that \eqn{\gamma} and \eqn{\lambda_2} can be identified only if the network includes enough isolated individuals.
 }
 \examples{
 \donttest{
@@ -162,93 +162,92 @@ n    <- sum(nvec)
 
 ### Simulating Data
 ## Network matrix
-G <- lapply(1:ngr, function(z) {
-  Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
-  diag(Gz) <- 0
+A <- lapply(1:ngr, function(g) {
+  Ag <- matrix(rbinom(nvec[g]^2, 1, 0.3), nvec[g], nvec[g])
+  diag(Ag) <- 0
   # Adding isolated nodes (important for the structural model)
-  niso <- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1))
+  niso <- sample(0:nvec[g], 1, prob = (nvec[g] + 1):1 / sum((nvec[g] + 1):1))
   if (niso > 0) {
-    Gz[sample(1:nvec[z], niso), ] <- 0
+    Ag[sample(1:nvec[g], niso), ] <- 0
   }
-  Gz
+  Ag
 })
 
 tau <- seq(0, 1, 1/3)
 X   <- cbind(rnorm(n), rpois(n, 2))
-l   <- c(0.2, 0.15, 0.1, 0.2)
-b   <- c(2, -0.5, 1)
+lam <- c(0.2, 0.15, 0.1, 0.2)
+gam <- c(2, -0.5, 1)
 eps <- rnorm(n, 0, 0.4)
 
 ## Generating `y`
-y <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, 
-               beta = b, epsilon = eps)$y
+y <- qpeer.sim(formula = ~ X, A = A, tau = tau, lambda = lam, 
+               gamma = gam, epsilon = eps)$y
 
 ### Estimation
 ## Computing instruments
-Z <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), 
+Z <- qpeer.inst(formula = ~ X, A = A, tau = seq(0, 1, 0.1), 
                 max.distance = 2, checkrank = TRUE)
 Z <- Z$instruments
 
 ## Reduced-form model 
-rest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau)
+rest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, A = A, tau = tau)
 summary(rest)
 summary(rest, diagnostic = TRUE)  # Summary with diagnostics
 
 ## Structural model
-sest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau,
+sest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, A = A, tau = tau,
               structural = TRUE)
 summary(sest, diagnostic = TRUE)
-# The lambda^* parameter is y_q (conformity) in the outputs.
 # There is no conformity in the data, so the estimate will be approximately 0.
 
 ## Structural model with double fixed effects per subnet using optimal GMM 
 ## and controlling for heteroskedasticity
-sesto <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau,
+sesto <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, A = A, tau = tau,
                structural = TRUE, fixed.effects = "separate", HAC = "hetero", 
                estimator = "gmm.optimal")
 summary(sesto, diagnostic = TRUE)
 
 ## Average peer effect model
 # Row-normalized network to compute instruments
-Gnorm <- lapply(G, function(g) {
+Anorm <- lapply(A, function(g) {
   d <- rowSums(g)
   d[d == 0] <- 1
   g / d
 })
 
-# GX and GGX
-Gall <- Matrix::bdiag(Gnorm)
-GX   <- as.matrix(Gall \%*\% X)
-GGX  <- as.matrix(Gall \%*\% GX)
+# AX and AAX
+Aall <- Matrix::bdiag(Anorm)
+AX   <- as.matrix(Aall \%*\% X)
+AAX  <- as.matrix(Aall \%*\% AX)
 
 # Standard linear model
-lpeer <- linpeer(formula = y ~ X + GX, excluded.instruments = ~ GGX, Glist = Gnorm)
+lpeer <- linpeer(formula = y ~ X + AX, excluded.instruments = ~ AAX, A = Anorm)
 summary(lpeer, diagnostic = TRUE)
 # Note: The normalized network is used here by definition of the model.
 # Contextual effects are also included (this is also possible for the quantile model).
 
 # The standard model can also be structural
-lpeers <- linpeer(formula = y ~ X + GX, excluded.instruments = ~ GGX, Glist = Gnorm,
+lpeers <- linpeer(formula = y ~ X + AX, excluded.instruments = ~ AAX, A = Anorm,
                   structural = TRUE, fixed.effects = "separate")
 summary(lpeers, diagnostic = TRUE)
 
 ## Estimation using `genpeer`
 # Average peer variable computed manually and included as an endogenous variable
-Gy     <- as.vector(Gall \%*\% y)
-gpeer1 <- genpeer(formula = y ~ X + GX, excluded.instruments = ~ GGX, 
-                  endogenous.variables = ~ Gy, Glist = Gnorm, structural = TRUE, 
+Ay     <- as.vector(Aall \%*\% y)
+gpeer1 <- genpeer(formula = y ~ X + AX, excluded.instruments = ~ AAX, 
+                  endogenous.variables = ~ Ay, A = Anorm, structural = TRUE, 
                   fixed.effects = "separate")
 summary(gpeer1, diagnostic = TRUE)
 
 # Using both average peer variables and quantile peer variables as endogenous,
 # or only the quantile peer variable
 # Quantile peer `y`
-qy <- qpeer.inst(formula = y ~ 1, Glist = G, tau = tau)
+qy <- qpeer.inst(formula = y ~ 1, A = A, tau = tau)
 qy <- qy$qy
 
 # Model estimation
-gpeer2 <- genpeer(formula = y ~ X + GX, excluded.instruments = ~ GGX + Z, 
-                  endogenous.variables = ~ Gy + qy, Glist = Gnorm, structural = TRUE, 
+gpeer2 <- genpeer(formula = y ~ X + AX, excluded.instruments = ~ AAX + Z, 
+                  endogenous.variables = ~ Ay + qy, A = Anorm, structural = TRUE, 
                   fixed.effects = "separate")
 summary(gpeer2, diagnostic = TRUE)}
 }

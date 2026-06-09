@@ -2,8 +2,8 @@
  * y       : is the vector of the outcome values
  * X       : is the matrix of the explanatory variables. Add the intercept 
  *           if it is included in the model. The intercept will not be added automatically. 
- * G       : is the network matrix List. That is G[r] is the subnetwork of the group r. 
- *           Gs(i,j) = measures the intensity of the outgoing link from i to j. 
+ * A       : is the network matrix List. That is A[g] is the subnetwork of the group g. 
+ *           A(i,j) = measures the intensity of the outgoing link from i to j. 
  * igroup  : is the matrix of groups indexes. The data should be organized by group. 
  *           igroup[s,] is a 2-dimension vector ans gives the first and the last rows
  *           for the group s.
@@ -39,26 +39,26 @@ using namespace std;
 ////////////////////////////////////// Structures ////////////////////////////////////////////////
 //===============================================================================================//
 //===============================================================================================//
-struct gPIyP {
-  std::vector<arma::vec> gP;
-  std::vector<arma::vec> cumsumgP;
+struct aPIyP {
+  std::vector<arma::vec> aP;
+  std::vector<arma::vec> cumsumaP;
   std::vector<arma::uvec> IyP;
   
-  gPIyP(int n) {
-    gP.resize(n);
-    cumsumgP.resize(n);
+  aPIyP(int n) {
+    aP.resize(n);
+    cumsumaP.resize(n);
     IyP.resize(n);
   }
 };
 
-struct gPIyP_EIGEN {
-  std::vector<Eigen::ArrayXd> gP;
-  std::vector<Eigen::ArrayXd> cumsumgP;
+struct aPIyP_EIGEN {
+  std::vector<Eigen::ArrayXd> aP;
+  std::vector<Eigen::ArrayXd> cumsumaP;
   std::vector<Eigen::ArrayXi> IyP;
   
-  gPIyP_EIGEN(int n) {
-    gP.resize(n);
-    cumsumgP.resize(n);
+  aPIyP_EIGEN(int n) {
+    aP.resize(n);
+    cumsumaP.resize(n);
     IyP.resize(n);
   }
 };
@@ -96,12 +96,12 @@ int fnthreads(const int& nthreads) {
 }
 
 
-// gP vector of gij for gij>0, this is sorted from the smallest based of yj of peers
+// aP vector of aij for aij>0, this is sorted from the smallest based of yj of peers
 // IyP includes the indexes of sorterd yj of peers in the original y
-// cumsumgP cumulative sum of gP
-// This function computes list of gP, IyP, cumsumgP
-gPIyP fgPIyP(const arma::vec& y,
-             const std::vector<arma::mat>& G,
+// cumsumaP cumulative sum of aP
+// This function computes list of aP, IyP, cumsumaP
+aPIyP faPIyP(const arma::vec& y,
+             const std::vector<arma::mat>& A,
              const arma::vec& d,
              const arma::uvec& igroup,
              const arma::uvec& group, // group index
@@ -110,13 +110,13 @@ gPIyP fgPIyP(const arma::vec& y,
              const int& ngroup,
              const int& n,
              const int& nthreads){
-  gPIyP out(n);
+  aPIyP out(n);
 #if defined(_OPENMP)
   omp_set_num_threads(nthreads);
 #pragma omp parallel
 {
-  arma::vec Gri;
-  arma::uvec ipGri, tp;
+  arma::vec Ari;
+  arma::uvec ipAri, tp;
   int i, r, n1, nfr;
 #pragma omp for
   for(int k = 0; k < n; ++ k){
@@ -125,14 +125,14 @@ gPIyP fgPIyP(const arma::vec& y,
     r  = group(k);
     n1 = igroup(r);
 
-      Gri   = G[r].row(i).t();
-      ipGri = arma::find(Gri > 1e-50);
-      Gri   = Gri.elem(ipGri) / d(k);
-      tp    = arma::sort_index(y.elem(ipGri + n1));
-      Gri   = Gri.elem(tp);
+      Ari   = A[r].row(i).t();
+      ipAri = arma::find(Ari > 1e-50);
+      Ari   = Ari.elem(ipAri) / d(k);
+      tp    = arma::sort_index(y.elem(ipAri + n1));
+      Ari   = Ari.elem(tp);
       
       // Index
-      tp    = ipGri.elem(tp) + n1;
+      tp    = ipAri.elem(tp) + n1;
       nfr   = tp.n_elem;
       arma::uvec idx(nfr + 2);
       idx(0)             = tp(0);
@@ -140,23 +140,23 @@ gPIyP fgPIyP(const arma::vec& y,
       idx(nfr + 1)       = tp(nfr - 1);
       
       // cumsum
-      arma::vec csgPi(nfr + 1);
-      csgPi(0)        = 0;
-      csgPi.tail(nfr) = arma::cumsum(Gri);
+      arma::vec csaPi(nfr + 1);
+      csaPi(0)        = 0;
+      csaPi.tail(nfr) = arma::cumsum(Ari);
       
       // Weights
-      arma::vec gP(nfr + 1);
-      gP.head(nfr) = Gri;
-      gP(nfr)      = 1;
+      arma::vec aP(nfr + 1);
+      aP.head(nfr) = Ari;
+      aP(nfr)      = 1;
       
-      out.gP[k] = gP;
-      out.cumsumgP[k] = csgPi;
+      out.aP[k] = aP;
+      out.cumsumaP[k] = csaPi;
       out.IyP[k]      = idx;
     }
 }
 #else
-  arma::vec Gri;
-  arma::uvec ipGri, tp;
+  arma::vec Ari;
+  arma::uvec ipAri, tp;
   int i, r, n1, nfr;
   for(int k = 0; k < n; ++ k){
     if(d(k) < 1e-50) continue;
@@ -164,14 +164,14 @@ gPIyP fgPIyP(const arma::vec& y,
     r  = group(k);
     n1 = igroup(r);
     
-    Gri   = G[r].row(i).t();
-    ipGri = arma::find(Gri > 1e-50);
-    Gri   = Gri.elem(ipGri) / d(k);
-    tp    = arma::sort_index(y.elem(ipGri + n1));
-    Gri   = Gri.elem(tp);
+    Ari   = A[r].row(i).t();
+    ipAri = arma::find(Ari > 1e-50);
+    Ari   = Ari.elem(ipAri) / d(k);
+    tp    = arma::sort_index(y.elem(ipAri + n1));
+    Ari   = Ari.elem(tp);
     
     // Index
-    tp    = ipGri.elem(tp) + n1;
+    tp    = ipAri.elem(tp) + n1;
     nfr   = tp.n_elem;
     arma::uvec idx(nfr + 2);
     idx(0)             = tp(0);
@@ -179,17 +179,17 @@ gPIyP fgPIyP(const arma::vec& y,
     idx(nfr + 1)       = tp(nfr - 1);
     
     // cumsum
-    arma::vec csgPi(nfr + 1);
-    csgPi(0)        = 0;
-    csgPi.tail(nfr) = arma::cumsum(Gri);
+    arma::vec csaPi(nfr + 1);
+    csaPi(0)        = 0;
+    csaPi.tail(nfr) = arma::cumsum(Ari);
     
     // Weights
-    arma::vec gP(nfr + 1);
-    gP.head(nfr) = Gri;
-    gP(nfr)      = 1;
+    arma::vec aP(nfr + 1);
+    aP.head(nfr) = Ari;
+    aP(nfr)      = 1;
     
-    out.gP[k] = gP;
-    out.cumsumgP[k] = csgPi;
+    out.aP[k] = aP;
+    out.cumsumaP[k] = csaPi;
     out.IyP[k]      = idx;
   }
 #endif
@@ -197,8 +197,8 @@ gPIyP fgPIyP(const arma::vec& y,
 }
 
 
-gPIyP_EIGEN fgPIyP_EIGEN(const Eigen::ArrayXd& y,
-                         const std::vector<Eigen::ArrayXXd>& G,
+aPIyP_EIGEN faPIyP_EIGEN(const Eigen::ArrayXd& y,
+                         const std::vector<Eigen::ArrayXXd>& A,
                          const Eigen::ArrayXd& d,
                          const Eigen::ArrayXi& igroup,
                          const Eigen::ArrayXi& group, // group index
@@ -207,7 +207,7 @@ gPIyP_EIGEN fgPIyP_EIGEN(const Eigen::ArrayXd& y,
                          const int& ngroup,
                          const int& n,
                          const int& nthreads){
-  gPIyP_EIGEN out(n);
+  aPIyP_EIGEN out(n);
 #ifdef _OPENMP
   omp_set_num_threads(nthreads);
 #pragma omp parallel for
@@ -215,39 +215,39 @@ gPIyP_EIGEN fgPIyP_EIGEN(const Eigen::ArrayXd& y,
     if(d(k) < 1e-50) continue;
     int i(groupidx(k)), r(group(k)), n1(igroup(r));
     
-    std::vector<int> ipGriVec;
+    std::vector<int> ipAriVec;
     for (int j(0); j < nvec(r); ++ j){
-      if (G[r](i, j) > 1e-50) {
-        ipGriVec.push_back(j);
+      if (A[r](i, j) > 1e-50) {
+        ipAriVec.push_back(j);
       }
     }
-    int nfr(ipGriVec.size());
-    Eigen::ArrayXi ipGri = Eigen::Map<Eigen::ArrayXi>(ipGriVec.data(), nfr);
-    Eigen::ArrayXd Gri(G[r](i, ipGri).transpose() / d(k));
+    int nfr(ipAriVec.size());
+    Eigen::ArrayXi ipAri = Eigen::Map<Eigen::ArrayXi>(ipAriVec.data(), nfr);
+    Eigen::ArrayXd Ari(A[r](i, ipAri).transpose() / d(k));
     
     Eigen::ArrayXi tp(Eigen::ArrayXi::LinSpaced(nfr, 0, nfr - 1));
     std::sort(tp.data(), tp.data() + nfr,
-              [&y, &ipGri, &n1](int a, int b) {
-                return y(ipGri(a) + n1) < y(ipGri(b) + n1);
+              [&y, &ipAri, &n1](int a, int b) {
+                return y(ipAri(a) + n1) < y(ipAri(b) + n1);
               });
-    Gri   = Gri(tp);
+    Ari   = Ari(tp);
     
     // Index
-    tp    = ipGri(tp) + n1;
+    tp    = ipAri(tp) + n1;
     Eigen::ArrayXi idx(nfr + 2);
     idx << tp(0), tp, tp(nfr - 1);
     
     // cumsum
-    Eigen::ArrayXd csgPi(Eigen::ArrayXd::Zero(nfr + 1));
+    Eigen::ArrayXd csaPi(Eigen::ArrayXd::Zero(nfr + 1));
     for (int j(0); j < nfr; ++ j) {
-      csgPi(j + 1) = std::min(1.0, csgPi(j) + Gri(j));
+      csaPi(j + 1) = std::min(1.0, csaPi(j) + Ari(j));
     }
     
     // Weights
-    Eigen::ArrayXd gP(nfr + 1);
-    gP << Gri, 1;
-    out.gP[k] = gP;
-    out.cumsumgP[k] = csgPi;
+    Eigen::ArrayXd aP(nfr + 1);
+    aP << Ari, 1;
+    out.aP[k] = aP;
+    out.cumsumaP[k] = csaPi;
     out.IyP[k]      = idx;
   }
 #else
@@ -255,39 +255,39 @@ gPIyP_EIGEN fgPIyP_EIGEN(const Eigen::ArrayXd& y,
     if(d(k) < 1e-50) continue;
     int i(groupidx(k)), r(group(k)), n1(igroup(r));
     
-    std::vector<int> ipGriVec;
+    std::vector<int> ipAriVec;
     for (int j(0); j < nvec(r); ++ j){
-      if (G[r](i, j) > 1e-50) {
-        ipGriVec.push_back(j);
+      if (A[r](i, j) > 1e-50) {
+        ipAriVec.push_back(j);
       }
     }
-    int nfr(ipGriVec.size());
-    Eigen::ArrayXi ipGri = Eigen::Map<Eigen::ArrayXi>(ipGriVec.data(), nfr);
-    Eigen::ArrayXd Gri(G[r](i, ipGri).transpose() / d(k));
+    int nfr(ipAriVec.size());
+    Eigen::ArrayXi ipAri = Eigen::Map<Eigen::ArrayXi>(ipAriVec.data(), nfr);
+    Eigen::ArrayXd Ari(A[r](i, ipAri).transpose() / d(k));
     
     Eigen::ArrayXi tp(Eigen::ArrayXi::LinSpaced(nfr, 0, nfr - 1));
     std::sort(tp.data(), tp.data() + nfr,
-              [&y, &ipGri, &n1](int a, int b) {
-                return y(ipGri(a) + n1) < y(ipGri(b) + n1);
+              [&y, &ipAri, &n1](int a, int b) {
+                return y(ipAri(a) + n1) < y(ipAri(b) + n1);
               });
-    Gri   = Gri(tp);
+    Ari   = Ari(tp);
     
     // Index
-    tp    = ipGri(tp) + n1;
+    tp    = ipAri(tp) + n1;
     Eigen::ArrayXi idx(nfr + 2);
     idx << tp(0), tp, tp(nfr - 1);
     
     // cumsum
-    Eigen::ArrayXd csgPi(Eigen::ArrayXd::Zero(nfr + 1));
+    Eigen::ArrayXd csaPi(Eigen::ArrayXd::Zero(nfr + 1));
     for (int j(0); j < nfr; ++ j) {
-      csgPi(j + 1) = std::min(1.0, csgPi(j) + Gri(j));
+      csaPi(j + 1) = std::min(1.0, csaPi(j) + Ari(j));
     }
     
     // Weights
-    Eigen::ArrayXd gP(nfr + 1);
-    gP << Gri, 1;
-    out.gP[k] = gP;
-    out.cumsumgP[k] = csgPi;
+    Eigen::ArrayXd aP(nfr + 1);
+    aP << Ari, 1;
+    out.aP[k] = aP;
+    out.cumsumaP[k] = csaPi;
     out.IyP[k]      = idx;
   }
 #endif
@@ -302,8 +302,8 @@ void fQWeightIndex(arma::mat& w1,
                    arma::mat& w2, 
                    arma::umat& pi1,
                    arma::umat& pi2,
-                   std::vector<arma::vec>& lgP, 
-                   std::vector<arma::vec>& lcumsumgP, 
+                   std::vector<arma::vec>& laP, 
+                   std::vector<arma::vec>& lcumsumaP, 
                    std::vector<arma::uvec>& lIyP,
                    const arma::vec& d,
                    const arma::vec& stau,
@@ -321,9 +321,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = ceilP(tp2 - pii1(k));
       }
@@ -342,9 +342,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = 0.5*(1 + ceilP(tp2 - pii1(k)));
       }
@@ -363,9 +363,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l - 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l - 0.5 + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); if (pii1(k) < 0) pii1(k) = 0;//this is j in HYNDMAN and FAN (1996)
         if((pii1(k)%2 == 0) & (tp2 >= 1)){
           w2i(k) = ceilP(tp2 - pii1(k));
@@ -388,9 +388,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -409,9 +409,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + 0.5 + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -430,9 +430,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + stau(k)); 
         if(stau(k) >= 1) tp2 = l;
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
@@ -452,9 +452,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + 1 - stau(k)); //here tp2 is necessarily >= 0
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + 1 - stau(k)); //here tp2 is necessarily >= 0
         pii1(k) = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)  = tp2 - pii1(k);
       }
@@ -473,9 +473,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + (stau(k) + 1.0)/3.0); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + (stau(k) + 1.0)/3.0); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -494,9 +494,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)/4.0 + 3.0/8.0); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + stau(k)/4.0 + 3.0/8.0); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -514,9 +514,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = ceilP(tp2 - pii1(k));
       }
@@ -534,9 +534,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = 0.5*(1 + ceilP(tp2 - pii1(k)));
       }
@@ -554,9 +554,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l - 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l - 0.5 + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); if (pii1(k) < 0) pii1(k) = 0;//this is j in HYNDMAN and FAN (1996)
         if((pii1(k)%2 == 0) & (tp2 >= 1)){
           w2i(k) = ceilP(tp2 - pii1(k));
@@ -578,9 +578,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -598,9 +598,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + 0.5 + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -618,9 +618,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + stau(k)); 
         if(stau(k) >= 1) tp2 = l;
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
@@ -639,9 +639,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + 1 - stau(k)); //here tp2 is necessarily >= 0
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + 1 - stau(k)); //here tp2 is necessarily >= 0
         pii1(k) = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)  = tp2 - pii1(k);
       }
@@ -659,9 +659,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + (stau(k) + 1.0)/3.0); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + (stau(k) + 1.0)/3.0); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -679,9 +679,9 @@ void fQWeightIndex(arma::mat& w1,
       arma::uvec pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l(sum(lcumsumgP[i] <= stau(k)) - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)/4.0 + 3.0/8.0); 
+        int l(sum(lcumsumaP[i] <= stau(k)) - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + stau(k)/4.0 + 3.0/8.0); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -698,8 +698,8 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
                          Eigen::ArrayXXd& w2, 
                          Eigen::ArrayXXi& pi1,
                          Eigen::ArrayXXi& pi2,
-                         std::vector<Eigen::ArrayXd>& lgP, 
-                         std::vector<Eigen::ArrayXd>& lcumsumgP, 
+                         std::vector<Eigen::ArrayXd>& laP, 
+                         std::vector<Eigen::ArrayXd>& lcumsumaP, 
                          std::vector<Eigen::ArrayXi>& lIyP,
                          const Eigen::ArrayXd& d,
                          const Eigen::ArrayXd& stau,
@@ -717,9 +717,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = ceilP(tp2 - pii1(k));
       }
@@ -738,9 +738,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = 0.5*(1 + ceilP(tp2 - pii1(k)));
       }
@@ -759,9 +759,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l - 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l - 0.5 + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); if (pii1(k) < 0) pii1(k) = 0;//this is j in HYNDMAN and FAN (1996)
         if((pii1(k)%2 == 0) & (tp2 >= 1)){
           w2i(k) = ceilP(tp2 - pii1(k));
@@ -784,9 +784,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -805,9 +805,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + 0.5 + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -826,9 +826,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + stau(k)); 
         if(stau(k) >= 1) tp2 = l;
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
@@ -848,9 +848,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + 1 - stau(k)); //here tp2 is necessarily >= 0
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + 1 - stau(k)); //here tp2 is necessarily >= 0
         pii1(k) = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)  = tp2 - pii1(k);
       }
@@ -869,9 +869,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + (stau(k) + 1.0)/3.0); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + (stau(k) + 1.0)/3.0); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -890,9 +890,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)/4.0 + 3.0/8.0); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + stau(k)/4.0 + 3.0/8.0); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -911,9 +911,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = ceilP(tp2 - pii1(k));
       }
@@ -931,9 +931,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = 0.5*(1 + ceilP(tp2 - pii1(k)));
       }
@@ -951,9 +951,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l - 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l - 0.5 + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); if (pii1(k) < 0) pii1(k) = 0;//this is j in HYNDMAN and FAN (1996)
         if((pii1(k)%2 == 0) & (tp2 >= 1)){
           w2i(k) = ceilP(tp2 - pii1(k));
@@ -975,9 +975,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -995,9 +995,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + 0.5 + (stau(k) - tp1)/lgP[i](l)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + 0.5 + (stau(k) - tp1)/laP[i](l)); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -1015,9 +1015,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + stau(k)); 
         if(stau(k) >= 1) tp2 = l;
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
@@ -1036,9 +1036,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + 1 - stau(k)); //here tp2 is necessarily >= 0
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + 1 - stau(k)); //here tp2 is necessarily >= 0
         pii1(k) = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)  = tp2 - pii1(k);
       }
@@ -1056,9 +1056,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + (stau(k) + 1.0)/3.0); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + (stau(k) + 1.0)/3.0); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -1076,9 +1076,9 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
       Eigen::ArrayXi pii1(ntau);
       
       for(int k(0); k < ntau; ++ k){
-        int l((lcumsumgP[i] <= stau(k)).sum() - 1);
-        long double tp1(lcumsumgP[i](l));
-        long double tp2(l + (stau(k) - tp1)/lgP[i](l) + stau(k)/4.0 + 3.0/8.0); 
+        int l((lcumsumaP[i] <= stau(k)).sum() - 1);
+        long double tp1(lcumsumaP[i](l));
+        long double tp2(l + (stau(k) - tp1)/laP[i](l) + stau(k)/4.0 + 3.0/8.0); 
         pii1(k)  = floorP(tp2); //this is j in HYNDMAN and FAN (1996)
         w2i(k)   = tp2 - pii1(k);
       }
@@ -1094,7 +1094,7 @@ void fQWeightIndex_EIGEN(Eigen::ArrayXXd& w1,
 // This function computes Qtau(y) 
 //[[Rcpp::export]]
 arma::mat fQtauy(const arma::vec& y,
-                 const std::vector<arma::mat>& G,
+                 const std::vector<arma::mat>& A,
                  const arma::vec& d,
                  const arma::uvec& igroup,
                  const arma::uvec& group, // group index
@@ -1106,14 +1106,14 @@ arma::mat fQtauy(const arma::vec& y,
                  const int& ntau,
                  const int& type,
                  const int& nthreads){
-  // compute gP, cumsumgP, and IyP
-  gPIyP tp = fgPIyP(y, G, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
+  // compute aP, cumsumaP, and IyP
+  aPIyP tp = faPIyP(y, A, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
   
   // compute w1, w2, pi1, and pi2
   arma::mat w1(ntau, n, arma::fill::zeros); 
   arma::mat w2(ntau, n, arma::fill::zeros); 
   arma::umat pi1(ntau, n, arma::fill::zeros), pi2(ntau, n, arma::fill::zeros);
-  fQWeightIndex(w1, w2, pi1, pi2, tp.gP, tp.cumsumgP, tp.IyP, d, stau, n, ntau, type, nthreads);
+  fQWeightIndex(w1, w2, pi1, pi2, tp.aP, tp.cumsumaP, tp.IyP, d, stau, n, ntau, type, nthreads);
   arma::mat Qty(ntau, n);
 #if defined(_OPENMP)
   omp_set_num_threads(nthreads);
@@ -1132,7 +1132,7 @@ arma::mat fQtauy(const arma::vec& y,
 
 //[[Rcpp::export]]
 Eigen::ArrayXXd fQtauy_EIGEN(const Eigen::ArrayXd& y,
-                             const std::vector<Eigen::ArrayXXd>& G,
+                             const std::vector<Eigen::ArrayXXd>& A,
                              const Eigen::ArrayXd& d,
                              const Eigen::ArrayXi& igroup,
                              const Eigen::ArrayXi& group, // group index
@@ -1144,13 +1144,13 @@ Eigen::ArrayXXd fQtauy_EIGEN(const Eigen::ArrayXd& y,
                              const int& ntau,
                              const int& type,
                              const int& nthreads){
-  // compute gP, cumsumgP, and IyP
-  gPIyP_EIGEN tp = fgPIyP_EIGEN(y, G, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
+  // compute aP, cumsumaP, and IyP
+  aPIyP_EIGEN tp = faPIyP_EIGEN(y, A, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
   
   // compute w1, w2, pi1, and pi2
   Eigen::ArrayXXd w1(Eigen::ArrayXXd::Zero(ntau, n)), w2(Eigen::ArrayXXd::Zero(ntau, n)); 
   Eigen::ArrayXXi pi1(Eigen::ArrayXXi::Zero(ntau, n)), pi2(Eigen::ArrayXXi::Zero(ntau, n));
-  fQWeightIndex_EIGEN(w1, w2, pi1, pi2, tp.gP, tp.cumsumgP, tp.IyP, d, stau, n, ntau, type, nthreads);
+  fQWeightIndex_EIGEN(w1, w2, pi1, pi2, tp.aP, tp.cumsumaP, tp.IyP, d, stau, n, ntau, type, nthreads);
   Eigen::ArrayXXd Qty(ntau, n);
 #if defined(_OPENMP)
   omp_set_num_threads(nthreads);
@@ -1169,7 +1169,7 @@ Eigen::ArrayXXd fQtauy_EIGEN(const Eigen::ArrayXd& y,
 // The same function with indices
 //[[Rcpp::export]]
 Rcpp::List fQtauyWithIndex(const arma::vec& y,
-                           const std::vector<arma::mat>& G,
+                           const std::vector<arma::mat>& A,
                            const arma::vec& d,
                            const arma::uvec& igroup,
                            const arma::uvec& group, // group index
@@ -1181,14 +1181,14 @@ Rcpp::List fQtauyWithIndex(const arma::vec& y,
                            const int& ntau,
                            const int& type,
                            const int& nthreads){
-  // compute gP, cumsumgP, and IyP
-  gPIyP tp = fgPIyP(y, G, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
+  // compute aP, cumsumaP, and IyP
+  aPIyP tp = faPIyP(y, A, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
   
   // compute w1, w2, pi1, and pi2
   arma::mat w1(ntau, n, arma::fill::zeros); 
   arma::mat w2(ntau, n, arma::fill::zeros); 
   arma::umat pi1(ntau, n, arma::fill::zeros), pi2(ntau, n, arma::fill::zeros);
-  fQWeightIndex(w1, w2, pi1, pi2, tp.gP, tp.cumsumgP, tp.IyP, d, stau, n, ntau, type, nthreads);
+  fQWeightIndex(w1, w2, pi1, pi2, tp.aP, tp.cumsumaP, tp.IyP, d, stau, n, ntau, type, nthreads);
   arma::mat Qty(ntau, n);
 #if defined(_OPENMP)
   omp_set_num_threads(nthreads);
@@ -1211,7 +1211,7 @@ Rcpp::List fQtauyWithIndex(const arma::vec& y,
 
 //[[Rcpp::export]]
 Rcpp::List fQtauyWithIndex_EIGEN(const Eigen::ArrayXd& y,
-                                 const std::vector<Eigen::ArrayXXd>& G,
+                                 const std::vector<Eigen::ArrayXXd>& A,
                                  const Eigen::ArrayXd& d,
                                  const Eigen::ArrayXi& igroup,
                                  const Eigen::ArrayXi& group, // group index
@@ -1223,13 +1223,13 @@ Rcpp::List fQtauyWithIndex_EIGEN(const Eigen::ArrayXd& y,
                                  const int& ntau,
                                  const int& type,
                                  const int& nthreads){
-  // compute gP, cumsumgP, and IyP
-  gPIyP_EIGEN tp = fgPIyP_EIGEN(y, G, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
+  // compute aP, cumsumaP, and IyP
+  aPIyP_EIGEN tp = faPIyP_EIGEN(y, A, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
   
   // compute w1, w2, pi1, and pi2
   Eigen::ArrayXXd w1(Eigen::ArrayXXd::Zero(ntau, n)), w2(Eigen::ArrayXXd::Zero(ntau, n)); 
   Eigen::ArrayXXi pi1(Eigen::ArrayXXi::Zero(ntau, n)), pi2(Eigen::ArrayXXi::Zero(ntau, n));
-  fQWeightIndex_EIGEN(w1, w2, pi1, pi2, tp.gP, tp.cumsumgP, tp.IyP, d, stau, n, ntau, type, nthreads);
+  fQWeightIndex_EIGEN(w1, w2, pi1, pi2, tp.aP, tp.cumsumaP, tp.IyP, d, stau, n, ntau, type, nthreads);
   Eigen::ArrayXXd Qty(ntau, n);
 #if defined(_OPENMP)
   omp_set_num_threads(nthreads);
@@ -1253,7 +1253,7 @@ Rcpp::List fQtauyWithIndex_EIGEN(const Eigen::ArrayXd& y,
 // The same function only indices
 //[[Rcpp::export]]
 Rcpp::List fQtauyIndex(const arma::vec& y,
-                       const std::vector<arma::mat>& G,
+                       const std::vector<arma::mat>& A,
                        const arma::vec& d,
                        const arma::uvec& igroup,
                        const arma::uvec& group, // group index
@@ -1265,14 +1265,14 @@ Rcpp::List fQtauyIndex(const arma::vec& y,
                        const int& ntau,
                        const int& type,
                        const int& nthreads){
-  // compute gP, cumsumgP, and IyP
-  gPIyP tp = fgPIyP(y, G, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
+  // compute aP, cumsumaP, and IyP
+  aPIyP tp = faPIyP(y, A, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
   
   // compute w1, w2, pi1, and pi2
   arma::mat w1(ntau, n, arma::fill::zeros); 
   arma::mat w2(ntau, n, arma::fill::zeros); 
   arma::umat pi1(ntau, n, arma::fill::zeros), pi2(ntau, n, arma::fill::zeros);
-  fQWeightIndex(w1, w2, pi1, pi2, tp.gP, tp.cumsumgP, tp.IyP, d, stau, n, ntau, type, nthreads);
+  fQWeightIndex(w1, w2, pi1, pi2, tp.aP, tp.cumsumaP, tp.IyP, d, stau, n, ntau, type, nthreads);
   return Rcpp::List::create(Rcpp::_["pi1"] = pi1.t(), 
                             Rcpp::_["pi2"] = pi2.t(), 
                             Rcpp::_["w1"]  = w1.t(), 
@@ -1281,7 +1281,7 @@ Rcpp::List fQtauyIndex(const arma::vec& y,
 
 //[[Rcpp::export]]
 Rcpp::List fQtauyIndex_EIGEN(const Eigen::ArrayXd& y,
-                             const std::vector<Eigen::ArrayXXd>& G,
+                             const std::vector<Eigen::ArrayXXd>& A,
                              const Eigen::ArrayXd& d,
                              const Eigen::ArrayXi& igroup,
                              const Eigen::ArrayXi& group, // group index
@@ -1293,13 +1293,13 @@ Rcpp::List fQtauyIndex_EIGEN(const Eigen::ArrayXd& y,
                              const int& ntau,
                              const int& type,
                              const int& nthreads){
-  // compute gP, cumsumgP, and IyP
-  gPIyP_EIGEN tp = fgPIyP_EIGEN(y, G, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
+  // compute aP, cumsumaP, and IyP
+  aPIyP_EIGEN tp = faPIyP_EIGEN(y, A, d, igroup, group, groupidx, nvec, ngroup, n, nthreads);
   
   // compute w1, w2, pi1, and pi2
   Eigen::ArrayXXd w1(Eigen::ArrayXXd::Zero(ntau, n)), w2(Eigen::ArrayXXd::Zero(ntau, n)); 
   Eigen::ArrayXXi pi1(Eigen::ArrayXXi::Zero(ntau, n)), pi2(Eigen::ArrayXXi::Zero(ntau, n));
-  fQWeightIndex_EIGEN(w1, w2, pi1, pi2, tp.gP, tp.cumsumgP, tp.IyP, d, stau, n, ntau, type, nthreads);
+  fQWeightIndex_EIGEN(w1, w2, pi1, pi2, tp.aP, tp.cumsumaP, tp.IyP, d, stau, n, ntau, type, nthreads);
   
   return Rcpp::List::create(Rcpp::_["pi1"] = pi1.transpose(), 
                             Rcpp::_["pi2"] = pi2.transpose(), 
@@ -1385,7 +1385,7 @@ Eigen::MatrixXd fProdWVI_EIGEN(const Eigen::SparseMatrix<double>& W,
 // y is initial solution
 //[[Rcpp::export]]
 int fNashE(arma::vec& y,
-           const std::vector<arma::mat>& G,
+           const std::vector<arma::mat>& A,
            const arma::vec& d,
            const arma::vec& talpha,
            const arma::vec& lambdatau,
@@ -1405,7 +1405,7 @@ int fNashE(arma::vec& y,
   computeBR: ++t;
   
   // Compute Qtauy
-  arma::mat Qtauy = fQtauy(y, G, d, igroup, group, groupidx, nvec, stau, ngroup,
+  arma::mat Qtauy = fQtauy(y, A, d, igroup, group, groupidx, nvec, stau, ngroup,
                            n, ntau, type, nthreads);
   
   // New y
@@ -1420,7 +1420,7 @@ int fNashE(arma::vec& y,
 
 //[[Rcpp::export]]
 Rcpp::List fNashE_EIGEN(const Eigen::ArrayXd& y0,
-                        const std::vector<Eigen::ArrayXXd>& G,
+                        const std::vector<Eigen::ArrayXXd>& A,
                         const Eigen::ArrayXd& d,
                         const Eigen::VectorXd& talpha,
                         const Eigen::VectorXd& lambdatau,
@@ -1441,7 +1441,7 @@ Rcpp::List fNashE_EIGEN(const Eigen::ArrayXd& y0,
   computeBR: ++t;
   
   // Compute Qtauy
-  Eigen::MatrixXd Qtauy = fQtauy_EIGEN(y, G, d, igroup, group, groupidx, nvec, stau, 
+  Eigen::MatrixXd Qtauy = fQtauy_EIGEN(y, A, d, igroup, group, groupidx, nvec, stau, 
                                        ngroup, n, ntau, type, nthreads);
   
   // New y
@@ -1460,7 +1460,7 @@ Rcpp::List fNashE_EIGEN(const Eigen::ArrayXd& y0,
 arma::mat simInstrqpeer(const arma::vec& y,
                         const arma::mat& qy,
                         const arma::mat& X,
-                        const std::vector<arma::mat>& G,
+                        const std::vector<arma::mat>& A,
                         const arma::vec& d,
                         const arma::uvec& igroup,
                         const arma::uvec& group, // group index
@@ -1543,7 +1543,7 @@ arma::mat simInstrqpeer(const arma::vec& y,
     computeBR: ++t;
     
     // Compute Qtauy
-    arma::mat Qtauy = fQtauy(yy, G, d, igroup, group, groupidx, nvec, stau, 
+    arma::mat Qtauy = fQtauy(yy, A, d, igroup, group, groupidx, nvec, stau, 
                              ngroup, n, ntau, type, 1);
     
     // New y
@@ -1553,7 +1553,7 @@ arma::mat simInstrqpeer(const arma::vec& y,
     double dist     = max(abs(yyst - yy)/(abs(yy) + 1e-50));
     yy              = yyst;
     if (dist > tol && t < maxit) goto computeBR;
-    listQtauy[tid] += fQtauy(yy, G, d, igroup, group, groupidx, nvec, stauInst,
+    listQtauy[tid] += fQtauy(yy, A, d, igroup, group, groupidx, nvec, stauInst,
                              ngroup, n, ntauInst, type, 1);
   }
 }
@@ -1585,7 +1585,7 @@ arma::mat simInstrqpeer(const arma::vec& y,
     computeBR: ++t;
     
     // Compute Qtauy
-    arma::mat Qtauy = fQtauy(yy, G, d, igroup, group, groupidx, nvec, stau, 
+    arma::mat Qtauy = fQtauy(yy, A, d, igroup, group, groupidx, nvec, stau, 
                              ngroup, n, ntau, type, 1);
     
     // New y
@@ -1595,7 +1595,7 @@ arma::mat simInstrqpeer(const arma::vec& y,
     double dist = max(abs(yyst - yy)/(abs(yy) + 1e-50));
     yy          = yyst;
     if (dist > tol && t < maxit) goto computeBR;
-    out        += fQtauy(yy, G, d, igroup, group, groupidx, nvec, stauInst,
+    out        += fQtauy(yy, A, d, igroup, group, groupidx, nvec, stauInst,
                          ngroup, n, ntauInst, type, 1);
   }
 #endif
@@ -1606,7 +1606,7 @@ return out / boot;
 Eigen::ArrayXXd simInstrqpeer_EIGEN(const Eigen::VectorXd& y,
                                     const Eigen::MatrixXd& qy,
                                     const Eigen::MatrixXd& X,
-                                    const std::vector<Eigen::ArrayXXd>& G,
+                                    const std::vector<Eigen::ArrayXXd>& A,
                                     const Eigen::ArrayXd& d,
                                     const Eigen::ArrayXXi& igroup,
                                     const Eigen::ArrayXi& group, // group index
@@ -1691,7 +1691,7 @@ Eigen::ArrayXXd simInstrqpeer_EIGEN(const Eigen::VectorXd& y,
     computeBR: ++t;
     
     // Compute Qtauy
-    Qtauy = fQtauy_EIGEN(yy, G, d, igroup, group, groupidx, nvec, stau, 
+    Qtauy = fQtauy_EIGEN(yy, A, d, igroup, group, groupidx, nvec, stau, 
                          ngroup, n, ntau, type, 1);
     
     // New y
@@ -1736,7 +1736,7 @@ Eigen::ArrayXXd simInstrqpeer_EIGEN(const Eigen::VectorXd& y,
     computeBR: ++t;
     
     // Compute Qtauy
-    Qtauy = fQtauy_EIGEN(yy, G, d, igroup, group, groupidx, nvec, stau, 
+    Qtauy = fQtauy_EIGEN(yy, A, d, igroup, group, groupidx, nvec, stau, 
                          ngroup, n, ntau, type, 1);
     
     // New y
@@ -1757,7 +1757,7 @@ return out / boot;
 //[[Rcpp::export]]
 void fylim_ARMA(arma::vec& y,
            arma::vec& Gy,
-           const std::vector<arma::mat>& G,
+           const std::vector<arma::mat>& A,
            const arma::vec& talpha,
            const arma::uvec& igroup,
            const int& ngroup,
@@ -1773,11 +1773,11 @@ void fylim_ARMA(arma::vec& y,
   
 #pragma omp for
   for (int m = 0; m < ngroup; ++m) {
-    Am = -lambda * G[m];
+    Am = -lambda * A[m];
     Am.diag() += 1.0;
     ym = arma::solve(Am, talpha.subvec(igroup(m), igroup(m + 1) - 1));
     y.rows(igroup(m), igroup(m + 1) - 1)  = ym;
-    Gy.rows(igroup(m), igroup(m + 1) - 1) = G[m] * ym;
+    Gy.rows(igroup(m), igroup(m + 1) - 1) = A[m] * ym;
   }
 }
 #else
@@ -1785,17 +1785,17 @@ void fylim_ARMA(arma::vec& y,
   arma::vec ym;
 
   for (int m = 0; m < ngroup; ++m) {
-    Am = -lambda * G[m];
+    Am = -lambda * A[m];
     Am.diag() += 1.0;
     ym = arma::solve(Am, talpha.subvec(igroup(m), igroup(m + 1) - 1));
     y.rows(igroup(m), igroup(m + 1) - 1)  = ym;
-    Gy.rows(igroup(m), igroup(m + 1) - 1) = G[m] * ym;
+    Gy.rows(igroup(m), igroup(m + 1) - 1) = A[m] * ym;
   }
 #endif
 }
 
 //[[Rcpp::export]]
-Rcpp::List fylim(const std::vector<Eigen::MatrixXd>& G,
+Rcpp::List fylim(const std::vector<Eigen::MatrixXd>& A,
                        const Eigen::VectorXd& talpha,
                        const Eigen::ArrayXi& igroup,
                        const Eigen::ArrayXi& nvec,
@@ -1810,68 +1810,20 @@ Rcpp::List fylim(const std::vector<Eigen::MatrixXd>& G,
 #pragma omp parallel for
   for (int m = 0; m < ngroup; ++ m) {
     int nm(nvec(m));
-    Eigen::MatrixXd Am(-lambda * G[m]);
+    Eigen::MatrixXd Am(-lambda * A[m]);
     Am.diagonal().array() += 1;
     y.segment(igroup(m), nm)  = Am.colPivHouseholderQr().solve(talpha.segment(igroup(m), nm));
-    Gy.segment(igroup(m), nm) = G[m] * y.segment(igroup(m), nm);
+    Gy.segment(igroup(m), nm) = A[m] * y.segment(igroup(m), nm);
   }
 #else
   for (int m = 0; m < ngroup; ++ m) {
     int nm(nvec(m));
-    Eigen::MatrixXd Am(-lambda * G[m]);
+    Eigen::MatrixXd Am(-lambda * A[m]);
     Am.diagonal().array() += 1;
     y.segment(igroup(m), nm)  = Am.colPivHouseholderQr().solve(talpha.segment(igroup(m), nm));
-    Gy.segment(igroup(m), nm) = G[m] * y.segment(igroup(m), nm);
+    Gy.segment(igroup(m), nm) = A[m] * y.segment(igroup(m), nm);
   }
 #endif
   return Rcpp::List::create(Rcpp::_["y"] = y, Rcpp::_["Gy"] = Gy);
 }
 
-// //  This function compute optimal instruments (reduced form model)
-// //[[Rcpp::export]]
-// arma::mat optins_red(const arma::vec& beta,
-//                      const arma::vec& y,
-//                      const std::vector<arma::mat>& G,
-//                      const arma::mat& X,
-//                      const arma::vec& d,
-//                      const arma::mat& igroup,
-//                      const arma::vec& nvec,
-//                      const arma::vec& stau,
-//                      const int& ngroup,
-//                      const int& n,
-//                      const int& ntau,
-//                      const int& type,
-//                      const int& Kx,
-//                      const double& tol,
-//                      const int& maxit) {
-//   arma::vec talpha(X*beta.tail(Kx));
-//   arma::vec Ey = y;
-//   fNashE(Ey, G, d, talpha, beta.head(ntau), igroup, nvec, stau, ngroup, n, 
-//          ntau, type, tol, maxit);
-//   return fQtauy(Ey, G, d, igroup, nvec, stau, ngroup, n, ntau, type);
-// }
-// 
-// //  This function compute optimal instruments (reduced form model)
-// //[[Rcpp::export]]
-// arma::mat optins_struc(const arma::vec& beta,
-//                        const arma::vec& y,
-//                        const std::vector<arma::mat>& G,
-//                        const arma::mat& X,
-//                        const arma::vec& d,
-//                        const arma::mat& igroup,
-//                        const arma::vec& nvec,
-//                        const arma::vec& stau,
-//                        const arma::uvec& nIs,
-//                        const int& ngroup,
-//                        const int& n,
-//                        const int& ntau,
-//                        const int& type,
-//                        const int& Kx,
-//                        const double& tol,
-//                        const int& maxit) {
-//   arma::vec talpha(X*beta.tail(Kx)); talpha.elem(nIs) *= (1 - beta(0));
-//   arma::vec Ey = y;
-//   fNashE(Ey, G, d, talpha, beta.subvec(1, ntau), igroup, nvec, stau, ngroup, n, 
-//          ntau, type, tol, maxit);
-//   return fQtauy(Ey, G, d, igroup, nvec, stau, ngroup, n, ntau, type);
-// }

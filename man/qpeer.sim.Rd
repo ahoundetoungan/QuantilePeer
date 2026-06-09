@@ -6,11 +6,11 @@
 \usage{
 qpeer.sim(
   formula,
-  Glist,
+  A,
   tau,
   parms,
   lambda,
-  beta,
+  gamma,
   epsilon,
   structural = FALSE,
   init,
@@ -26,17 +26,25 @@ qpeer.sim(
 \item{formula}{An object of class \link[stats]{formula}: a symbolic description of the model. \code{formula} should be specified as, for example, \code{~ x1 + x2},
 where \code{x1} and \code{x2} are control variables, which can include contextual variables such as averages or quantiles among peers.}
 
-\item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
+\item{A}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{A} must be a list of subnets, with the \code{g}-th element being an \eqn{n_g \times n_g} adjacency matrix, where \eqn{n_g} is the number of nodes in the \code{g}-th subnet.}
 
 \item{tau}{The vector of quantile levels.}
 
-\item{parms}{A vector defining the true values of \eqn{(\lambda', \beta')'}, where \eqn{\lambda} is a vector of \eqn{\lambda_{\tau}} for each quantile level \eqn{\tau}.
-The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately using the arguments \code{lambda} and \code{beta}. For the structural model,
-\eqn{\lambda = (\lambda_2, \lambda_{\tau_1}, \lambda_{\tau_2}, \dots)^{\prime}} (see the Details section of \code{\link{qpeer}}).}
+\item{parms}{A vector defining the true values of \eqn{(\lambda', \gamma')'}, where
+\eqn{\lambda = (\lambda_{0}, \dots, \lambda_{K})'} is a vector of effects at each quantile level.
+
+For the structural model, \eqn{\lambda = (\lambda^c, \lambda_{0}, \dots, \lambda_{M})^{\prime}},
+where \eqn{\lambda^c} represents the total conformity effect.
+For the structural model, all effects are normalized by \eqn{1 + \beta^s}, where \eqn{\beta^c} is the
+total conformity effects in the utility function  (see the Details section of
+\code{\link{qpeer}}).
+
+The parameters \eqn{\lambda} and \eqn{\gamma} can also be specified separately using the
+arguments \code{lambda} and \code{gamma}.}
 
 \item{lambda}{The true value of the vector \eqn{\lambda}.}
 
-\item{beta}{The true value of the vector \eqn{\beta}.}
+\item{gamma}{The true value of the vector \eqn{\gamma}.}
 
 \item{epsilon}{A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in the Details section of \code{\link{qpeer}}).}
 
@@ -63,8 +71,8 @@ A list containing:
 \item{y}{The simulated variable.}
 \item{qy}{Quantiles of the simulated variable among peers.}
 \item{epsilon}{The idiosyncratic error.}
-\item{index}{The indices of the two peers whose weighted average gives the quantile.}
-\item{weight}{The weights of the two peers whose weighted average gives the quantile.}
+\item{weight}{Weights of the two peers whose weighted average defines the quantile
+(available only under the quantile specification).}
 \item{iteration}{The number of iterations before convergence.}
 }
 \description{
@@ -75,17 +83,18 @@ set.seed(123)
 ngr  <- 50
 nvec <- rep(30, ngr)
 n    <- sum(nvec)
-G    <- lapply(1:ngr, function(z){
-  Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
-  diag(Gz) <- 0
-  Gz
+A    <- lapply(1:ngr, function(g){
+  Ag <- matrix(rbinom(nvec[g]^2, 1, 0.3), nvec[g])
+  diag(Ag) <- 0
+  Ag
 }) 
 tau  <- seq(0, 1, 0.25)
 X    <- cbind(rnorm(n), rpois(n, 2))
-l    <- c(0.2, 0.1, 0.05, 0.1, 0.2)
-b    <- c(2, -0.5, 1)
+lam  <- c(0.2, 0.1, 0.05, 0.1, 0.2)
+gam  <- c(2, -0.5, 1)
 
-out  <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, beta = b)
+out  <- qpeer.sim(formula = ~ X, A = A, tau = tau, lambda = lam, 
+                  gamma = gam)
 summary(out$y)
 out$iteration
 }

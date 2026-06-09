@@ -66,38 +66,38 @@ n    <- sum(nvec)
 
 ### Simulating Data
 ## Network matrix
-G <- lapply(1:ngr, function(z) {
-  Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
-  diag(Gz) <- 0
+A <- lapply(1:ngr, function(g) {
+  Ag <- matrix(rbinom(nvec[g]^2, 1, 0.3), nvec[g], nvec[g])
+  diag(Ag) <- 0
   # Adding isolated nodes (important for the structural model)
-  niso <- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1))
+  niso <- sample(0:nvec[g], 1, prob = (nvec[g] + 1):1 / sum((nvec[g] + 1):1))
   if (niso > 0) {
-    Gz[sample(1:nvec[z], niso), ] <- 0
+    Ag[sample(1:nvec[g], niso), ] <- 0
   }
-  Gz
+  Ag
 })
 
 tau <- seq(0, 1, 1/3)
 X   <- cbind(rnorm(n), rpois(n, 2))
-l   <- c(0.2, 0.15, 0.1, 0.2)
-b   <- c(2, -0.5, 1)
+lam <- c(0.2, 0.15, 0.1, 0.2)
+gam <- c(2, -0.5, 1)
 eps <- rnorm(n, 0, 0.4)
 
 ## Generating `y`
-y <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l, 
-               beta = b, epsilon = eps)$y
+y <- qpeer.sim(formula = ~ X, A = A, tau = tau, lambda = lam, 
+               gamma = gam, epsilon = eps)$y
 
 ### Estimation
 ## Computing instruments
-Z1 <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), 
+Z1 <- qpeer.inst(formula = ~ X, A = A, tau = seq(0, 1, 0.1), 
                  max.distance = 2, checkrank = TRUE)$instruments
-Z2 <- qpeer.inst(formula = y ~ X, Glist = G, tau = seq(0, 1, 0.1), 
+Z2 <- qpeer.inst(formula = y ~ X, A = A, tau = seq(0, 1, 0.1), 
                  max.distance = 2, checkrank = TRUE)$instruments
 
 ## Reduced-form model 
-rest1 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1, Glist = G, tau = tau)
+rest1 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1, A = A, tau = tau)
 summary(rest1, diagnostic = TRUE)  
-rest2 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1 + Z2, Glist = G, tau = tau)
+rest2 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1 + Z2, A = A, tau = tau)
 summary(rest2, diagnostic = TRUE)  
 
 qpeer.test(model1 = rest1, which = "increasing")
@@ -105,7 +105,7 @@ qpeer.test(model1 = rest1, which = "decreasing")
 qpeer.test(model1 = rest1, model2 = rest2, which = "sargan")
 
 #' A model with a mispecified tau
-rest3 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1 + Z2, Glist = G, tau = c(0, 1))
+rest3 <- qpeer(formula = y ~ X, excluded.instruments = ~ Z1 + Z2, A = A, tau = c(0, 1))
 summary(rest3)
 #' Test is rest3 is worse than rest1
 qpeer.test(model1 = rest3, model2 = rest1, which = "encompassing")

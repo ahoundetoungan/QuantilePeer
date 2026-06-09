@@ -9,7 +9,7 @@
 \usage{
 qpeer.optimal.instruments(
   model,
-  Glist,
+  A,
   tau,
   boot = 100L,
   nthreads = 1L,
@@ -20,7 +20,7 @@ qpeer.optimal.instruments(
 
 qpeer.optimal.instrument(
   model,
-  Glist,
+  A,
   tau,
   boot = 100L,
   nthreads = 1L,
@@ -31,7 +31,7 @@ qpeer.optimal.instrument(
 
 qpeer.optimal.insts(
   model,
-  Glist,
+  A,
   tau,
   boot = 100L,
   nthreads = 1L,
@@ -42,7 +42,7 @@ qpeer.optimal.insts(
 
 qpeer.optimal.inst(
   model,
-  Glist,
+  A,
   tau,
   boot = 100L,
   nthreads = 1L,
@@ -55,9 +55,9 @@ qpeer.optimal.inst(
 \item{model}{An object of class \code{\link{qpeer}} that contains an initial estimation of the model
 for which the "optimal" instruments will be computed.}
 
-\item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools),
-\code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix,
-where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
+\item{A}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools),
+\code{A} must be a list of subnets, with the \code{g}-th element being an \eqn{n_g \times n_g} adjacency matrix,
+where \eqn{n_g} is the number of nodes in the \code{g}-th subnet.}
 
 \item{tau}{A numeric vector specifying the quantile levels for the instrument matrix.
 The default value is the vector of quantile levels used to estimate the model.}
@@ -89,50 +89,50 @@ n    <- sum(nvec)
 
 ### Simulating Data
 ## Network matrix
-G <- lapply(1:ngr, function(z) {
-  Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
-  diag(Gz) <- 0
+A <- lapply(1:ngr, function(g) {
+  Ag <- matrix(rbinom(nvec[g]^2, 1, 0.3), nvec[g], nvec[g])
+  diag(Ag) <- 0
   # Adding isolated nodes (important for the structural model)
-  niso <- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1))
+  niso <- sample(0:nvec[g], 1, prob = (nvec[g] + 1):1 / sum((nvec[g] + 1):1))
   if (niso > 0) {
-    Gz[sample(1:nvec[z], niso), ] <- 0
+    Ag[sample(1:nvec[g], niso), ] <- 0
   }
-  Gz
+  Ag
 })
 
 tau <- seq(0, 1, 1/3)
 X   <- cbind(rnorm(n), rpois(n, 2))
-l   <- c(0.2, 0.15, 0.1, 0.2)
-b   <- c(2, -0.5, 1)
+lam <- c(0.2, 0.15, 0.1, 0.2)
+gam <- c(2, -0.5, 1)
 eps <- rnorm(n, 0, 0.4)
 
 ## Generating `y`
-y <- qpeer.sim(formula = ~ X, Glist = G, tau = tau, lambda = l,
-               beta = b, epsilon = eps)$y
+y <- qpeer.sim(formula = ~ X, A = A, tau = tau, lambda = lam,
+               gamma = gam, epsilon = eps)$y
 
 ### Estimation
 ## Computing instruments
-Z <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1),
+Z <- qpeer.inst(formula = ~ X, A = A, tau = seq(0, 1, 0.1),
                 max.distance = 2, checkrank = TRUE)
 Z <- Z$instruments
 
 ## Reduced-form model
-rest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau)
+rest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, A = A, tau = tau)
 summary(rest, diagnostic = TRUE)  
 
 # Estimation using the optimal instrument
-Ired <- qpeer.optimal.insts(rest, Glist = G, boot = 100, nthreads = 2)
-summary(qpeer(formula = y ~ X, excluded.instruments = ~ Ired, Glist = G, tau = tau), 
+Ired <- qpeer.optimal.insts(rest, A = A, boot = 100, nthreads = 2)
+summary(qpeer(formula = y ~ X, excluded.instruments = ~ Ired, A = A, tau = tau), 
         diagnostic = TRUE)  
 
 ## Structural model
-sest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, Glist = G, tau = tau,
+sest <- qpeer(formula = y ~ X, excluded.instruments = ~ Z, A = A, tau = tau,
               structural = TRUE)
 summary(sest, diagnostic = TRUE)
 
 # Estimation using the optimal instrument
-Istr <- qpeer.optimal.insts(sest, Glist = G, boot = 100, nthreads = 2)
-summary(qpeer(formula = y ~ X, excluded.instruments = ~ Istr, Glist = G, tau = tau), 
+Istr <- qpeer.optimal.insts(sest, A = A, boot = 100, nthreads = 2)
+summary(qpeer(formula = y ~ X, excluded.instruments = ~ Istr, A = A, tau = tau), 
         diagnostic = TRUE)
 }
 }

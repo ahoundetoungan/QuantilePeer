@@ -1,6 +1,6 @@
 #' @rdname qpeer
 #' @export
-linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV", 
+linpeer <- function(formula, excluded.instruments, A, data, estimator = "IV", 
                     structural = FALSE, drop = NULL, fixed.effects = FALSE, HAC = "iid", 
                     checkrank = FALSE, compute.cov = TRUE, boot = 5e2, nthreads = 1, tol = 1e-10,
                     print = TRUE){
@@ -38,23 +38,23 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   }
   
   # Network
-  if (!is.list(Glist)) {
-    Glist  <- list(Glist)
+  if (!is.list(A)) {
+    A  <- list(A)
   }
-  dg       <- fnetwork(Glist = Glist)
-  M        <- dg$M
-  MIs      <- dg$MIs
-  MnIs     <- dg$MnIs
-  nvec     <- dg$nvec
+  d        <- fnetwork(A = A)
+  G        <- d$G
+  GIs      <- d$GIs
+  GnIs     <- d$GnIs
+  nvec     <- d$nvec
   ncum     <- c(0, cumsum(nvec))
-  n        <- dg$n
-  igr      <- dg$igr
-  lIs      <- dg$lIs
-  Is       <- dg$Is
-  lnIs     <- dg$lnIs
-  nIs      <- dg$nIs
-  ldg      <- dg$ldg
-  dg       <- dg$dg
+  n        <- d$n
+  igr      <- d$igr
+  lIs      <- d$lIs
+  Is       <- d$Is
+  lnIs     <- d$lnIs
+  nIs      <- d$nIs
+  ld       <- d$ld
+  d        <- d$d
   
   # Data
   # y and X
@@ -66,7 +66,7 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   xname      <- f.t.data$xname
   yname      <- f.t.data$yname
   xint       <- f.t.data$intercept
-  Gy         <- as.matrix(unlist(lapply(1:M, function(m) Glist[[m]] %*% y[(ncum[m] + 1):ncum[m + 1]])))
+  Ay         <- as.matrix(unlist(lapply(1:G, function(m) A[[m]] %*% y[(ncum[m] + 1):ncum[m + 1]])))
   
   # Instruments
   inst       <- as.formula(excluded.instruments); excluded.instruments <- inst
@@ -84,43 +84,43 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   
   # drop
   if (!is.null(drop)) {
-    dg       <- fdrop(drop = drop, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
-                      lnIs = lnIs, y = y, X = X, qy = Gy, ins = ins)
-    M        <- dg$M
-    MIs      <- dg$MIs
-    MnIs     <- dg$MnIs
-    nvec     <- dg$nvec
-    n        <- dg$n
-    igr      <- dg$igr
-    lIs      <- dg$lIs
-    Is       <- dg$Is
-    lnIs     <- dg$lnIs
-    nIs      <- dg$nIs
-    ldg      <- dg$ldg
-    y        <- dg$y
-    X        <- dg$X
-    Gy       <- dg$qy
-    ins      <- dg$ins
-    dg       <- dg$dg
+    d        <- fdrop(drop = drop, ld = ld, nvec = nvec, G = G, lIs = lIs, 
+                      lnIs = lnIs, y = y, X = X, qy = Ay, ins = ins)
+    G        <- d$G
+    GIs      <- d$GIs
+    GnIs     <- d$GnIs
+    nvec     <- d$nvec
+    n        <- d$n
+    igr      <- d$igr
+    lIs      <- d$lIs
+    Is       <- d$Is
+    lnIs     <- d$lnIs
+    nIs      <- d$nIs
+    ld       <- d$ld
+    y        <- d$y
+    X        <- d$X
+    Ay       <- d$qy
+    ins      <- d$ins
+    d        <- d$d
   }
   
   # Demean fixed effect models
   # save original data
   y0         <- y
-  Gy0        <- Gy
+  Ay0        <- Ay
   X0         <- X
   ins0       <- ins
   if (fixed.effects != "no") {
     if (fixed.effects == "join") {
-      y      <- c(Demean(as.matrix(y), igroup = igr, ngroup = M))
-      Gy     <- Demean(Gy, igroup = igr, ngroup = M)
-      X      <- Demean(X, igroup = igr, ngroup = M)
-      ins    <- Demean(ins, igroup = igr, ngroup = M)
+      y      <- c(Demean(as.matrix(y), igroup = igr, ngroup = G))
+      Ay     <- Demean(Ay, igroup = igr, ngroup = G)
+      X      <- Demean(X, igroup = igr, ngroup = G)
+      ins    <- Demean(ins, igroup = igr, ngroup = G)
     } else {
-      y      <- c(Demean_separate(as.matrix(y), igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n))
-      Gy     <- Demean_separate(Gy, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
-      X      <- Demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
-      ins    <- Demean_separate(ins, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+      y      <- c(Demean_separate(as.matrix(y), igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n))
+      Ay     <- Demean_separate(Ay, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n)
+      X      <- Demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n)
+      ins    <- Demean_separate(ins, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n)
     }
     colnames(X)   <- xname
     colnames(ins) <- zename
@@ -142,9 +142,9 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
   xname      <- xname[tlm + 1]
   Kx         <- ncol(X)
   if (structural) {
-    if (length(fcheckrank(X = cbind(Gy, X)[nIs + 1,], tol = tol)) != (1 + Kx)) stop("The design matrix is not full rank.")
+    if (length(fcheckrank(X = cbind(Ay, X)[nIs + 1,], tol = tol)) != (1 + Kx)) stop("The design matrix is not full rank.")
   } else {
-    if (length(fcheckrank(X = cbind(Gy, X), tol = tol)) != (1 + Kx)) stop("The design matrix is not full rank.")
+    if (length(fcheckrank(X = cbind(Ay, X), tol = tol)) != (1 + Kx)) stop("The design matrix is not full rank.")
   }
   
   
@@ -171,45 +171,45 @@ linpeer <- function(formula, excluded.instruments, Glist, data, estimator = "IV"
     Kx1      <- length(idX1)
     Kx2      <- length(idX2)
     if (Kins < Kx2 + 1) stop("Insufficient number of instruments: the model is not identified.")
-    Kest1    <- ifelse(FEnum == 0, Kx1, Kx1 + MIs)
-    Kest2    <- ifelse(FEnum == 0, Kx2 + 2, Kx2 + 1 + MnIs)
+    Kest1    <- ifelse(FEnum == 0, Kx1, Kx1 + GIs)
+    Kest2    <- ifelse(FEnum == 0, Kx2 + 2, Kx2 + 1 + GnIs)
     if (length(Is) <= Kest1) stop("Insufficient number of isolated nodes for estimating the structural model.")
     if (length(nIs) <= Kest2) stop("Insufficient number of nonisolated nodes for estimating the structural model.")
     Kest     <- Kest1 + Kest2
-    if (HACnum == 2 && (Kx1 >= MIs || Kins + 1 >= MnIs) && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
+    if (HACnum == 2 && (Kx1 >= GIs || Kins + 1 >= GnIs) && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
       stop("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. Set HAC to 'iid' or 'hetero'.")
     }
-    estname  <- c(paste0(c("G(conformity):", "G(total):"), yname), xname)
+    estname  <- c(paste0(c("A(conformity):", "A(total):"), yname), xname)
     
     # Estimation
-    GMMe     <- fstruct(y = y, X = X, qy = Gy, ins = ins, idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igr = igr, 
-                        nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, M = M, MnIs = MnIs, Kins = Kins, Kx = Kx, ntau = 1, 
+    GMMe     <- fstruct(y = y, X = X, qy = Ay, ins = ins, idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igr = igr, 
+                        nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, G = G, GnIs = GnIs, Kins = Kins, Kx = Kx, ntau = 1, 
                         Kest1 = Kest1, Kest2 = Kest2, n = n, HACnum = HACnum, iv = iv, estimator = estimator, 
                         compute.cov = compute.cov, estname = estname)
   } else {
     if (Kins < Kx + 1) stop("Insufficient number of instruments: the model is not identified.")
-    Kest     <- ifelse(FEnum == 0, Kx + 1, ifelse(FEnum == 1, Kx + 1 + M, Kx + 1 + MIs + MnIs))
+    Kest     <- ifelse(FEnum == 0, Kx + 1, ifelse(FEnum == 1, Kx + 1 + G, Kx + 1 + GIs + GnIs))
     if (n <= Kest) stop("Insufficient number of observations.")
-    if (HACnum == 2 && Kins >= M && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
+    if (HACnum == 2 && Kins >= G && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
       stop("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. Set HAC to 'iid' or 'hetero', or use Bootstrap.")
     }
-    estname  <- c(paste0("G:", yname), xname)
-    V        <- cbind(Gy, X)
+    estname  <- c(paste0("A:", yname), xname)
+    V        <- cbind(Ay, X)
     
     # Estimation
-    GMMe     <- freduce(y = y, V = V, ins = ins, igr = igr, nvec = nvec, M = M, Kins = Kins, Kx = Kx, ntau = 1, 
+    GMMe     <- freduce(y = y, V = V, ins = ins, igr = igr, nvec = nvec, G = G, Kins = Kins, Kx = Kx, ntau = 1, 
                         Kest = Kest, n = n, HACnum = HACnum, iv = iv, estimator = estimator, compute.cov = compute.cov, 
                         estname = estname, LnIs = lnIs, LIs = lIs, boot = boot, nthreads = nthreads, seed = seed,
                         print = print)
   }
   
-  out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
+  out       <- list(model.info  = list(n = n, ngroup = G, nvec = nvec, structural = structural, formula = formula, 
                                        excluded.instruments = excluded.instruments, estimator = estimator, 
                                        fixed.effects = fixed.effects, idXiso = idX1 + 1, idXniso = idX2 + 1, HAC = HAC, 
                                        yname = yname, xnames = xname, znames = zename, seed = seed, boot = boot),
                     gmm         = GMMe,
-                    data        = list(y = y0, Gy = c(Gy0), X = X0, instruments = ins0, isolated = lapply(lIs, \(s) s + 1), 
-                                       non.isolated = lapply(lnIs, \(s) s + 1), degree = ldg))
+                    data        = list(y = y0, Ay = c(Ay0), X = X0, instruments = ins0, isolated = lapply(lIs, \(s) s + 1), 
+                                       non.isolated = lapply(lnIs, \(s) s + 1), degree = ld))
   class(out) <- "linpeer"
   out
 }
@@ -229,7 +229,7 @@ summary.linpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, d
   boot           <- ifelse(is.null(boot), object$model.info$boot, boot)
   nthreads       <- fnthreads(nthreads = nthreads)
   if (diagnostic || diagnostics) {
-    diagn        <- fdiagnostic(object, nendo = "Gy", seed = seed, boot = boot, 
+    diagn        <- fdiagnostic(object, nendo = "Ay", seed = seed, boot = boot, 
                                 nthreads = nthreads, print = print)
     cvKP         <- diagn$cvKP
     diagn        <- diagn$diag
@@ -244,7 +244,7 @@ summary.linpeer <- function(object, fullparameters = TRUE, diagnostic = FALSE, d
     Kx2          <- length(object$model.info$idXniso)
     tp                  <- fStructParamFull(param = est, covp = covt, ntau = 1, Kx1 = Kx1, Kx2 = Kx2, quantile = 0) 
     tp$theta            <- c(tp$theta)
-    names(tp$theta)     <- colnames(tp$Vpa) <- rownames(tp$Vpa) <- c(paste0(c("G(spillover):", "G(conformity):", "G(total):"), yname), xnames)
+    names(tp$theta)     <- colnames(tp$Vpa) <- rownames(tp$Vpa) <- c(paste0(c("A(spillover):", "A(conformity):", "A(total):"), yname), xnames)
     object$gmm$Estimate <- tp$theta
     object$gmm$cov      <- tp$Vpa
   }
@@ -321,12 +321,12 @@ print.linpeer <- function(x, ...) {
 #' @title Simulating Linear Peer Effect Models
 #' @param formula An object of class \link[stats]{formula}: a symbolic description of the model. `formula` should be specified as, for example, \code{~ x1 + x2}, 
 #' where `x1` and `x2` are control variables, which can include contextual variables such as averages or quantiles among peers.
-#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
-#' @param parms A vector defining the true values of \eqn{(\lambda', \beta')'}, where  
+#' @param A The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `A` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
+#' @param parms A vector defining the true values of \eqn{(\lambda', \gamma')'}, where  
 #' \eqn{\lambda} is either the peer effect parameter for the reduced-form specification or a 2-vector with the first component being conformity peer effects and the second component representing total peer effects. 
-#' The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately using the arguments `lambda`, and `beta`.
+#' The parameters \eqn{\lambda} and \eqn{\gamma} can also be specified separately using the arguments `lambda`, and `gamma`.
 #' @param lambda The true value of the vector \eqn{\lambda}.
-#' @param beta The true value of the vector \eqn{\beta}.
+#' @param gamma The true value of the vector \eqn{\gamma}.
 #' @param epsilon A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution. 
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 #' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `linpeer.sim` is called.
@@ -337,37 +337,37 @@ print.linpeer <- function(x, ...) {
 #' @seealso \code{\link{qpeer}}, \code{\link{linpeer}}
 #' @return A list containing:
 #'     \item{y}{The simulated variable.}
-#'     \item{Gy}{the average of y among friends.}
+#'     \item{Ay}{the average of y among friends.}
 #' @examples 
 #' set.seed(123)
 #' ngr  <- 50
 #' nvec <- rep(30, ngr)
 #' n    <- sum(nvec)
-#' G    <- lapply(1:ngr, function(z){
+#' A    <- lapply(1:ngr, function(z){
 #'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
 #'   diag(Gz) <- 0
 #'   Gz/rowSums(Gz) # Row-normalized network
 #' })
 #' X    <- cbind(rnorm(n), rpois(n, 2))
-#' l    <- 0.5
-#' b    <- c(2, -0.5, 1)
+#' lam  <- 0.5
+#' gam  <- c(2, -0.5, 1)
 #' 
-#' out  <- linpeer.sim(formula = ~ X, Glist = G, lambda = l, beta = b)
+#' out  <- linpeer.sim(formula = ~ X, A = A, lambda = lam, gamma = gam)
 #' summary(out$y)
 #' @export
-linpeer.sim   <- function(formula, Glist, parms, lambda, beta, epsilon, 
+linpeer.sim   <- function(formula, A, parms, lambda, gamma, epsilon, 
                           structural = FALSE, nthreads = 1, data){
-  if (!is.list(Glist)) {
-    Glist  <- list(Glist)
+  if (!is.list(A)) {
+    A  <- list(A)
   }
-  dg       <- fnetwork(Glist = Glist)
-  M        <- dg$M
-  nvec     <- dg$nvec
-  n        <- dg$n
-  igr      <- dg$igr
-  Is       <- dg$Is
-  nIs      <- dg$nIs
-  dg       <- dg$dg
+  d        <- fnetwork(A = A)
+  G        <- d$G
+  nvec     <- d$nvec
+  n        <- d$n
+  igr      <- d$igr
+  Is       <- d$Is
+  nIs      <- d$nIs
+  d        <- d$d
   if (length(Is) <= 1 & structural) warning("The structural model requires isolated nodes.")
   
   # Data
@@ -388,10 +388,10 @@ linpeer.sim   <- function(formula, Glist, parms, lambda, beta, epsilon,
   # parameters
   lamst    <- NULL
   lam      <- NULL
-  b        <- NULL
+  gam      <- NULL
   if (missing(parms)) {
-    if (missing(lambda) | missing(beta)) {
-      stop("Define either `parms` or `lambda` and `beta`.")
+    if (missing(lambda) | missing(gamma)) {
+      stop("Define either `parms` or `lambda` and `gamma`.")
     }
     if (structural) {
       if (length(lambda) != 2){
@@ -405,11 +405,11 @@ linpeer.sim   <- function(formula, Glist, parms, lambda, beta, epsilon,
       }
       lam   <- lambda
     }
-    if (length(beta) != Kx) stop("length(beta) is different from ncol(X).")
-    b      <- beta
+    if (length(gamma) != Kx) stop("length(gamma) is different from ncol(X).")
+    gam     <- gamma
   } else{
-    if (!missing(lambda) | !missing(beta)) {
-      stop("Define either `parms` or `lambda` and `beta`.")
+    if (!missing(lambda) | !missing(gamma)) {
+      stop("Define either `parms` or `lambda` and `gamma`.")
     }
     if (structural) {
       if (length(parms) != (2 + Kx)) stop("length(parms) is different from 2 + ncol(X).")
@@ -419,7 +419,7 @@ linpeer.sim   <- function(formula, Glist, parms, lambda, beta, epsilon,
       if (length(parms) != (1 + Kx)) stop("length(parms) is different from 1 + ncol(X).")
       lam   <- parms[1]
     }
-    b      <- tail(parms, Kx)
+    gam     <- tail(parms, Kx)
   }
   if (sum(abs(lam)) >= 1) {
     warning("The absolute value of the total peer effects is greater than or equal to one, which may lead to multiple or no equilibria.")
@@ -430,15 +430,15 @@ linpeer.sim   <- function(formula, Glist, parms, lambda, beta, epsilon,
   
   # Solving the game
   ## talpha
-  talpha <- c(X %*% b + eps)
+  talpha <- c(X %*% gam + eps)
   if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - lamst)
   
-  y      <- fylim(G = Glist, talpha = talpha, igroup = igr, nvec = nvec, 
-                  ngroup = M, lambda = lam, n = n, nthreads = nthreads)
-  Gy     <- y$Gy
+  y      <- fylim(A = A, talpha = talpha, igroup = igr, nvec = nvec, 
+                  ngroup = G, lambda = lam, n = n, nthreads = nthreads)
+  Ay     <- y$Ay
   y      <- y$y
   
   out    <- list("y"  = y,
-                 "Gy" = Gy)
+                 "Ay" = Ay)
   out
 }

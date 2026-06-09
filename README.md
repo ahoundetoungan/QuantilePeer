@@ -41,4 +41,4 @@ remotes::install_github("ahoundetoungan/QuantilePeer", build_vignettes = TRUE)
 ```
 
 ### Getting Started
-See the [vignettes](https://docs.google.com/viewer?url=https://github.com/ahoundetoungan/QuantilePeer/raw/main/doc/introduction_to_QuantilePeer.pdf) for detailed examples demonstrating how to use the package.
+See the [vignettes](https://docs.google.com/viewer?url=https://github.com/ahoundetoungan/QuantilePeer/raw/main/docs/articles/introduction_to_QuantilePeer.pdf) for detailed examples demonstrating how to use the package.

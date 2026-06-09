@@ -6,11 +6,11 @@
 \usage{
 cespeer.sim(
   formula,
-  Glist,
+  A,
   parms,
   rho,
   lambda,
-  beta,
+  gamma,
   epsilon,
   structural = FALSE,
   init,
@@ -23,17 +23,17 @@ cespeer.sim(
 \item{formula}{A formula object (\link[stats]{formula}): a symbolic description of the model. \code{formula} should be specified as, for example, \code{~ x1 + x2},
 where \code{x1} and \code{x2} are control variables, which can include contextual variables such as averages or quantiles among peers.}
 
-\item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
+\item{A}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{A} must be a list of subnets, with the \code{g}-th element being an \eqn{n_g \times n_g} adjacency matrix, where \eqn{n_g} is the number of nodes in the \code{g}-th subnet.}
 
-\item{parms}{A vector defining the true values of \eqn{(\rho, \lambda', \beta')'}, where \eqn{\rho} is the substitution parameter of the CES function and
+\item{parms}{A vector defining the true values of \eqn{(\rho, \lambda', \gamma')'}, where \eqn{\rho} is the substitution parameter of the CES function and
 \eqn{\lambda} is either the peer effect parameter for the reduced-form specification or a 2-vector with the first component being conformity peer effects and the second component representing total peer effects.
-The parameters \eqn{\rho}, \eqn{\lambda}, and \eqn{\beta} can also be specified separately using the arguments \code{rho}, \code{lambda}, and \code{beta} (see the Details section of \code{\link{cespeer}}).}
+The parameters \eqn{\rho}, \eqn{\lambda}, and \eqn{\gamma} can also be specified separately using the arguments \code{rho}, \code{lambda}, and \code{gamma} (see the Details section of \code{\link{cespeer}}).}
 
 \item{rho}{The true value of the substitution parameter of the CES function.}
 
 \item{lambda}{The true value of the peer effect parameter \eqn{\lambda}. It must include conformity and total peer effects for the structural model.}
 
-\item{beta}{The true value of the vector \eqn{\beta}.}
+\item{gamma}{The true value of the vector \eqn{\gamma}.}
 
 \item{epsilon}{A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in the Details section of \code{\link{cespeer}}).}
 
@@ -63,18 +63,18 @@ set.seed(123)
 ngr  <- 50
 nvec <- rep(30, ngr)
 n    <- sum(nvec)
-G    <- lapply(1:ngr, function(z){
-  Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
-  diag(Gz) <- 0
-  Gz/rowSums(Gz) # Row-normalized network
+A    <- lapply(1:ngr, function(z){
+  Ag <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
+  diag(Ag) <- 0
+  Ag/rowSums(Ag) # Row-normalized network
 })
 tau  <- seq(0, 1, 0.25)
 X    <- cbind(rnorm(n), rpois(n, 2))
-l    <- 0.55
+lam  <- 0.55
 rho  <- 3
-b    <- c(4, -0.5, 1)
+gam  <- c(4, -0.5, 1)
 
-out  <- cespeer.sim(formula = ~ X, Glist = G, rho = rho, lambda = l, beta = b)
+out  <- cespeer.sim(formula = ~ X, A = A, rho = rho, lambda = lam, gamma = gam)
 summary(out$y)
 out$iteration
 }

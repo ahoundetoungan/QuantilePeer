@@ -9,7 +9,7 @@
 \usage{
 qpeer.instruments(
   formula,
-  Glist,
+  A,
   tau,
   type = 7,
   data,
@@ -21,7 +21,7 @@ qpeer.instruments(
 
 qpeer.instrument(
   formula,
-  Glist,
+  A,
   tau,
   type = 7,
   data,
@@ -33,7 +33,7 @@ qpeer.instrument(
 
 qpeer.inst(
   formula,
-  Glist,
+  A,
   tau,
   type = 7,
   data,
@@ -45,7 +45,7 @@ qpeer.inst(
 
 qpeer.insts(
   formula,
-  Glist,
+  A,
   tau,
   type = 7,
   data,
@@ -59,7 +59,7 @@ qpeer.insts(
 \item{formula}{An object of class \link[stats]{formula}: a symbolic description of the model. The \code{formula} should be specified as, for example, \code{~ x1 + x2} or \code{y ~ x1 + x2},
 where \code{x1} and \code{x2} are variables for which the quantiles will be computed and \code{y} is the dependent variable. If \code{y} is specified, then the quantiles of \code{x1} and \code{x2} are computed by ranking observations according to the values of \code{y} (see details).}
 
-\item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
+\item{A}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{A} must be a list of subnets, with the \code{g}-th element being an \eqn{n_g \times n_g} adjacency matrix, where \eqn{n_g} is the number of nodes in the \code{g}-th subnet.}
 
 \item{tau}{The vector of quantile levels.}
 
@@ -93,23 +93,23 @@ The sample quantile is computed as a weighted average of two peer outcomes (see 
 \deqn{q_{\tau,i}(x_{-i}) = (1 - \omega_i)x_{i,(\pi_i)} + \omega_ix_{i,(\pi_i+1)},}
 where \eqn{x_{i,(1)}, x_{i,(2)}, x_{i,(3)}, \ldots} are the order statistics of the outcome within \eqn{i}'s peers, and \eqn{q_{\tau,i}(x_{-i})} represents the sample \eqn{\tau}-quantile
 of the outcome within \eqn{i}'s peer group. If \code{y} is specified, then the ranks \eqn{\pi_i} and the weights \eqn{\omega_i} for the variables in \code{X} are determined based on \code{y}.
-The network matrices in \code{Glist} can be weighted or unweighted. If weighted, the sample weighted quantile is computed, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}, the \eqn{(i, j)} entry of the network matrix.
+The network matrices in \code{A} can be weighted or unweighted. If weighted, the sample weighted quantile is computed, where the outcome for friend \eqn{j} of \eqn{i} is weighted by \eqn{g_{ij}}, the \eqn{(i, j)} entry of the network matrix.
 }
 \examples{
 ngr  <- 50
 nvec <- rep(30, ngr)
 n    <- sum(nvec)
-G    <- lapply(1:ngr, function(z){
-  Gz <- matrix(rbinom(sum(nvec[z]*(nvec[z] - 1)), 1, 0.3), nvec[z])
-  diag(Gz) <- 0
-  Gz
+A    <- lapply(1:ngr, function(g){
+  Ag <- matrix(rbinom(sum(nvec[g]*(nvec[g] - 1)), 1, 0.3), nvec[g])
+  diag(Ag) <- 0
+  Ag
 }) 
 tau  <- seq(0, 1, 0.25)
 X    <- cbind(rnorm(n), rpois(n, 2))
-l    <- c(0.2, 0.1, 0.05, 0.1, 0.2)
-b    <- c(2, -0.5, 1)
-y    <- qpeer.sim(formula = ~X, Glist = G, tau = tau, lambda = l, beta = b)$y
-Inst <- qpeer.instruments(formula = ~ X, Glist = G, tau = tau, max.distance = 2)$instruments
+lam  <- c(0.2, 0.1, 0.05, 0.1, 0.2)
+gam  <- c(2, -0.5, 1)
+y    <- qpeer.sim(formula = ~X, A = A, tau = tau, lambda = lam, gamma = gam)$y
+Inst <- qpeer.instruments(formula = ~ X, A = A, tau = tau, max.distance = 2)$instruments
 summary(Inst)
 }
 \references{

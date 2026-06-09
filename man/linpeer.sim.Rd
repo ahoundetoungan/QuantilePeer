@@ -6,10 +6,10 @@
 \usage{
 linpeer.sim(
   formula,
-  Glist,
+  A,
   parms,
   lambda,
-  beta,
+  gamma,
   epsilon,
   structural = FALSE,
   nthreads = 1,
@@ -20,15 +20,15 @@ linpeer.sim(
 \item{formula}{An object of class \link[stats]{formula}: a symbolic description of the model. \code{formula} should be specified as, for example, \code{~ x1 + x2},
 where \code{x1} and \code{x2} are control variables, which can include contextual variables such as averages or quantiles among peers.}
 
-\item{Glist}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{Glist} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
+\item{A}{The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), \code{A} must be a list of subnets, with the \code{m}-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the \code{m}-th subnet.}
 
-\item{parms}{A vector defining the true values of \eqn{(\lambda', \beta')'}, where
+\item{parms}{A vector defining the true values of \eqn{(\lambda', \gamma')'}, where
 \eqn{\lambda} is either the peer effect parameter for the reduced-form specification or a 2-vector with the first component being conformity peer effects and the second component representing total peer effects.
-The parameters \eqn{\lambda} and \eqn{\beta} can also be specified separately using the arguments \code{lambda}, and \code{beta}.}
+The parameters \eqn{\lambda} and \eqn{\gamma} can also be specified separately using the arguments \code{lambda}, and \code{gamma}.}
 
 \item{lambda}{The true value of the vector \eqn{\lambda}.}
 
-\item{beta}{The true value of the vector \eqn{\beta}.}
+\item{gamma}{The true value of the vector \eqn{\gamma}.}
 
 \item{epsilon}{A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution.}
 
@@ -42,7 +42,7 @@ in the model. If not found in \code{data}, the variables are taken from \code{en
 \value{
 A list containing:
 \item{y}{The simulated variable.}
-\item{Gy}{the average of y among friends.}
+\item{Ay}{the average of y among friends.}
 }
 \description{
 \code{linpeer.sim} simulates linear peer effect models.
@@ -52,16 +52,16 @@ set.seed(123)
 ngr  <- 50
 nvec <- rep(30, ngr)
 n    <- sum(nvec)
-G    <- lapply(1:ngr, function(z){
+A    <- lapply(1:ngr, function(z){
   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
   diag(Gz) <- 0
   Gz/rowSums(Gz) # Row-normalized network
 })
 X    <- cbind(rnorm(n), rpois(n, 2))
-l    <- 0.5
-b    <- c(2, -0.5, 1)
+lam  <- 0.5
+gam  <- c(2, -0.5, 1)
 
-out  <- linpeer.sim(formula = ~ X, Glist = G, lambda = l, beta = b)
+out  <- linpeer.sim(formula = ~ X, A = A, lambda = lam, gamma = gam)
 summary(out$y)
 }
 \seealso{

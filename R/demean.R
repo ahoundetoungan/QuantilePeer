@@ -2,7 +2,7 @@
 #' 
 #' @param X A matrix or vector to demean.
 #' 
-#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
+#' @param A The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `A` must be a list of subnets, with the `g`-th element being an \eqn{n_g \times n_g} adjacency matrix, where \eqn{n_g} is the number of nodes in the `g`-th subnet.
 #' 
 #' @param drop A logical vector of the same length as the sample, indicating whether an observation should be dropped. 
 #' This can be used, for example, to remove false isolates or to estimate the model only on non-isolated agents.
@@ -17,52 +17,52 @@
 #' 
 #' @return A matrix or vector with the same dimensions as \code{X}, containing the demeaned values.
 #' @export
-demean <- function(X, Glist, separate = FALSE, drop = NULL) {
+demean <- function(X, A, separate = FALSE, drop = NULL) {
   X    <- as.matrix(X)
   cn   <- colnames(X)
   # Network
-  if (!is.list(Glist)) {
-    Glist  <- list(Glist)
+  if (!is.list(A)) {
+    A  <- list(A)
   }
-  dg       <- fnetwork(Glist = Glist)
-  M        <- dg$M
-  MIs      <- dg$MIs
-  MnIs     <- dg$MnIs
-  nvec     <- dg$nvec
-  n        <- dg$n
-  igr      <- dg$igr
-  lIs      <- dg$lIs
-  Is       <- dg$Is
-  lnIs     <- dg$lnIs
-  nIs      <- dg$nIs
-  ldg      <- dg$ldg
-  dg       <- dg$dg
+  d        <- fnetwork(A = A)
+  G        <- d$G
+  GIs      <- d$GIs
+  GnIs     <- d$GnIs
+  nvec     <- d$nvec
+  n        <- d$n
+  igr      <- d$igr
+  lIs      <- d$lIs
+  Is       <- d$Is
+  lnIs     <- d$lnIs
+  nIs      <- d$nIs
+  ld       <- d$ld
+  d        <- d$d
   
   # drop
   if (!is.null(drop)) {
-    dg       <- fdrop(drop = drop, ldg = ldg, nvec = nvec, M = M, lIs = lIs, lnIs = lnIs, 
+    d        <- fdrop(drop = drop, ld = ld, nvec = nvec, G = G, lIs = lIs, lnIs = lnIs, 
                       y = rep(0, n), X = X, qy = matrix(0, n, 1), ins = matrix(0, n, 1))
-    M        <- dg$M
-    MIs      <- dg$MIs
-    MnIs     <- dg$MnIs
-    nvec     <- dg$nvec
-    n        <- dg$n
-    igr      <- dg$igr
-    lIs      <- dg$lIs
-    Is       <- dg$Is
-    lnIs     <- dg$lnIs
-    nIs      <- dg$nIs
-    ldg      <- dg$ldg
-    y        <- dg$y
-    X        <- dg$X
-    qy       <- dg$qy
-    ins      <- dg$ins
-    dg       <- dg$dg
+    G        <- d$G
+    GIs      <- d$GIs
+    GnIs     <- d$GnIs
+    nvec     <- d$nvec
+    n        <- d$n
+    igr      <- d$igr
+    lIs      <- d$lIs
+    Is       <- d$Is
+    lnIs     <- d$lnIs
+    nIs      <- d$nIs
+    ld       <- d$ld
+    y        <- d$y
+    X        <- d$X
+    qy       <- d$qy
+    ins      <- d$ins
+    d        <- d$d
   }
   if (separate) {
-    X        <- Demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+    X        <- Demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n)
   } else {
-    X        <- Demean(X, igroup = igr, ngroup = M)
+    X        <- Demean(X, igroup = igr, ngroup = G)
   }
   
   if (ncol(X) == 1) {

@@ -4,7 +4,7 @@
 #' @param instrument An object of class \link[stats]{formula} indicating the excluded instrument. It should be specified as \code{~ z},  
 #' where `z` is the excluded instrument for the outcome. Following Boucher et al. (2024), it can be an OLS exogenous prediction of `y`.  
 #' This prediction is used to compute instruments for the CES function of peer outcomes.
-#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
+#' @param A The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `A` must be a list of subnets, with the `g`-th element being an \eqn{n_g \times n_g} adjacency matrix, where \eqn{n_g} is the number of nodes in the `g`-th subnet.
 #' @param data An optional data frame, list, or environment (or an object that can be coerced by \link[base]{as.data.frame} to a data frame) containing the variables
 #' in the model. If not found in `data`, the variables are taken from \code{environment(formula)}, typically the environment from which `cespeer` is called.
 #' @param tol A tolerance value used in the QR factorization to identify columns of explanatory variable and instrument matrices that ensure a full-rank matrix (see the \link[base]{qr} function).
@@ -29,26 +29,26 @@
 #' `cespeer` estimates the CES-based peer effects model introduced by Boucher et al. (2024). See Details.
 #' @details 
 #' Let \eqn{\mathcal{N}} be a set of \eqn{n} agents indexed by the integer \eqn{i \in [1, n]}.  
-#' Agents are connected through a network characterized by an adjacency matrix \eqn{\mathbf{G} = [g_{ij}]} of dimension \eqn{n \times n}, where \eqn{g_{ij} = 1} if agent \eqn{j} is a friend of agent \eqn{i}, and \eqn{g_{ij} = 0} otherwise.  
-#' In weighted networks, \eqn{g_{ij}} can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from \eqn{i} to \eqn{j}. The model can also accommodate such networks.  
+#' Agents are connected through a network characterized by an adjacency matrix \eqn{\mathbf{A} = [a_{ij}]} of dimension \eqn{n \times n}, where \eqn{a_{ij} = 1} if agent \eqn{j} is a friend of agent \eqn{i}, and \eqn{a_{ij} = 0} otherwise.  
+#' In weighted networks, \eqn{a_{ij}} can be a nonnegative variable (not necessarily binary) that measures the intensity of the outgoing link from \eqn{i} to \eqn{j}. The model can also accommodate such networks.  
 #' Note that the network generally consists of multiple independent subnets (e.g., schools).  
-#' The `Glist` argument is the list of subnets. In the case of a single subnet, `Glist` should be a list containing one matrix.\cr
+#' The `A` argument is the list of subnets. In the case of a single subnet, `A` should be a list containing one matrix.\cr
 #' 
 #' The reduced-form specification of the CES-based peer effects model is given by:
-#' \deqn{y_i = \lambda\left(\sum_{j = 1}^n g_{ij}y_j^{\rho}\right)^{1/\rho} + \mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
-#' where \eqn{\varepsilon_i} is an idiosyncratic error term, \eqn{\lambda} captures the effect of the social norm \eqn{\left(\sum_{j = 1}^n g_{ij}y_j^{\rho}\right)^{1/\rho}},  
-#' and \eqn{\beta} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. The parameter \eqn{\rho} determines the form of the social norm in the model.  
+#' \deqn{y_i = \lambda\left(\sum_{j = 1}^n a_{ij}y_j^{\rho}\right)^{1/\rho} + \mathbf{x}_i^{\prime}\gamma + \varepsilon_i,}
+#' where \eqn{\varepsilon_i} is an idiosyncratic error term, \eqn{\lambda} captures the effect of the social norm \eqn{\left(\sum_{j = 1}^n a_{ij}y_j^{\rho}\right)^{1/\rho}},  
+#' and \eqn{\gamma} captures the effect of \eqn{\mathbf{x}_i} on \eqn{y_i}. The parameter \eqn{\rho} determines the form of the social norm in the model.  
 #' - When \eqn{\rho > 1}, individuals are more sensitive to peers with high outcomes.  
 #' - When \eqn{\rho < 1}, individuals are more sensitive to peers with low outcomes.  
 #' - When \eqn{\rho = 1}, peer effects are uniform across peer outcome values.\cr
 #' 
 #' The structural specification of the model differs for isolated and non-isolated individuals.  
 #' For an **isolated** \eqn{i}, the specification is similar to a standard linear-in-means model without social interactions, given by:
-#' \deqn{y_i = \mathbf{x}_i^{\prime}\beta + \varepsilon_i.}
+#' \deqn{y_i = \mathbf{x}_i^{\prime}\gamma + \varepsilon_i.}
 #' If node \eqn{i} is **non-isolated**, the specification is:
-#' \deqn{y_i = \lambda\left(\sum_{j = 1}^n g_{ij}y_j^{\rho}\right)^{1/\rho} + (1 - \lambda_2)\mathbf{x}_i^{\prime}\beta + \varepsilon_i,}
+#' \deqn{y_i = \lambda\left(\sum_{j = 1}^n a_{ij}y_j^{\rho}\right)^{1/\rho} + (1 - \lambda_2)\mathbf{x}_i^{\prime}\gamma + \varepsilon_i,}
 #' where \eqn{\lambda_2} determines whether preferences exhibit conformity or complementarity/substitution.  
-#' Identification of \eqn{\beta} and \eqn{\lambda_2} requires the network to include a sufficient number of isolated individuals.
+#' Identification of \eqn{\gamma} and \eqn{\lambda_2} requires the network to include a sufficient number of isolated individuals.
 #' @seealso \code{\link{qpeer}}, \code{\link{linpeer}}
 #' @references Boucher, V., Rendall, M., Ushchev, P., & Zenou, Y. (2024). Toward a general theory of peer effects. Econometrica, 92(2), 543-565, \doi{10.3982/ECTA21048}.
 #' @return A list containing:
@@ -64,53 +64,53 @@
 #' 
 #' ### Simulating Data
 #' ## Network matrix
-#' G <- lapply(1:ngr, function(z) {
-#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
-#'   diag(Gz) <- 0
+#' A <- lapply(1:ngr, function(z) {
+#'   Ag <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z], nvec[z])
+#'   diag(Ag) <- 0
 #'   # Adding isolated nodes (important for the structural model)
 #'   niso <- sample(0:nvec[z], 1, prob = (nvec[z] + 1):1 / sum((nvec[z] + 1):1))
 #'   if (niso > 0) {
-#'     Gz[sample(1:nvec[z], niso), ] <- 0
+#'     Ag[sample(1:nvec[z], niso), ] <- 0
 #'   }
 #'   # Row-normalization
-#'   rs   <- rowSums(Gz); rs[rs == 0] <- 1
-#'   Gz/rs
+#'   rs   <- rowSums(Ag); rs[rs == 0] <- 1
+#'   Ag/rs
 #' })
 #' 
 #' X   <- cbind(rnorm(n), rpois(n, 2))
-#' l   <- 0.55
-#' b   <- c(2, -0.5, 1)
+#' lam <- 0.55
+#' gam <- c(2, -0.5, 1)
 #' rho <- -2
 #' eps <- rnorm(n, 0, 0.4)
 #' 
 #' ## Generating `y`
-#' y <- cespeer.sim(formula = ~ X, Glist = G, rho = rho, lambda = l,
-#'                  beta = b, epsilon = eps)$y
+#' y <- cespeer.sim(formula = ~ X, A = A, rho = rho, lambda = lam,
+#'                  gamma = gam, epsilon = eps)$y
 #' 
 #' ### Estimation
 #' ## Computing instruments
 #' z <- fitted.values(lm(y ~ X))
 #' 
 #' ## Reduced-form model
-#' rest <- cespeer(formula = y ~ X, instrument = ~ z, Glist = G, fixed.effects = "yes",
+#' rest <- cespeer(formula = y ~ X, instrument = ~ z, A = A, fixed.effects = "yes",
 #'                 radius = 5, grid.rho = seq(-10, 10, 1))
 #' summary(rest)
 #' 
 #' ## Structural model
-#' sest <- cespeer(formula = y ~ X, instrument = ~ z, Glist = G, fixed.effects = "yes",
+#' sest <- cespeer(formula = y ~ X, instrument = ~ z, A = A, fixed.effects = "yes",
 #'                 radius = 5, structural = TRUE, grid.rho = seq(-10, 10, 1))
 #' summary(sest)
 #' 
 #' ## Quantile model
-#' z    <- qpeer.inst(formula = ~ X, Glist = G, tau = seq(0, 1, 0.1), max.distance = 2, 
+#' z    <- qpeer.inst(formula = ~ X, A = A, tau = seq(0, 1, 0.1), max.distance = 2, 
 #'                    checkrank = TRUE)$instruments
-#' qest <- qpeer(formula = y ~ X, excluded.instruments  = ~ z, Glist = G, 
+#' qest <- qpeer(formula = y ~ X, excluded.instruments  = ~ z, A = A, 
 #'               fixed.effects = "yes", tau = seq(0, 1, 1/3), structural = TRUE)
 #' summary(qest)
 #' }
 #' @export
 #' @importFrom stats optimise
-cespeer <- function(formula, instrument, Glist, structural = FALSE, fixed.effects = FALSE,
+cespeer <- function(formula, instrument, A, structural = FALSE, fixed.effects = FALSE,
                     set.rho = NULL, grid.rho = seq(-400, 400, radius), radius = 5, tol = 1e-8, 
                     drop = NULL, compute.cov = TRUE, HAC = "iid", data) {
   if (!is.null(set.rho)) {
@@ -134,22 +134,22 @@ cespeer <- function(formula, instrument, Glist, structural = FALSE, fixed.effect
   }
   
   # Network
-  if (!is.list(Glist)) {
-    Glist  <- list(Glist)
+  if (!is.list(A)) {
+    A  <- list(A)
   }
-  dg       <- fnetwork(Glist = Glist)
-  M        <- dg$M
-  # MIs      <- dg$MIs
-  # MnIs     <- dg$MnIs
-  nvec     <- dg$nvec
-  n        <- dg$n
-  igr      <- dg$igr
-  lIs      <- dg$lIs
-  Is       <- dg$Is
-  lnIs     <- dg$lnIs
-  nIs      <- dg$nIs
-  ldg      <- dg$ldg
-  dg       <- dg$dg
+  d        <- fnetwork(A = A)
+  G        <- d$G
+  # GIs      <- d$GIs
+  # GnIs     <- d$GnIs
+  nvec     <- d$nvec
+  n        <- d$n
+  igr      <- d$igr
+  lIs      <- d$lIs
+  Is       <- d$Is
+  lnIs     <- d$lnIs
+  nIs      <- d$nIs
+  ld       <- d$ld
+  d        <- d$d
   
   # Data
   # y and X
@@ -179,15 +179,15 @@ cespeer <- function(formula, instrument, Glist, structural = FALSE, fixed.effect
   }
   
   # Create additional variables)
-  hasIso   <- fCESdatainit(y = y, z = z, G = Glist, nvec = nvec, M = M, ldg = ldg, lIs = lIs, lnIs = lnIs, drop = drop)
+  hasIso   <- fCESdatainit(y = y, z = z, A = A, nvec = nvec, G = G, ld = ld, lIs = lIs, lnIs = lnIs, drop = drop)
   frindex  <- hasIso$friendindex
   frzeroy  <- hasIso$frzeroy
   frzeroz  <- hasIso$frzeroz
-  ldg_st   <- hasIso$ldg
-  dg_st    <- hasIso$dg
-  M_st     <- hasIso$M
-  MIs_st   <- hasIso$MIs
-  MnIs_st  <- hasIso$MnIs
+  ldg_st   <- hasIso$ld
+  dg_st    <- hasIso$d
+  M_st     <- hasIso$G
+  GIs_st   <- hasIso$GIs
+  GnIs_st  <- hasIso$GnIs
   yFMiMa   <- cbind(hasIso$yFmin, hasIso$yFmax)
   zFMiMa   <- cbind(hasIso$zFmin, hasIso$zFmax)
   lIs      <- hasIso$lIs # After selection
@@ -204,9 +204,9 @@ cespeer <- function(formula, instrument, Glist, structural = FALSE, fixed.effect
   }
   
   # Index for Isolated to form a full rank matrix
-  tp      <- fCESdata(X = X, y = y, z = z, G = Glist, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
+  tp      <- fCESdata(X = X, y = y, z = z, A = A, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
                       frzeroz = frzeroz, lIs = lIs, lnIs = lnIs, nvec = nvec, yFMiMa = yFMiMa, zFMiMa = zFMiMa, 
-                      n = n, Kx = Kx, ngroup = M, rho = 1, FEnum = FEnum, deriv = FALSE)
+                      n = n, Kx = Kx, ngroup = G, rho = 1, FEnum = FEnum, deriv = FALSE)
   idXiso   <- fcheckrank(X = tp[Is + 1, 1:Kx, drop = FALSE], tol = tol)
   Kxiso    <- length(idXiso)
   if (length(idXiso) == 0 & structural) {
@@ -226,26 +226,26 @@ cespeer <- function(formula, instrument, Glist, structural = FALSE, fixed.effect
   Kest1      <- NA
   Kest2      <- NA
   if (structural) {
-    Kest1    <- ifelse(FEnum == 0, Kx, Kx + MIs_st)
-    Kest2    <- ifelse(FEnum == 0, Kx + 3, Kx + 3 + MnIs_st)
+    Kest1    <- ifelse(FEnum == 0, Kx, Kx + GIs_st)
+    Kest2    <- ifelse(FEnum == 0, Kx + 3, Kx + 3 + GnIs_st)
     Kest     <- Kest
     Kendo    <- 3
-    nKendo   <- c("rho", paste0(c("G(conformity):", "G(total):"), yname))
+    nKendo   <- c("rho", paste0(c("A(conformity):", "A(total):"), yname))
     if (niso <= Kest1) stop("Insufficient number of isolated nodes for estimating the structural model.")
     if (nniso <= Kest2) stop("Insufficient number of nonisolated nodes for estimating the structural model.")
   } else {
-    Kest     <- ifelse(FEnum == 0, Kx + 2, ifelse(FEnum == 1, Kx + 2 + M, Kx + 2 + MIs_st + MnIs_st))
+    Kest     <- ifelse(FEnum == 0, Kx + 2, ifelse(FEnum == 1, Kx + 2 + G, Kx + 2 + GIs_st + GnIs_st))
     if (nniso <= Kest) stop("Insufficient number of isolated nodes.")
     Kendo    <- 2
-    nKendo   <- c("rho", paste0("G:", yname))
+    nKendo   <- c("rho", paste0("A:", yname))
   }
   
-  # beta1 and W
-  b1    <- numeric()
+  # gamma1 and W
+  gam1  <- numeric()
   W     <- NULL
   if (structural) {
-    b1  <- fOLS(data = tp, idX1 = idXiso, Is = Is, Kx = Kx)
-    W   <- diag(Kxniso + 3)
+    gam1 <- fOLS(data = tp, idX1 = idXiso, Is = Is, Kx = Kx)
+    W    <- diag(Kxniso + 3)
   } else {
     W   <- diag(Kx + 2)
   }
@@ -257,39 +257,39 @@ cespeer <- function(formula, instrument, Glist, structural = FALSE, fixed.effect
     grid.rho <- grid.rho[grid.rho != 0]
     # First estimation when W = I
     Fsear    <- sapply(grid.rho, function(s){
-      tp1    <- fCESdata(X = X, y = y, z = z, G = Glist, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
+      tp1    <- fCESdata(X = X, y = y, z = z, A = A, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
                          frzeroz = frzeroz, lIs = lIs, lnIs = lnIs, nvec = nvec, n = n, yFMiMa = yFMiMa, zFMiMa = zFMiMa, 
-                         Kx = Kx, ngroup = M, rho = s, FEnum = FEnum, deriv = compute.cov)
-      tp2    <- fCESgmmrhoparms(rho = s, beta1 = b1, data = tp1, sel = sel, nIs = nIs, Is = Is, idX1 = idXiso, 
-                                idX2 = idXniso, igroup = igr, ngroup = M, Kx = Kx, Kx2 = Kxniso, nniso = nniso, niso = niso, n = n, 
+                         Kx = Kx, ngroup = G, rho = s, FEnum = FEnum, deriv = compute.cov)
+      tp2    <- fCESgmmrhoparms(rho = s, gamma1 = gam1, data = tp1, sel = sel, nIs = nIs, Is = Is, idX1 = idXiso, 
+                                idX2 = idXniso, igroup = igr, ngroup = G, Kx = Kx, Kx2 = Kxniso, nniso = nniso, niso = niso, n = n, 
                                 nst = n_st, Kest1 = Kest1, Kest2 = Kest2, Kest = Kest, structural = structural, COV = compute.cov)
       fCESgmmrhoobj(theta = tp2$theta, data = tp1, sel = sel, nIs = nIs, idX1 = idXiso, 
                     idX2 = idXniso, Kx = Kx, Kx2 = Kxniso, nniso = nniso, nst = n_st, structural = structural)
     })
     rhoi <- grid.rho[which.min(Fsear)]
-    fes  <- fCESgmmparms(rho = rhoi, beta1 = b1, idX1 = idXiso, idX2 = idXniso, X = X, y = y, z = z, G = Glist, 
+    fes  <- fCESgmmparms(rho = rhoi, gamma1 = gam1, idX1 = idXiso, idX2 = idXniso, X = X, y = y, z = z, A = A, 
                          friendindex = frindex, igroup = igr, frzeroy = frzeroy, frzeroz = frzeroz, lIs = lIs, lnIs = lnIs, 
                          nIs = nIs, Is = Is, sel = sel, W = W, nvec = nvec, yFMiMa = yFMiMa, zFMiMa = zFMiMa, n = n, nniso = nniso, 
-                         niso = niso, nst = n_st, Kx = Kx, Kx2 = Kxniso, ngroup = M, FEnum = FEnum, Kest1 = Kest1, Kest2 = Kest2, 
+                         niso = niso, nst = n_st, Kx = Kx, Kx2 = Kxniso, ngroup = G, FEnum = FEnum, Kest1 = Kest1, Kest2 = Kest2, 
                          Kest = Kest, structural = structural, HAC = HACnum, COV = FALSE)$theta
     
     # Second estimation
-    tp  <- fCESdata(X = X, y = y, z = z, G = Glist, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
+    tp  <- fCESdata(X = X, y = y, z = z, A = A, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
                     frzeroz = frzeroz, lIs = lIs, lnIs = lnIs, nvec = nvec, n = n, yFMiMa = yFMiMa, zFMiMa = zFMiMa, 
-                    Kx = Kx, ngroup = M, rho = fes[1], FEnum = FEnum, deriv = FALSE)
+                    Kx = Kx, ngroup = G, rho = fes[1], FEnum = FEnum, deriv = FALSE)
     W   <- fCESWeight(theta = fes, data = tp, sel = sel,
                       nIs = nIs, idX1 = idXiso, idX2 = idXniso, structural = structural, Kx = Kx, Kx2 = Kxniso,
                       nniso = nniso, nst = n_st)
     tp  <- optimise(fCESgmmobj, tol = tol, interval = c(fes[1] - radius, fes[1] + radius),
-                    beta1 = b1, idX1 = idXiso, idX2 = idXniso, X = X, y = y, z = z, G = Glist, friendindex = frindex, 
+                    gamma1 = gam1, idX1 = idXiso, idX2 = idXniso, X = X, y = y, z = z, A = A, friendindex = frindex, 
                     igroup = igr, frzeroy = frzeroy, frzeroz = frzeroz, lIs = lIs, lnIs = lnIs, nIs = nIs, sel = sel,
                     W = W, nvec = nvec, yFMiMa = yFMiMa, zFMiMa = zFMiMa, n = n, nniso = nniso, nst = n_st, Kx = Kx, 
-                    Kx2 = Kxniso, ngroup = M, FEnum = FEnum, structural = structural)
+                    Kx2 = Kxniso, ngroup = G, FEnum = FEnum, structural = structural)
     opt$objective <- tp$objective
-    Est <- fCESgmmparms(rho = tp$minimum, beta1 = b1, idX1 = idXiso, idX2 = idXniso, X = X, y = y, z = z, G = Glist, 
+    Est <- fCESgmmparms(rho = tp$minimum, gamma1 = gam1, idX1 = idXiso, idX2 = idXniso, X = X, y = y, z = z, A = A, 
                         friendindex = frindex, igroup = igr, frzeroy = frzeroy, frzeroz = frzeroz, lIs = lIs, lnIs = lnIs, 
                         nIs = nIs, Is = Is, sel = sel, W = W, nvec = nvec, yFMiMa = yFMiMa, zFMiMa = zFMiMa, n = n, nniso = nniso, 
-                        niso = niso, nst = n_st, Kx = Kx, Kx2 = Kxniso, ngroup = M, FEnum = FEnum, Kest1 = Kest1, Kest2 = Kest2, 
+                        niso = niso, nst = n_st, Kx = Kx, Kx2 = Kxniso, ngroup = G, FEnum = FEnum, Kest1 = Kest1, Kest2 = Kest2, 
                         Kest = Kest, structural = structural, HAC = HACnum, COV = compute.cov)
     
     # print(Est$theta)
@@ -302,11 +302,11 @@ cespeer <- function(formula, instrument, Glist, structural = FALSE, fixed.effect
     fes        <- list(grid.rho = grid.rho, objective = Fsear, theta = fes)
   } else {
     rhoinf <- ifelse(is.finite(set.rho), 0, 1)
-    tp  <- fCESdata(X = X, y = y, z = z, G = Glist, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
+    tp  <- fCESdata(X = X, y = y, z = z, A = A, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
                     frzeroz = frzeroz, lIs = lIs, lnIs = lnIs, nvec = nvec, n = n, yFMiMa = yFMiMa, zFMiMa = zFMiMa, 
-                    Kx = Kx, ngroup = M, rho = set.rho, FEnum = FEnum, deriv = compute.cov)
-    Est  <- fCESgmmrhoparms(rho = set.rho, beta1 = b1, data = tp, sel = sel, nIs = nIs, Is = Is, idX1 = idXiso, 
-                            idX2 = idXniso, igroup = igr, ngroup = M, Kx = Kx, Kx2 = Kxniso, nniso = nniso, niso = niso, n = n, 
+                    Kx = Kx, ngroup = G, rho = set.rho, FEnum = FEnum, deriv = compute.cov)
+    Est  <- fCESgmmrhoparms(rho = set.rho, gamma1 = gam1, data = tp, sel = sel, nIs = nIs, Is = Is, idX1 = idXiso, 
+                            idX2 = idXniso, igroup = igr, ngroup = G, Kx = Kx, Kx2 = Kxniso, nniso = nniso, niso = niso, n = n, 
                             nst = n_st, Kest1 = Kest1, Kest2 = Kest2, Kest = Kest, rhoinf = rhoinf, structural = structural, 
                             COV = compute.cov)
     opt$objective <- fCESgmmrhoobj(theta = Est$theta, data = tp, sel = sel, nIs = nIs, idX1 = idXiso, 
@@ -332,7 +332,7 @@ cespeer <- function(formula, instrument, Glist, structural = FALSE, fixed.effect
   }
   Est         <- c(list(Estimate = opt$theta, cov = opt$Vpa, objective = opt$objective),  SIGMA,
                    list(counts = opt$counts, convergence = opt$convergence, message = opt$message))
-  out         <- list(model.info   = list(n = n_st, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
+  out         <- list(model.info   = list(n = n_st, ngroup = G, nvec = nvec, structural = structural, formula = formula, 
                                           instrument = instrument, fixed.effects = fixed.effects, idXiso = idXiso + 1, idXniso = idXniso + 1, 
                                           HAC = HAC, set.rho = set.rho, yname = yname, xnames = xname, zname = zename),
                       gmm          = Est,
@@ -367,7 +367,7 @@ summary.cespeer <- function(object, fullparameters = TRUE, ...) {
     Kx2          <- length(object$model.info$idXniso)
     tp                  <- fStructParamFull(param = est, covp = covt, ntau = 1, Kx1 = Kx1, Kx2 = Kx2, quantile = 0, ces = TRUE) 
     tp$theta            <- c(tp$theta)
-    names(tp$theta)     <- colnames(tp$Vpa) <- rownames(tp$Vpa) <- c(c("rho", paste0(c("G(spillover):", "G(conformity):", "G(total):"), yname)), xnames)
+    names(tp$theta)     <- colnames(tp$Vpa) <- rownames(tp$Vpa) <- c(c("rho", paste0(c("A(spillover):", "A(conformity):", "A(total):"), yname)), xnames)
     object$gmm$Estimate <- tp$theta
     object$gmm$cov      <- tp$Vpa
   }
@@ -434,13 +434,13 @@ print.cespeer <- function(x, ...) {
 #' @title Simulating Peer Effect Models with a CES Social Norm
 #' @param formula A formula object (\link[stats]{formula}): a symbolic description of the model. `formula` should be specified as, for example, \code{~ x1 + x2}, 
 #' where `x1` and `x2` are control variables, which can include contextual variables such as averages or quantiles among peers.
-#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
-#' @param parms A vector defining the true values of \eqn{(\rho, \lambda', \beta')'}, where \eqn{\rho} is the substitution parameter of the CES function and 
+#' @param A The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `A` must be a list of subnets, with the `g`-th element being an \eqn{n_g \times n_g} adjacency matrix, where \eqn{n_g} is the number of nodes in the `g`-th subnet.
+#' @param parms A vector defining the true values of \eqn{(\rho, \lambda', \gamma')'}, where \eqn{\rho} is the substitution parameter of the CES function and 
 #' \eqn{\lambda} is either the peer effect parameter for the reduced-form specification or a 2-vector with the first component being conformity peer effects and the second component representing total peer effects. 
-#' The parameters \eqn{\rho}, \eqn{\lambda}, and \eqn{\beta} can also be specified separately using the arguments `rho`, `lambda`, and `beta` (see the Details section of \code{\link{cespeer}}).
+#' The parameters \eqn{\rho}, \eqn{\lambda}, and \eqn{\gamma} can also be specified separately using the arguments `rho`, `lambda`, and `gamma` (see the Details section of \code{\link{cespeer}}).
 #' @param rho The true value of the substitution parameter of the CES function.
 #' @param lambda The true value of the peer effect parameter \eqn{\lambda}. It must include conformity and total peer effects for the structural model.
-#' @param beta The true value of the vector \eqn{\beta}.
+#' @param gamma The true value of the vector \eqn{\gamma}.
 #' @param epsilon A vector of idiosyncratic error terms. If not specified, it will be simulated from a standard normal distribution (see the model specification in the Details section of \code{\link{cespeer}}). 
 #' @param maxit The maximum number of iterations for the Fixed Point Iteration Method.
 #' @param data An optional data frame, list, or environment containing the model variables. If a variable is not found in `data`, it is retrieved from \code{environment(formula)}, typically the environment from which `cespeer.sim` is called.
@@ -462,36 +462,36 @@ print.cespeer <- function(x, ...) {
 #' ngr  <- 50
 #' nvec <- rep(30, ngr)
 #' n    <- sum(nvec)
-#' G    <- lapply(1:ngr, function(z){
-#'   Gz <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
-#'   diag(Gz) <- 0
-#'   Gz/rowSums(Gz) # Row-normalized network
+#' A    <- lapply(1:ngr, function(z){
+#'   Ag <- matrix(rbinom(nvec[z]^2, 1, 0.3), nvec[z])
+#'   diag(Ag) <- 0
+#'   Ag/rowSums(Ag) # Row-normalized network
 #' })
 #' tau  <- seq(0, 1, 0.25)
 #' X    <- cbind(rnorm(n), rpois(n, 2))
-#' l    <- 0.55
+#' lam  <- 0.55
 #' rho  <- 3
-#' b    <- c(4, -0.5, 1)
+#' gam  <- c(4, -0.5, 1)
 #' 
-#' out  <- cespeer.sim(formula = ~ X, Glist = G, rho = rho, lambda = l, beta = b)
+#' out  <- cespeer.sim(formula = ~ X, A = A, rho = rho, lambda = lam, gamma = gam)
 #' summary(out$y)
 #' out$iteration
 #' @export
-cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, structural = FALSE, 
+cespeer.sim <- function(formula, A, parms, rho, lambda, gamma, epsilon, structural = FALSE, 
                         init, tol = 1e-10, maxit = 500, data){
   # Network
-  if (!is.list(Glist)) {
-    Glist  <- list(Glist)
+  if (!is.list(A)) {
+    A  <- list(A)
   }
-  dg       <- fnetwork(Glist = Glist)
-  M        <- dg$M
-  nvec     <- dg$nvec
-  n        <- dg$n
-  igr      <- dg$igr
-  Is       <- dg$Is
-  nIs      <- dg$nIs
-  ldg      <- dg$ldg
-  dg       <- dg$dg
+  d        <- fnetwork(A = A)
+  G        <- d$G
+  nvec     <- d$nvec
+  n        <- d$n
+  igr      <- d$igr
+  Is       <- d$Is
+  nIs      <- d$nIs
+  ld       <- d$ld
+  d        <- d$d
   if (length(Is) <= 1 & structural) warning("The structural model requires isolated nodes.")
   
   # Data
@@ -512,10 +512,10 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
   # parameters
   lamst    <- NULL
   lam      <- NULL
-  b        <- NULL
+  gam      <- NULL
   if (missing(parms)) {
-    if (missing(lambda) | missing(beta) | missing(rho)) {
-      stop("Define either `parms` or `rho`, `lambda`, and `beta`.")
+    if (missing(lambda) | missing(gamma) | missing(rho)) {
+      stop("Define either `parms` or `rho`, `lambda`, and `gamma`.")
     }
     if (structural) {
       if (length(lambda) != 2){
@@ -529,11 +529,11 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
       }
       lam   <- lambda
     }
-    if (length(beta) != Kx) stop("length(beta) is different from ncol(X).")
-    b      <- beta
+    if (length(gamma) != Kx) stop("length(gamma) is different from ncol(X).")
+    gam     <- gamma
   } else{
-    if (!missing(rho) | !missing(lambda) | !missing(beta)) {
-      stop("Define either `parms` or `rho`, `lambda`, and `beta`.")
+    if (!missing(rho) | !missing(lambda) | !missing(gamma)) {
+      stop("Define either `parms` or `rho`, `lambda`, and `gamma`.")
     }
     if (structural) {
       if (length(parms) != (3 + Kx)) stop("length(parms) is different from 3 + ncol(X). See details on the structural model.")
@@ -545,7 +545,7 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
       rho   <- parms[1]
       lam   <- parms[2]
     }
-    b      <- tail(parms, Kx)
+    gam     <- tail(parms, Kx)
   }
   if (sum(abs(lam)) >= 1) {
     warning("The absolute value of the total peer effects is greater than or equal to one, which may lead to multiple or no equilibria.")
@@ -559,7 +559,7 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
   
   # Solving the game
   ## talpha
-  talpha   <- c(X %*% b + eps)
+  talpha   <- c(X %*% gam + eps)
   if (structural) talpha[nIs + 1] <- talpha[nIs + 1]*(1 - lamst)
   
   ## init
@@ -567,7 +567,7 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
     init   <- rep(max(talpha)/(1 - lam))
   }
   if (all(init <= 0)) {
-    stop("`x*beta + epsilon` is negative.")
+    stop("`x*gamma + epsilon` is negative.")
   }
   if (length(init) == 1){
     init   <- rep(init, n)
@@ -578,22 +578,22 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
   
   ## other variables
   ncs      <- c(0, cumsum(nvec))
-  friendindex <- lapply(1:M, function(m) {
-    lapply(1:nvec[m], function(s) {
-      which(Glist[[m]][s,] > 0) - 1
+  friendindex <- lapply(1:G, function(g) {
+    lapply(1:nvec[g], function(i) {
+      which(A[[g]][i,] > 0) - 1
     })})
-  frzeroy  <- as.integer(unlist(lapply(1:M, function(m){
-    lapply(1:nvec[m], function(s){
-      any(y[friendindex[[m]][[s]] + ncs[m] + 1] <= 0)
+  frzeroy  <- as.integer(unlist(lapply(1:G, function(g){
+    lapply(1:nvec[g], function(i){
+      any(y[friendindex[[g]][[i]] + ncs[g] + 1] <= 0)
     })})))
-  yFmax    <- unlist(lapply(1:M, function(m){
-    lapply(1:nvec[m], function(s){
-      ifelse(ldg[[m]][s] > 0, max(y[friendindex[[m]][[s]] + ncs[m] + 1]), NA)
+  yFmax    <- unlist(lapply(1:G, function(g){
+    lapply(1:nvec[g], function(i){
+      ifelse(ld[[g]][i] > 0, max(y[friendindex[[g]][[i]] + ncs[g] + 1]), NA)
     })
   }))
-  yFmin    <- unlist(lapply(1:M, function(m){
-    lapply(1:nvec[m], function(s){
-      ifelse(ldg[[m]][s] > 0, min(y[friendindex[[m]][[s]] + ncs[m] + 1]), NA)
+  yFmin    <- unlist(lapply(1:G, function(g){
+    lapply(1:nvec[g], function(i){
+      ifelse(ld[[g]][i] > 0, min(y[friendindex[[g]][[i]] + ncs[g] + 1]), NA)
     })
   }))
   yFMiMa   <- cbind(yFmin, yFmax)
@@ -602,8 +602,8 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
   }
   
   # Compute equilibrium
-  t        <- fNashECES(y = y, G = Glist, talpha = talpha, lambda = lam, rho = rho, friendindex = friendindex, 
-                        igroup = igr, frzeroy = frzeroy, nvec = nvec, yFMiMa = yFMiMa, ngroup = M, n = n, tol = tol, 
+  t        <- fNashECES(y = y, A = A, talpha = talpha, lambda = lam, rho = rho, friendindex = friendindex, 
+                        igroup = igr, frzeroy = frzeroy, nvec = nvec, yFMiMa = yFMiMa, ngroup = G, n = n, tol = tol, 
                         maxit = maxit)
   names(y) <- names(eps) <- NULL
   # Output
@@ -617,7 +617,7 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
 #' 
 #' @param y A vector of outcomes used to compute the social norm.
 #' @param rho The CES substitution parameter.
-#' @param Glist The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `Glist` must be a list of subnets, with the `m`-th element being an \eqn{n_m \times n_m} adjacency matrix, where \eqn{n_m} is the number of nodes in the `m`-th subnet.
+#' @param A The adjacency matrix. For networks consisting of multiple subnets (e.g., schools), `A` must be a list of subnets, with the `g`-th element being an \eqn{n_g \times n_g} adjacency matrix, where \eqn{n_g} is the number of nodes in the `g`-th subnet.
 #' 
 #' @description
 #' `cespeer.data` computes the CES social norm, along with the first and second derivatives of the CES social norm with respect to the substitution parameter \eqn{\rho}.
@@ -629,39 +629,39 @@ cespeer.sim <- function(formula, Glist, parms, rho, lambda, beta, epsilon, struc
 #'   \item{`dd[ces(y, rho)]`}{The second derivative of the social norm.}
 #' 
 #' @export
-cespeer.data <- function(y, Glist, rho) {
+cespeer.data <- function(y, A, rho) {
   stopifnot(rho != 0)
   # Network
-  if (!is.list(Glist)) {
-    Glist  <- list(Glist)
+  if (!is.list(A)) {
+    A  <- list(A)
   }
-  dg       <- fnetwork(Glist = Glist)
-  M        <- dg$M
-  # MIs      <- dg$MIs
-  # MnIs     <- dg$MnIs
-  nvec     <- dg$nvec
-  n        <- dg$n
-  igr      <- dg$igr
-  lIs      <- dg$lIs
-  Is       <- dg$Is
-  lnIs     <- dg$lnIs
-  nIs      <- dg$nIs
-  ldg      <- dg$ldg
-  dg       <- dg$dg
+  d       <- fnetwork(A = A)
+  G        <- d$G
+  # GIs      <- d$GIs
+  # GnIs     <- d$GnIs
+  nvec     <- d$nvec
+  n        <- d$n
+  igr      <- d$igr
+  lIs      <- d$lIs
+  Is       <- d$Is
+  lnIs     <- d$lnIs
+  nIs      <- d$nIs
+  ld      <- d$ld
+  d       <- d$d
   y        <- unlist(y)
   stopifnot(length(y) == n)
   
   # Create additional variables)
   z        <- y
-  hasIso   <- fCESdatainit(y = y, z = z, G = Glist, nvec = nvec, M = M, ldg = ldg, lIs = lIs, lnIs = lnIs, drop = rep(0, n))
+  hasIso   <- fCESdatainit(y = y, z = z, A = A, nvec = nvec, G = G, ld = ld, lIs = lIs, lnIs = lnIs, drop = rep(0, n))
   frindex  <- hasIso$friendindex
   frzeroy  <- hasIso$frzeroy
   frzeroz  <- hasIso$frzeroz
-  ldg_st   <- hasIso$ldg
-  dg_st    <- hasIso$dg
-  M_st     <- hasIso$M
-  MIs_st   <- hasIso$MIs
-  MnIs_st  <- hasIso$MnIs
+  ldg_st   <- hasIso$ld
+  dg_st    <- hasIso$d
+  M_st     <- hasIso$G
+  GIs_st   <- hasIso$GIs
+  GnIs_st  <- hasIso$GnIs
   yFMiMa   <- cbind(hasIso$yFmin, hasIso$yFmax)
   zFMiMa   <- cbind(hasIso$zFmin, hasIso$zFmax)
   lIs      <- hasIso$lIs # After selection
@@ -677,9 +677,9 @@ cespeer.data <- function(y, Glist, rho) {
     stop("`y` must be strictly positive.")
   }
   
-  out     <- fCESdata(X = matrix(NA, n, 1), y = y, z = z, G = Glist, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
+  out     <- fCESdata(X = matrix(NA, n, 1), y = y, z = z, A = A, friendindex = frindex, igroup = igr, frzeroy = frzeroy, 
                       frzeroz = frzeroz, lIs = lIs, lnIs = lnIs, nvec = nvec, yFMiMa = yFMiMa, zFMiMa = zFMiMa, 
-                      n = n, Kx = 1, ngroup = M, rho = rho, FEnum = 0, deriv = TRUE)[,c(-1, -3, -5)]
+                      n = n, Kx = 1, ngroup = G, rho = rho, FEnum = 0, deriv = TRUE)[,c(-1, -3, -5)]
   colnames(out) <- c("y", "ces(y, rho)", "d[ces(y, rho)]", "dd[ces(y, rho)]")
   out
 }

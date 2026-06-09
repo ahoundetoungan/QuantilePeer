@@ -26,4 +26,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Aristide Houndetoungan \email{ahoundetoungan@ecn.ulaval.ca} (\href{https://orcid.org/0009-0003-2733-9362}{ORCID})
 
+Authors:
+\itemize{
+  \item Eyo I. Herstad
+  \item Myungkou Shin
+}
+
 }

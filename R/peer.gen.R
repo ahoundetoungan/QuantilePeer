@@ -1,6 +1,6 @@
 #' @rdname qpeer
 #' @export
-genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, data, estimator = "IV", 
+genpeer <- function(formula, excluded.instruments, endogenous.variables, A, data, estimator = "IV", 
                     structural = FALSE, drop = NULL, fixed.effects = FALSE, 
                     HAC = "iid", checkrank = FALSE, compute.cov = TRUE, boot = 5e2, nthreads = 1, tol = 1e-10,
                     print = TRUE){
@@ -38,23 +38,23 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   }
   
   # Network
-  if (!is.list(Glist)) {
-    Glist  <- list(Glist)
+  if (!is.list(A)) {
+    A  <- list(A)
   }
-  dg       <- fnetwork(Glist = Glist)
-  M        <- dg$M
-  MIs      <- dg$MIs
-  MnIs     <- dg$MnIs
-  nvec     <- dg$nvec
+  d        <- fnetwork(A = A)
+  G        <- d$G
+  GIs      <- d$GIs
+  GnIs     <- d$GnIs
+  nvec     <- d$nvec
   ncum     <- c(0, cumsum(nvec))
-  n        <- dg$n
-  igr      <- dg$igr
-  lIs      <- dg$lIs
-  Is       <- dg$Is
-  lnIs     <- dg$lnIs
-  nIs      <- dg$nIs
-  ldg      <- dg$ldg
-  dg       <- dg$dg
+  n        <- d$n
+  igr      <- d$igr
+  lIs      <- d$lIs
+  Is       <- d$Is
+  lnIs     <- d$lnIs
+  nIs      <- d$nIs
+  ld       <- d$ld
+  d        <- d$d
   
   # Data
   # y and X
@@ -91,24 +91,24 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   
   # Drop false isolated
   if (!is.null(drop)) {
-    dg       <- fdrop(drop = drop, ldg = ldg, nvec = nvec, M = M, lIs = lIs, 
+    d        <- fdrop(drop = drop, ld = ld, nvec = nvec, G = G, lIs = lIs, 
                       lnIs = lnIs, y = y, X = X, qy = endo, ins = ins)
-    M        <- dg$M
-    MIs      <- dg$MIs
-    MnIs     <- dg$MnIs
-    nvec     <- dg$nvec
-    n        <- dg$n
-    igr      <- dg$igr
-    lIs      <- dg$lIs
-    Is       <- dg$Is
-    lnIs     <- dg$lnIs
-    nIs      <- dg$nIs
-    ldg      <- dg$ldg
-    y        <- dg$y
-    X        <- dg$X
-    endo     <- dg$qy
-    ins      <- dg$ins
-    dg       <- dg$dg
+    G        <- d$G
+    GIs      <- d$GIs
+    GnIs     <- d$GnIs
+    nvec     <- d$nvec
+    n        <- d$n
+    igr      <- d$igr
+    lIs      <- d$lIs
+    Is       <- d$Is
+    lnIs     <- d$lnIs
+    nIs      <- d$nIs
+    ld       <- d$ld
+    y        <- d$y
+    X        <- d$X
+    endo     <- d$qy
+    ins      <- d$ins
+    d        <- d$d
   }
   
   # Demean fixed effect models
@@ -119,15 +119,15 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
   ins0       <- ins
   if (fixed.effects != "no") {
     if (fixed.effects == "join") {
-      y      <- c(Demean(as.matrix(y), igroup = igr, ngroup = M))
-      endo   <- Demean(endo, igroup = igr, ngroup = M)
-      X      <- Demean(X, igroup = igr, ngroup = M)
-      ins    <- Demean(ins, igroup = igr, ngroup = M)
+      y      <- c(Demean(as.matrix(y), igroup = igr, ngroup = G))
+      endo   <- Demean(endo, igroup = igr, ngroup = G)
+      X      <- Demean(X, igroup = igr, ngroup = G)
+      ins    <- Demean(ins, igroup = igr, ngroup = G)
     } else {
-      y      <- c(Demean_separate(as.matrix(y), igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n))
-      endo   <- Demean_separate(endo, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
-      X      <- Demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
-      ins    <- Demean_separate(ins, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = M, n = n)
+      y      <- c(Demean_separate(as.matrix(y), igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n))
+      endo   <- Demean_separate(endo, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n)
+      X      <- Demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n)
+      ins    <- Demean_separate(ins, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n)
     }
     colnames(X)   <- xname
     colnames(ins) <- zename
@@ -178,44 +178,44 @@ genpeer <- function(formula, excluded.instruments, endogenous.variables, Glist, 
     Kx1      <- length(idX1)
     Kx2      <- length(idX2)
     if (Kins < Kx2 + Kendo) stop("Insufficient number of instruments: the model is not identified.")
-    Kest1    <- ifelse(FEnum == 0, Kx1, Kx1 + MIs)
-    Kest2    <- ifelse(FEnum == 0, Kx2 + Kendo + 1, Kx2 + Kendo + MnIs)
+    Kest1    <- ifelse(FEnum == 0, Kx1, Kx1 + GIs)
+    Kest2    <- ifelse(FEnum == 0, Kx2 + Kendo + 1, Kx2 + Kendo + GnIs)
     if (length(Is) <= Kest1) stop("Insufficient number of isolated nodes for estimating the structural model.")
     if (length(nIs) <= Kest2) stop("Insufficient number of nonisolated nodes for estimating the structural model.")
     Kest     <- Kest1 + Kest2
-    if (HACnum == 2 && (Kx1 >= MIs || Kins + 1 >= MnIs) && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
+    if (HACnum == 2 && (Kx1 >= GIs || Kins + 1 >= GnIs) && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
       stop("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. Set HAC to 'iid' or 'hetero'.")
     }
     estname  <- c("Peers(conformity)", enname, xname)
     
     # Estimation
     GMMe     <- fstruct(y = y, X = X, qy = endo, ins = ins, idX1 = idX1, idX2 = idX2, Kx1 = Kx1, Kx2 = Kx2, igr = igr, 
-                        nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, M = M, MnIs = MnIs, Kins = Kins, Kx = Kx, ntau = Kendo, 
+                        nIs = nIs, Is = Is, lnIs = lnIs, lIs = lIs, G = G, GnIs = GnIs, Kins = Kins, Kx = Kx, ntau = Kendo, 
                         Kest1 = Kest1, Kest2 = Kest2, n = n, HACnum = HACnum, iv = iv, estimator = estimator, 
                         compute.cov = compute.cov, estname = estname)
   } else {
     if (Kins < Kx + Kendo) stop("Insufficient number of instruments: the model is not identified.")
-    Kest     <- ifelse(FEnum == 0, Kx + Kendo, ifelse(FEnum == 1, Kx + Kendo + M, Kx + Kendo + MIs + MnIs))
+    Kest     <- ifelse(FEnum == 0, Kx + Kendo, ifelse(FEnum == 1, Kx + Kendo + G, Kx + Kendo + GIs + GnIs))
     if (n <= Kest) stop("Insufficient number of observations.")
-    if (HACnum == 2 && Kins >= M && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
+    if (HACnum == 2 && Kins >= G && estimator %in% c("IV", "GMM.optimal", "GMM.identity")) {
       stop("Heteroskedasticity at the group (cluster) level is not possible because the number of groups is small. Set HAC to 'iid' or 'hetero', or use Bootstrap.")
     }
     estname  <- c(enname, xname)
     V        <- cbind(endo, X)
     
     # Estimation
-    GMMe     <- freduce(y = y, V = V, ins = ins, igr = igr, nvec = nvec, M = M, Kins = Kins, Kx = Kx, ntau = Kendo, 
+    GMMe     <- freduce(y = y, V = V, ins = ins, igr = igr, nvec = nvec, G = G, Kins = Kins, Kx = Kx, ntau = Kendo, 
                         Kest = Kest, n = n, HACnum = HACnum, iv = iv, estimator = estimator, compute.cov = compute.cov, 
                         estname = estname, LnIs = lnIs, LIs = lIs, boot = boot, nthreads = nthreads, seed = seed)
   }
   
-  out       <- list(model.info  = list(n = n, ngroup = M, nvec = nvec, structural = structural, formula = formula, 
+  out       <- list(model.info  = list(n = n, ngroup = G, nvec = nvec, structural = structural, formula = formula, 
                                        endogenous.variables = endogenous.variables, excluded.instruments = excluded.instruments, 
                                        estimator = estimator, fixed.effects = fixed.effects, idXiso = idX1 + 1, idXniso = idX2 + 1, HAC = HAC,
                                        yname = yname, xnames = xname, znames = zename, endonames = enname, boot = boot),
                     gmm         = GMMe,
                     data        = list(y = y0, endogenous.variables = endo0, X = X0, instruments = ins0, isolated = lapply(lIs, \(s) s + 1), 
-                                       non.isolated = lapply(lnIs, \(s) s + 1), degree = ldg))
+                                       non.isolated = lapply(lnIs, \(s) s + 1), degree = ld))
   class(out) <- "genpeer"
   out
 }

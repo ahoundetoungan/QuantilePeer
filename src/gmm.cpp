@@ -363,8 +363,8 @@ Rcpp::List fFstat(const Eigen::MatrixXd& y,
 //[[Rcpp::export]]
 Rcpp::List fKPstat(const Eigen::MatrixXd& qy,
                    const Eigen::MatrixXd& Z,
-                   const arma::uvec& index,
-                   const Eigen::ArrayXd& igroup,
+                   const Eigen::ArrayXi& index,
+                   const Eigen::ArrayXi& igroup,
                    const int& HAC = 0) {
   int n(qy.rows()), ntau(qy.cols()), l(index.size()), Kins(Z.cols()), 
   Kx(Kins - l), ngroup(igroup.size() - 1);
