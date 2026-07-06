@@ -1,11 +1,13 @@
-##############################################################################################################
-##############################################################################################################
-########################### Quantile Peer Effect Models by Aristide Houndetoungan ############################
-##############################################################################################################
+################################################################################
+################################################################################
+################ Identification of Heterogeneous Peer Effects ##################
+########### Eyo I. Herstad, Aristide Houndetoungan, Myungkou Shin ##############
+################################################################################
+################################################################################
 
-# Last updated: 2025-05-16
+# Last updated: 2026-06-09
 
-# This script reproduces the counterfactual analysis (Figure 6.1)
+# This script reproduces the counterfactual analysis (Figure 5.1)
 
 rm(list = ls()) 
 library(dplyr)
@@ -19,22 +21,21 @@ library(ggplot2)
 OutDataPath <- "PATH/TO/WHERE/PREPARED/DATA/IS/SAVED/" # Where prepared data for each outcome are saved (/ at the end is important)
 OutResPath  <- "PATH/TO/WHERE/RESULTS/WILL/BE/SAVED/" # Where results should be saved
 
-
 # List of outcome variables
 depvar  <- c("gpa", "academiceffort", "nclubs", "futureperception", "trouble", "smoke", "drink", "risky",
              "selfesteem", "physicalexercise", "fight")
 
 # The following function takes an outcome and compute the impact of an increase in the intercept.
 fsim    <- function(outcome) {
-  if (file.exists(paste0(OutResPath, outcome, ".txt"))) {
-    file.remove(paste0(OutResPath, outcome, ".txt"))
+  if (file.exists(paste0(OutResPath, "/", outcome, ".txt"))) {
+    file.remove(paste0(OutResPath, "/", outcome, ".txt"))
   }
-  sink(file = paste0(OutResPath, outcome, ".txt"))
+  sink(file = paste0(OutResPath, "/", outcome, ".txt"))
   cat("Outcome: ", outcome, "\n", sep = "")
   ########################################################
   ################### Data Preparation ###################
   ########################################################
-  load(file = paste0(OutDataPath, outcome, ".Rda")) # Load saved data using with the script 0-Data.R
+  load(file = paste0(OutDataPath, "/", outcome, ".Rda")) # Load saved data using with the script 0-Data.R
   # Exogenous characteristics (excluding reference variables for identification)
   exovar  <- c("age", "age2", "grade", "grade2", "female", "hispanic", "racewhite", "raceblack", 
                "raceasian", "melhigh", "memhigh", "memiss", "mjprof", "mjother",  "mjmiss")
@@ -49,7 +50,7 @@ fsim    <- function(outcome) {
   X       <- cbind(X, nmatch = nmatch, match = match) # Adding additional variables
   
   # Load results
-  load(paste0(OutResPath, outcome, ".Rda"))
+  load(paste0(OutResPath, "/", outcome, ".Rda"))
   
   #############################################################
   ######################## Simulations ########################
@@ -75,96 +76,78 @@ fsim    <- function(outcome) {
       
       #### Linear model
       Xmat     <- cbind(X, GX)
-      # multiply isolated individual X by 1 - lambda2
-      Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SLIM$gmm$Estimate["G(conformity):y"])
       # Gy
       Gy       <- peer.avg(Gnorm, y)
       # residuals
-      res      <- y - cbind(Gy, Xmat) %*% SLIM$gmm$Estimate[c("G(total):y",
-                                                              paste0("X", colnames(X)),
-                                                              paste0("GX", colnames(GX)))]
-      res[match > 0] <- res[match > 0]/(1 - SLIM$gmm$Estimate["G(conformity):y"])
+      res      <- y - cbind(Gy, Xmat) %*% LIM$gmm$Estimate[c("A:y", paste0("X", colnames(X)),
+                                                             paste0("GX", colnames(GX)))]
       # key player status
       KPLIM    <- mean(y[(ncum[s] + 1):ncum[s + 1]] - 
                          linpeer.sim(formula = ~ -1 + X[(ncum[s] + 1):ncum[s + 1],] + GX[(ncum[s] + 1):ncum[s + 1],], 
-                                     Glist = Gs,
-                                     lambda = SLIM$gmm$Estimate[c("G(conformity):y", "G(total):y")],
-                                     beta = c(SLIM$gmm$Estimate[c(paste0("X", colnames(X)),
+                                     A = Gs,
+                                     lambda = LIM$gmm$Estimate["A:y"],
+                                     gamma = c(LIM$gmm$Estimate[c(paste0("X", colnames(X)),
                                                                   paste0("GX", colnames(GX)))]),
-                                     structural = TRUE,
                                      epsilon = res[(ncum[s] + 1):ncum[s + 1]])$y)
       
       #### Quantile model
       # because this model is not linear in y, it is important to estimate the residual
       # tau3
-      tau3     <- SQ13$model.info$tau
+      tau3     <- Q3$model.info$tau
       Xmat     <- cbind(X, GX)
-      # multiply isolated individual X by 1 - lambda2
-      Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SQ13$gmm$Estimate["y_q(conformity)"])
       # qy
-      qy       <- qpeer.instrument(y ~ 1, tau = tau3, Glist = Gnorm)$qy
+      qy       <- qpeer.instrument(y ~ 1, tau = tau3, A = Gnorm)$qy
       # residuals
-      res      <- y - cbind(qy, Xmat) %*% SQ13$gmm$Estimate[c(paste0("y_q", 1:length(tau3)),
-                                                              paste0("X", colnames(X)),
-                                                              paste0("GX", colnames(GX)))]
-      res[match > 0] <- res[match > 0]/(1 - SQ13$gmm$Estimate["y_q(conformity)"])
+      res      <- y - cbind(qy, Xmat) %*% Q3$gmm$Estimate[c(paste0("y_q", 1:length(tau3)),
+                                                            paste0("X", colnames(X)),
+                                                            paste0("GX", colnames(GX)))]
       # key player status
       KPQ3     <- mean(y[(ncum[s] + 1):ncum[s + 1]] - 
                          qpeer.sim(formula = ~ -1 + X[(ncum[s] + 1):ncum[s + 1],] + GX[(ncum[s] + 1):ncum[s + 1],], 
-                                   Glist = Gs,
+                                   A = Gs,
                                    tau = tau3,
-                                   lambda = SQ13$gmm$Estimate[c("y_q(conformity)", paste0("y_q", 1:length(tau3)))],
-                                   beta = c(SQ13$gmm$Estimate[c(paste0("X", colnames(X)),
-                                                                paste0("GX", colnames(GX)))]),
-                                   structural = TRUE,
+                                   lambda = Q3$gmm$Estimate[paste0("y_q", 1:length(tau3))],
+                                   gamma = c(Q3$gmm$Estimate[c(paste0("X", colnames(X)),
+                                                               paste0("GX", colnames(GX)))]),
                                    init = y[(ncum[s] + 1):ncum[s + 1]],
                                    epsilon = res[(ncum[s] + 1):ncum[s + 1]])$y)
       
       # tau4
-      tau4     <- SQ14$model.info$tau
+      tau4     <- Q4$model.info$tau
       Xmat     <- cbind(X, GX)
-      # multiply isolated individual X by 1 - lambda2
-      Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SQ14$gmm$Estimate["y_q(conformity)"])
       # qy
-      qy       <- qpeer.instrument(y ~ 1, tau = tau4, Glist = Gnorm)$qy
+      qy       <- qpeer.instrument(y ~ 1, tau = tau4, A = Gnorm)$qy
       # residuals
-      res      <- y - cbind(qy, Xmat) %*% SQ14$gmm$Estimate[c(paste0("y_q", 1:length(tau4)),
-                                                              paste0("X", colnames(X)),
-                                                              paste0("GX", colnames(GX)))]
-      res[match > 0] <- res[match > 0]/(1 - SQ14$gmm$Estimate["y_q(conformity)"])
+      res      <- y - cbind(qy, Xmat) %*% Q4$gmm$Estimate[c(paste0("y_q", 1:length(tau4)),
+                                                            paste0("X", colnames(X)),
+                                                            paste0("GX", colnames(GX)))]
       # key player status
       KPQ4     <- mean(y[(ncum[s] + 1):ncum[s + 1]] - 
                          qpeer.sim(formula = ~ -1 + X[(ncum[s] + 1):ncum[s + 1],] + GX[(ncum[s] + 1):ncum[s + 1],], 
-                                   Glist = Gs,
+                                   A = Gs,
                                    tau = tau4,
-                                   lambda = SQ14$gmm$Estimate[c("y_q(conformity)", paste0("y_q", 1:length(tau4)))],
-                                   beta = c(SQ14$gmm$Estimate[c(paste0("X", colnames(X)),
-                                                                paste0("GX", colnames(GX)))]),
-                                   structural = TRUE,
+                                   lambda = Q4$gmm$Estimate[paste0("y_q", 1:length(tau4))],
+                                   gamma = c(Q4$gmm$Estimate[c(paste0("X", colnames(X)),
+                                                               paste0("GX", colnames(GX)))]),
                                    init = y[(ncum[s] + 1):ncum[s + 1]],
                                    epsilon = res[(ncum[s] + 1):ncum[s + 1]])$y)
       
       #### CES model
       # because this model is not linear in y, it is important to estimate the residual
       Xmat     <- cbind(X, GX)
-      # multiply isolated individual X by 1 - lambda2
-      Xmat[match > 0,] <- Xmat[match > 0,]*(1 - SCES$gmm$Estimate["G(conformity):y"])
       # social norm
-      Gy       <- cespeer.data(y, Glist = Gnorm, rho = SCES$gmm$Estimate["rho"])[,"ces(y, rho)"]
+      Gy       <- cespeer.data(y, A = Gnorm, rho = CES$gmm$Estimate["rho"])[,"ces(y, rho)"]
       # residuals
-      res      <- y - cbind(Gy, Xmat) %*% SCES$gmm$Estimate[c("G(total):y",
-                                                              paste0("X", colnames(X)),
-                                                              paste0("GX", colnames(GX)))]
-      res[match > 0] <- res[match > 0]/(1 - SCES$gmm$Estimate["G(conformity):y"])
+      res      <- y - cbind(Gy, Xmat) %*% CES$gmm$Estimate[c("A:y", paste0("X", colnames(X)),
+                                                             paste0("GX", colnames(GX)))]
       # key player status
       KPCES    <- mean(y[(ncum[s] + 1):ncum[s + 1]] - 
                          cespeer.sim(formula = ~ -1 + X[(ncum[s] + 1):ncum[s + 1],] + GX[(ncum[s] + 1):ncum[s + 1],], 
-                                     Glist = Gs,
-                                     rho = SCES$gmm$Estimate["rho"],
-                                     lambda = SCES$gmm$Estimate[c("G(conformity):y", "G(total):y")],
-                                     beta = c(SCES$gmm$Estimate[c(paste0("X", colnames(X)),
+                                     A = Gs,
+                                     rho = CES$gmm$Estimate["rho"],
+                                     lambda = CES$gmm$Estimate["A:y"],
+                                     gamma = c(CES$gmm$Estimate[c(paste0("X", colnames(X)),
                                                                   paste0("GX", colnames(GX)))]),
-                                     structural = TRUE,
                                      init = y[(ncum[s] + 1):ncum[s + 1]],
                                      epsilon = res[(ncum[s] + 1):ncum[s + 1]])$y, na.rm = TRUE)
       
@@ -174,16 +157,17 @@ fsim    <- function(outcome) {
   }
   sink()
   
-  saveRDS(KPlayer, file = paste0(OutResPath, outcome, ".RDS"))
+  saveRDS(KPlayer, file = paste0(OutResPath, "/", outcome, ".RDS"))
 }
 
 # Set up parallel backend
+cat("How many cores:", parallel::detectCores(), "\n")
 ncores  <- 11
 cl      <- makeCluster(ncores)
 registerDoParallel(cl)
 
 # Estimation
-foreach(outcome = depvar, .packages = c("dplyr", "QuantilePeer", "PartialNetwork"), .options.RNG = 2025) %dorng% {
+foreach(outcome = depvar, .packages = c("dplyr", "QuantilePeer", "PartialNetwork"), .options.RNG = 2026) %dorng% {
   fsim(outcome)
 }
 
@@ -198,7 +182,7 @@ OUTCOME <- c("Academic achievements", "Academic effort", "Extracurricular activi
 # data to plot
 dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
   cat("Outcome: ", OUTCOME[k], "\n", sep = "")
-  SIM     <-  readRDS(paste0(OutResPath, depvar[k], ".RDS")) %>%
+  SIM     <-  readRDS(paste0(OutResPath, "/", depvar[k], ".RDS")) %>%
     group_by(School) %>% 
     mutate(across(c("LIM", "Q3", "Q4", "CES"), ~ rank(., ties.method = "min"), 
                   .names = "rk.{.col}")) %>% 
@@ -217,7 +201,7 @@ dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
 
 
 # tau3
-(graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 6, 7, 9, 11)), 
+(graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 4, 6, 7, 11)), 
                  aes(x = Quant3, y = Other, colour = model, shape = model)) +
     geom_point(size = 1.5, alpha = 1) +
     facet_wrap(~ outcome, ncol = 2, scales = "free") +
@@ -240,7 +224,7 @@ dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
 ggsave("CFScatter3.pdf", path = OutResPath, plot = graph, device = "pdf", width = 6, height = 6)
 
 # tau4
-(graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 6, 7, 9, 11)), 
+(graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 4, 6, 7, 11)), 
                  aes(x = Quant4, y = Other, colour = model, shape = model)) +
     geom_point(size = 1.5, alpha = 1) +
     facet_wrap(~ outcome, ncol = 2, scales = "free") +
