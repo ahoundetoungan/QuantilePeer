@@ -51,3 +51,8 @@ inst/doc
 /doc/
 *.DS_Store
 *.aux
+Replication/Simulations.Rda
+Replication/Simulations.xlsx
+Replication/SimulationsNoContext.Rda
+Replication/SimulationsNoContext.xlsx
+*.xlsx#
