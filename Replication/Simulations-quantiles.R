@@ -222,7 +222,7 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE,
 }
 
 # Number of simulations
-nsim      <- 1000
+nsim      <- 10000
 
 # Several values will be tested for peer effects with conformity parameter set to 0.2
 # Estimation is done in parallel 
