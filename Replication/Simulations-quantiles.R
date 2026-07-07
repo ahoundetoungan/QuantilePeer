@@ -23,8 +23,8 @@ library(openxlsx)
 
 # Where results should be saved
 OutResPath  <- "PATH/TO/WHERE/RESULTS/WILL/BE/SAVED"
-OutResPath  <- "~/personal/Quantile Peer Effects/Simulations"
 OutResPath  <- "~/Dropbox/Academy/1.Papers/Quantile Peer Effects/Package/QuantilePeer/Replication"
+OutResPath  <- "~/personal/Quantile Peer Effects/Package/QuantilePeer/Results"
 
 # Sample size:
 ngroup     <- 50  # Number of subnetworks
@@ -36,12 +36,12 @@ tau        <- seq(0, 1, 1/3)
 ntau       <- length(tau)
 
 # Contextual 
-contextual <- FALSE
+contextual <- TRUE
 
 # Function: Takes lambda, simulates data, estimates the model, and returns estimates.
 # lambda is the vector of peer effect parameters
 # fixed.effects indicates whether the model includes fixed effects
-# linear indicates whether data should be simulated using tje standar linear model
+# linear indicates whether data should be simulated using the standard linear model
 festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE, 
                        nthreads = 7) {
   
@@ -70,49 +70,59 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE,
   AX       <- peer.avg(Anorm, X)
   
   # Outcome y
+  resim    <- TRUE
+  Zces     <- NULL
   y        <- NULL
-  
-  form     <- NULL
-  if (contextual) {
-    form   <- as.formula(~ -1 + eff + X + AX)
-  } else {
-    form   <- as.formula(~ -1 + eff + X)
-  }
-  
-  if (linear) {
-    # If linear lambda is set to the sum of lambda
-    y      <- linpeer.sim(formula = form, A = Anorm, lambda = sum(lambda), 
+  while (resim) {
+    form   <- NULL
+    if (contextual) {
+      form <- as.formula(~ -1 + eff + X + AX)
+    } else {
+      form <- as.formula(~ -1 + eff + X)
+    }
+    
+    if (linear) {
+      # If linear lambda is set to the sum of lambda
+      y    <- linpeer.sim(formula = form, A = Anorm, lambda = sum(lambda), 
+                            gamma = c(ifelse(fixed.effects, 1, 0), gamma), structural = FALSE, 
+                            epsilon = rnorm(n, 0, sigma))$y 
+    } else {
+      y    <- qpeer.sim(formula = form, A = A, tau = tau, lambda = lambda, 
                           gamma = c(ifelse(fixed.effects, 1, 0), gamma), structural = FALSE, 
                           epsilon = rnorm(n, 0, sigma))$y 
-  } else {
-    y      <- qpeer.sim(formula = form, A = A, tau = tau, lambda = lambda, 
-                        gamma = c(ifelse(fixed.effects, 1, 0), gamma), structural = FALSE, 
-                        epsilon = rnorm(n, 0, sigma))$y 
+    }
+    
+    # Instrument for CES model: exogenous prediction of y
+    if (fixed.effects) {
+      
+      form <- as.formula(y ~ X + AX + grp)
+      grp  <- as.factor(rep(1:ngroup, nvec))
+      Zces <- fitted.values(lm(form))
+      
+    } else {
+      
+      form <- as.formula(y ~ X + AX)
+      Zces <- fitted.values(lm(form))
+      
+    }
+    
+    # Resimulate
+    ## This is because the CES does not allow negative outcome
+    ## But with the large values of eff, this should not happen often
+    ## it happen 2 times in 60K simulations.
+    resim  <- (any(y < 0) | any(Zces < 0)) 
   }
   
-  # Instruments
+  # Instruments for LiM and Quantile
   # linear model: A^2X
   AAX      <- peer.avg(Anorm, AX) #AX where A is row-normalized
   
   # Quantile model
-  
   form     <- as.formula(~ X + AX)
   Z        <- qpeer.inst(formula = form, A = A, tau = seq(0, 1, 1/9), 
                          max.distance = 2, checkrank = TRUE)$instruments 
-  # CES model: exogenous prediction of y
-  Zces     <- NULL
-  if (fixed.effects) {
-    
-    form   <- as.formula(y ~ X + AX + grp)
-    grp    <- as.factor(rep(1:ngroup, nvec))
-    Zces   <- fitted.values(lm(form))
-    
-  } else {
-    
-    form   <- as.formula(y ~ X + AX)
-    Zces   <- fitted.values(lm(form))
-  }
   
+  # Estimation
   # Linear model
   
   form     <- NULL
