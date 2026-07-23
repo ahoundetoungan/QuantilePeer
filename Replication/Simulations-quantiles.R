@@ -5,7 +5,7 @@
 ################################################################################
 ################################################################################
 
-# Last updated: 2026-07-06
+# Last updated: 2026-07-08
 
 # This script reproduces the Monte Carlo simulations (Tables 4.2 and 4.3).
 # Estimation results will be exported to a single Excel file (`Simulation.xlsx`)
@@ -23,8 +23,8 @@ library(openxlsx)
 
 # Where results should be saved
 OutResPath  <- "PATH/TO/WHERE/RESULTS/WILL/BE/SAVED"
-OutResPath  <- "~/Dropbox/Academy/1.Papers/Quantile Peer Effects/Package/QuantilePeer/Replication"
 OutResPath  <- "~/personal/Quantile Peer Effects/Package/QuantilePeer/Results"
+OutResPath  <- "~/Dropbox/Academy/1.Papers/Quantile Peer Effects/Package/QuantilePeer/Replication"
 
 # Sample size:
 ngroup     <- 50  # Number of subnetworks
@@ -41,7 +41,7 @@ contextual <- TRUE
 # Function: Takes lambda, simulates data, estimates the model, and returns estimates.
 # lambda is the vector of peer effect parameters
 # fixed.effects indicates whether the model includes fixed effects
-# linear indicates whether data should be simulated using the standard linear model
+# linear indicates whether data should be simulated using tje standar linear model
 festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE, 
                        nthreads = 7) {
   
@@ -84,12 +84,12 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE,
     if (linear) {
       # If linear lambda is set to the sum of lambda
       y    <- linpeer.sim(formula = form, A = Anorm, lambda = sum(lambda), 
-                            gamma = c(ifelse(fixed.effects, 1, 0), gamma), structural = FALSE, 
-                            epsilon = rnorm(n, 0, sigma))$y 
-    } else {
-      y    <- qpeer.sim(formula = form, A = A, tau = tau, lambda = lambda, 
                           gamma = c(ifelse(fixed.effects, 1, 0), gamma), structural = FALSE, 
                           epsilon = rnorm(n, 0, sigma))$y 
+    } else {
+      y    <- qpeer.sim(formula = form, A = A, tau = tau, lambda = lambda, 
+                        gamma = c(ifelse(fixed.effects, 1, 0), gamma), structural = FALSE, 
+                        epsilon = rnorm(n, 0, sigma))$y 
     }
     
     # Instrument for CES model: exogenous prediction of y
@@ -193,46 +193,46 @@ festim     <- function(lambda, fixed.effects = TRUE, linear = FALSE,
   LIM           <- summary(LIM, diagnostic = TRUE)
   LIM           <- c(LIM$gmm$Estimate, KPstat = LIM$diagnostics[2, 3], Jpvalue = LIM$diagnostics[4, 4],
                      Jpvalue05 = LIM$diagnostics[4, 4] < 0.05, Jpvalue10 = LIM$diagnostics[4, 4] < 0.1)
-  names(LIM)    <- paste0(ifelse(fixed.effects, "FE.", ""), "LIM.", names(LIM))
+  names(LIM)    <- paste0("LIM.", names(LIM))
   
   Quant         <- summary(Quant, diagnostic = TRUE)
   Quant         <- c(Quant$gmm$Estimate, KPstat = Quant$diagnostics[ntau + 1, 3], 
                      Jpvalue = Quant$diagnostics[ntau + 3, 4], Jpvalue05 = Quant$diagnostics[ntau + 3, 4] < 0.05,
                      Jpvalue10 = Quant$diagnostics[ntau + 3, 4] < 0.1)
-  names(Quant)  <- paste0(ifelse(fixed.effects, "FE.", ""), "Q.", names(Quant))
+  names(Quant)  <- paste0("Q.", names(Quant))
   
   Ces           <- summary(Ces)$gmm$Estimate
-  names(Ces)    <- paste0(ifelse(fixed.effects, "FE.", ""), "CES.", names(Ces))
+  names(Ces)    <- paste0("CES.", names(Ces))
   
   Etest         <- c(Etest, Etest < 0.05, Etest < 0.1)
-  names(Etest)  <- paste0(ifelse(fixed.effects, "FE.", ""), c("ET.ntau=2.3", "ET.ntau=3.4", "ET.ntau=4.5",
-                                                              "ET05.ntau=2.3", "ET05.ntau=3.4", "ET05.ntau=4.5", 
-                                                              "ET10.ntau=2.3", "ET10.ntau=3.4", "ET10.ntau=4.5"))
+  names(Etest)  <- paste0(c("ET.ntau=2.3", "ET.ntau=3.4", "ET.ntau=4.5",
+                            "ET05.ntau=2.3", "ET05.ntau=3.4", "ET05.ntau=4.5", 
+                            "ET10.ntau=2.3", "ET10.ntau=3.4", "ET10.ntau=4.5"))
   
   Quant2        <- summary(Quant2)
   Quant2        <- c(Quant2$gmm$Estimate, KPstat = Quant2$diagnostics[ntau, 3], 
                      Jpvalue = Quant2$diagnostics[ntau + 2, 4], Jpvalue05 = Quant2$diagnostics[ntau + 2, 4] < 0.05, 
                      Jpvalue10 = Quant2$diagnostics[ntau + 2, 4] < 0.1)
-  names(Quant2) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q2.", names(Quant2))
+  names(Quant2) <- paste0("Q2.", names(Quant2))
   
   Quant3        <- summary(Quant3)
   Quant3        <- c(Quant3$gmm$Estimate, KPstat = Quant3$diagnostics[ntau + 2, 3], 
                      Jpvalue = Quant3$diagnostics[ntau + 4, 4], Jpvalue05 = Quant3$diagnostics[ntau + 4, 4] < 0.05,
                      Jpvalue10 = Quant3$diagnostics[ntau + 4, 4] < 0.1)
-  names(Quant3) <- paste0(ifelse(fixed.effects, "FE.", ""), "Q3.", names(Quant3))
+  names(Quant3) <- paste0("Q3.", names(Quant3))
   
   Quant5        <- summary(Quant5)
   Quant5        <- c(Quant5$gmm$Estimate, KPstat = Quant5$diagnostics[ntau + 2, 3], 
                      Jpvalue = Quant5$diagnostics[ntau + 4, 4], Jpvalue05 = Quant5$diagnostics[ntau + 4, 4] < 0.05,
                      Jpvalue10 = Quant5$diagnostics[ntau + 4, 4] < 0.1)
-  names(Quant5) <- paste0(ifelse(fixed.effects, "FE.", ""), "Qb.", names(Quant5))
+  names(Quant5) <- paste0("Qb.", names(Quant5))
   
   
   c(LIM, Quant, Ces, Etest, Quant2, Quant3, Quant5)
 }
 
 # Number of simulations
-nsim      <- 10000
+nsim      <- 3
 
 # Several values will be tested for peer effects with conformity parameter set to 0.2
 # Estimation is done in parallel 
@@ -241,83 +241,53 @@ set.seed(2026)  # Set global seed for reproducibility
 
 # Increasing lambda
 lambda1    <- c(0, 0.05, 0.2, 0.3)
-cat("DGP A without fixed effects\n")
-Est11      <- do.call(cbind, lapply(1:nsim, \(i) {
-  cat("Iteration:", i, "\n")
-  festim(lambda1, FALSE, FALSE, nthreads)
-}))
-cat("DGP A with fixed effects\n")
-Est12      <- do.call(cbind, lapply(1:nsim, \(i) {
+cat("========== DGP 1\n")
+Est1       <- do.call(cbind, lapply(1:nsim, \(i) {
   cat("Iteration:", i, "\n")
   festim(lambda1, TRUE, FALSE, nthreads)
 }))
 
 # Decreasing lambda
 lambda2    <- c(0.3, 0.2, 0.05, 0)
-cat("DGP B without fixed effects\n")
-Est21      <- do.call(cbind, lapply(1:nsim, \(i) {
-  cat("Iteration:", i, "\n")
-  festim(lambda2, FALSE, FALSE, nthreads)
-}))
-cat("DGP B with fixed effects\n")
-Est22      <- do.call(cbind, lapply(1:nsim, \(i) {
+cat("========== DGP 2\n")
+Est2       <- do.call(cbind, lapply(1:nsim, \(i) {
   cat("Iteration:", i, "\n")
   festim(lambda2, TRUE, FALSE, nthreads)
 }))
 
 # Concave lambda
 lambda3    <- c(0, 0.275, 0.275, 0)
-cat("DGP C without fixed effects\n")
-Est31      <- do.call(cbind, lapply(1:nsim, \(i) {
-  cat("Iteration:", i, "\n")
-  festim(lambda3, FALSE, FALSE, nthreads)
-}))
-cat("DGP C with fixed effects\n")
-Est32      <- do.call(cbind, lapply(1:nsim, \(i) {
+cat("========== DGP 3\n")
+Est3      <- do.call(cbind, lapply(1:nsim, \(i) {
   cat("Iteration:", i, "\n")
   festim(lambda3, TRUE, FALSE, nthreads)
 }))
 
 # Convex lambda
 lambda4    <- c(0.275, 0, 0, 0.275)
-cat("DGP D without fixed effects\n")
-Est41      <- do.call(cbind, lapply(1:nsim, \(i) {
-  cat("Iteration:", i, "\n")
-  festim(lambda4, FALSE, FALSE, nthreads)
-}))
-cat("DGP D with fixed effects\n")
-Est42      <- do.call(cbind, lapply(1:nsim, \(i) {
+cat("========== DGP 4\n")
+Est4       <- do.call(cbind, lapply(1:nsim, \(i) {
   cat("Iteration:", i, "\n")
   festim(lambda4, TRUE, FALSE, nthreads)
 }))
 
 # Concave lambda
 lambda5    <- c(-0.05, 0.35, 0.15, 0.1)
-cat("DGP E without fixed effects\n")
-Est51      <- do.call(cbind, lapply(1:nsim, \(i) {
-  cat("Iteration:", i, "\n")
-  festim(lambda5, FALSE, FALSE, nthreads)
-}))
-cat("DGP E with fixed effects\n")
-Est52      <- do.call(cbind, lapply(1:nsim, \(i) {
+cat("========== DGP 5\n")
+Est5       <- do.call(cbind, lapply(1:nsim, \(i) {
   cat("Iteration:", i, "\n")
   festim(lambda5, TRUE, FALSE, nthreads)
 }))
 
 # Constant lambda with data simulated using the standard LIM model
 lambda6    <- 0.55
-cat("DGP F without fixed effects\n")
-Est61      <- do.call(cbind, lapply(1:nsim, \(i) {
-  cat("Iteration:", i, "\n")
-  festim(lambda6, FALSE, TRUE, nthreads)
-}))
-cat("DGP F with fixed effects\n")
-Est62      <- do.call(cbind, lapply(1:nsim, \(i) {
+cat("========== DGP 6\n")
+Est6       <- do.call(cbind, lapply(1:nsim, \(i) {
   cat("Iteration:", i, "\n")
   festim(lambda6, TRUE, TRUE, nthreads)
 }))
 
-save(Est11, Est12, Est21, Est22, Est31, Est32, Est41, Est42, Est51, Est52, Est61, Est62,
+save(Est1, Est2, Est3, Est4, Est5, Est6,
      file = paste0(OutResPath, "/Simulations", ifelse(contextual, "", "NoContext"),  ".Rda"))
 
 # Summary
@@ -327,12 +297,12 @@ Sumfunc    <- function(x) {
 }
 
 load(paste0(OutResPath, "/Simulations", ifelse(contextual, "", "NoContext"),  ".Rda"))
-Est        <- as.data.frame(rbind(cbind(apply(Est11, 1, Sumfunc), apply(Est12, 1, Sumfunc)),
-                                  cbind(apply(Est21, 1, Sumfunc), apply(Est22, 1, Sumfunc)),
-                                  cbind(apply(Est31, 1, Sumfunc), apply(Est32, 1, Sumfunc)),
-                                  cbind(apply(Est41, 1, Sumfunc), apply(Est42, 1, Sumfunc)),
-                                  cbind(apply(Est51, 1, Sumfunc), apply(Est52, 1, Sumfunc)),
-                                  cbind(apply(Est61, 1, Sumfunc), apply(Est62, 1, Sumfunc))))
+Est        <- as.data.frame(rbind(cbind(apply(Est1, 1, Sumfunc)),
+                                  cbind(apply(Est2, 1, Sumfunc)),
+                                  cbind(apply(Est3, 1, Sumfunc)),
+                                  cbind(apply(Est4, 1, Sumfunc)),
+                                  cbind(apply(Est5, 1, Sumfunc)),
+                                  cbind(apply(Est6, 1, Sumfunc))))
 
 # Formatting to Excel
 # Put standard error into parenthesis
@@ -359,16 +329,16 @@ addWorksheet(wb, "Table 4.2")
 addWorksheet(wb, "Full results")
 
 # Table 4.3
-T4.3 <- Est %>% select(all_of(c(paste0("FE.Q.y_q", 1:4), "FE.LIM.A:y", "FE.CES.rho", "FE.CES.A:y")))
+T4.3 <- Est %>% select(all_of(c(paste0("Q.y_q", 1:4), "LIM.A:y", "CES.rho", "CES.A:y")))
 T4.3[seq(1, 16, 3), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1, collapse = ", "), ")$"),
                             paste0("DGP B: $\\boldsymbol\\lambda = (", paste0(lambda2, collapse = ", "), ")$"),
                             paste0("DGP C: $\\boldsymbol\\lambda = (", paste0(lambda3, collapse = ", "), ")$"),
                             paste0("DGP D: $\\boldsymbol\\lambda = (", paste0(lambda4, collapse = ", "), ")$"),
                             paste0("DGP E: $\\boldsymbol\\lambda = (", paste0(lambda5, collapse = ", "), ")$"),
                             paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$"))
-T4.3 <- cbind(T4.3[,c("FE.Q.y_q1", "FE.Q.y_q2", "FE.Q.y_q3", "FE.Q.y_q4")], "V1" = NA,
-              T4.3[,c("FE.LIM.A:y")], "V2" = NA,
-              T4.3[,c("FE.CES.rho", "FE.CES.A:y")])
+T4.3 <- cbind(T4.3[,c("Q.y_q1", "Q.y_q2", "Q.y_q3", "Q.y_q4")], "V1" = NA,
+              T4.3[,c("LIM.A:y")], "V2" = NA,
+              T4.3[,c("CES.rho", "CES.A:y")])
 # write
 writeData(wb, "Table 4.3", T4.3, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 # first row
@@ -385,9 +355,9 @@ addStyle(wb, "Table 4.3", style = createStyle(halign = "center"),
          rows = 1:(nrow(T4.3) + 1), cols = 1:ncol(T4.3), gridExpand = TRUE)
 
 # Table 4.2
-T4.2 <- Est %>% select(all_of(c("FE.ET05.ntau=2.3", "FE.ET10.ntau=2.3",
-                                "FE.ET05.ntau=3.4", "FE.ET10.ntau=3.4", 
-                                "FE.ET05.ntau=4.5", "FE.ET10.ntau=4.5" # Encompassing tests
+T4.2 <- Est %>% select(all_of(c("ET05.ntau=2.3", "ET10.ntau=2.3",
+                                "ET05.ntau=3.4", "ET10.ntau=3.4", 
+                                "ET05.ntau=4.5", "ET10.ntau=4.5" # Encompassing tests
 ))) %>% 
   filter((row_number() - 1) %% 3 != 2)
 T4.2[seq(1, 11, 2), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(lambda1, collapse = ", "), ")$"),
@@ -396,11 +366,11 @@ T4.2[seq(1, 11, 2), 1] <- c(paste0("DGP A: $\\boldsymbol\\lambda = (", paste0(la
                             paste0("DGP D: $\\boldsymbol\\lambda = (", paste0(lambda4, collapse = ", "), ")$"),
                             paste0("DGP E: $\\boldsymbol\\lambda = (", paste0(lambda5, collapse = ", "), ")$"),
                             paste0("DGP F (LIM model): $\\lambda = ", lambda6, "$"))
-T4.2 <- cbind(T4.2[,c("FE.ET05.ntau=2.3", "FE.ET10.ntau=2.3")], 
+T4.2 <- cbind(T4.2[,c("ET05.ntau=2.3", "ET10.ntau=2.3")], 
               V1 = NA,
-              T4.2[,c("FE.ET05.ntau=3.4", "FE.ET10.ntau=3.4")], 
+              T4.2[,c("ET05.ntau=3.4", "ET10.ntau=3.4")], 
               V2 = NA,
-              T4.2[,c("FE.ET05.ntau=4.5", "FE.ET10.ntau=4.5")])
+              T4.2[,c("ET05.ntau=4.5", "ET10.ntau=4.5")])
 # write
 writeData(wb, "Table 4.2", T4.2, keepNA = TRUE, na.string = "", startRow = 1, startCol = 1)
 # first row
