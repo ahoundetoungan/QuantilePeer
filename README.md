@@ -4,7 +4,7 @@
 
 
  <!-- badges: start -->
-  [![Lifecycle: stable[![Lifecycle: stable](https://img.shields.io/badge/Lifecycle-Stable-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+  [![Lifecycle: stable](https://img.shields.io/badge/Lifecycle-Stable-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![R-CMD-check](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yml)
   
