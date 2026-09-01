@@ -9,8 +9,8 @@
   [![R-CMD-check](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/ahoundetoungan/QuantilePeer/actions/workflows/R-CMD-check.yml)
   
 
-  [![R-universe](https://ahoundetoungan.r-universe.dev/badges/QuantilePeer)](https://ahoundetoungan.r-universe.dev/QuantilePeer)
   [![CRAN](https://www.r-pkg.org/badges/version/QuantilePeer)](https://CRAN.R-project.org/package=QuantilePeer)
+  [![R-universe](https://ahoundetoungan.r-universe.dev/badges/QuantilePeer)](https://ahoundetoungan.r-universe.dev/QuantilePeer)
   [![DOI](https://img.shields.io/badge/DOI-10.32614%2FCRAN.package.QuantilePeer-blue)](https://doi.org/10.32614/CRAN.package.QuantilePeer)
   [![CRAN Downloads](https://img.shields.io/endpoint?url=https://ahoundetoungan.github.io/cranlogs/badges/QuantilePeer.json)](https://cran.r-project.org/package=QuantilePeer)
 
