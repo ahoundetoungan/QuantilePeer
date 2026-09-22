@@ -112,3 +112,52 @@ Rcpp::List fdatadiagnostic(arma::vec& y,
   return Rcpp::List::create(_["y"] = y, _["endo"] = endo, _["X"] = X, _["ins"] = ins);
 }
 
+
+// Assigning folds to groups
+// This function assigning folds to subnetworks
+//[[Rcpp::export]]
+Eigen::ArrayXi fassignfold(const Eigen::ArrayXi& subnetwork,
+                           const int& nfold,
+                           const unsigned long long& seed) {
+  
+  // sizes
+  int n = subnetwork.size();
+  std::unordered_set<int> usubnetwork(subnetwork.data(), subnetwork.data() + n);
+  int R(usubnetwork.size());
+  if (R < 2) {
+    Rcpp::stop("There is only one subnetwork.");
+  }
+  
+  // group should take values from 0 to ngroup - 1 with possible duplication
+  if ((subnetwork.minCoeff() != 0) || (subnetwork.maxCoeff() != (R - 1))) {
+    Rcpp::stop("Subnetwork should take values from 0, 1, 2, ... without jumps.");
+  }
+  
+  // Number of data per subnetwork
+  Eigen::ArrayXi nvec(Eigen::ArrayXi::Zero(R));
+  for (int i(0); i < n; ++i) {
+    nvec(subnetwork(i)) += 1;
+  }
+  
+  // Shuffle order
+  std::mt19937 rng(seed);
+  std::vector<int> netorder(R);
+  std::iota(netorder.begin(), netorder.end(), 0);
+  std::shuffle(netorder.begin(), netorder.end(), rng);
+  
+  // Fold for each subnetwork
+  Eigen::ArrayXi fold(R);
+  Eigen::ArrayXi foldsize(Eigen::ArrayXi::Zero(nfold));
+  for (int r : netorder) {
+    int minsize(foldsize.minCoeff());
+    for (int k(0); k < nfold; ++k) {
+      if (foldsize(k) == minsize) {
+        fold(r)      = k;
+        foldsize(k) += nvec(r);
+        break;
+      }
+    }
+  }
+  return fold(subnetwork);
+}
+

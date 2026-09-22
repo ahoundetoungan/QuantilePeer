@@ -1,8 +1,8 @@
 Package: QuantilePeer
 Type: Package
 Title: Quantile Peer Effect Models
-Version: 0.0.2
-Date: 2026-07-31
+Version: 1.0.1
+Date: 2026-10-21
 Authors@R: c(person(given = "Aristide", family = "Houndetoungan", role = c("cre","aut"), email =  "ahoundetoungan@ecn.ulaval.ca", comment = c(ORCID = "0009-0003-2733-9362")),
              person(given = "Eyo I.", family = "Herstad",  role = c("aut")),
              person(given = "Myungkou", family = "Shin",  role = c("aut")))
@@ -16,7 +16,7 @@ Encoding: UTF-8
 BugReports: https://github.com/ahoundetoungan/QuantilePeer/issues
 URL: https://github.com/ahoundetoungan/QuantilePeer
 Depends: R (>= 4.1.0)
-Imports: Rcpp (>= 1.0.0), formula.tools, Matrix, MASS
+Imports: Rcpp (>= 1.0.0), formula.tools, Matrix, MASS, ranger, xgboost, glmnet
 LinkingTo: Rcpp, RcppArmadillo, RcppEigen, RcppNumerical, RcppProgress
 RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)

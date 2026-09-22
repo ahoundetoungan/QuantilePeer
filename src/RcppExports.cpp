@@ -876,6 +876,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fassignfold
+Eigen::ArrayXi fassignfold(const Eigen::ArrayXi& subnetwork, const int& nfold, const unsigned long long& seed);
+RcppExport SEXP _QuantilePeer_fassignfold(SEXP subnetworkSEXP, SEXP nfoldSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::ArrayXi& >::type subnetwork(subnetworkSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nfold(nfoldSEXP);
+    Rcpp::traits::input_parameter< const unsigned long long& >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(fassignfold(subnetwork, nfold, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fgmm_red
 Rcpp::List fgmm_red(const Eigen::VectorXd& y, const Eigen::MatrixXd& V, const Eigen::MatrixXd& ins, Eigen::MatrixXd& W, const Eigen::ArrayXi& igroup, const int& ngroup, const int& Kx, const int& Kins, const int& ntau, const int& n, const int& Kest, const int& HAC, const bool& iv);
 RcppExport SEXP _QuantilePeer_fgmm_red(SEXP ySEXP, SEXP VSEXP, SEXP insSEXP, SEXP WSEXP, SEXP igroupSEXP, SEXP ngroupSEXP, SEXP KxSEXP, SEXP KinsSEXP, SEXP ntauSEXP, SEXP nSEXP, SEXP KestSEXP, SEXP HACSEXP, SEXP ivSEXP) {
@@ -1294,6 +1307,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_QuantilePeer_Demean", (DL_FUNC) &_QuantilePeer_Demean, 3},
     {"_QuantilePeer_Demean_separate", (DL_FUNC) &_QuantilePeer_Demean_separate, 6},
     {"_QuantilePeer_fdatadiagnostic", (DL_FUNC) &_QuantilePeer_fdatadiagnostic, 16},
+    {"_QuantilePeer_fassignfold", (DL_FUNC) &_QuantilePeer_fassignfold, 3},
     {"_QuantilePeer_fgmm_red", (DL_FUNC) &_QuantilePeer_fgmm_red, 13},
     {"_QuantilePeer_fgmm_struc", (DL_FUNC) &_QuantilePeer_fgmm_struc, 23},
     {"_QuantilePeer_fStructParam", (DL_FUNC) &_QuantilePeer_fStructParam, 9},

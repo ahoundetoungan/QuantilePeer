@@ -153,6 +153,10 @@ fdatadiagnostic <- function(y, endo, X, ins, theta, idX1, idX2, igroup, nIs, LIs
     .Call(`_QuantilePeer_fdatadiagnostic`, y, endo, X, ins, theta, idX1, idX2, igroup, nIs, LIs, LnIs, n, ngroup, ntau, struc, FE)
 }
 
+fassignfold <- function(subnetwork, nfold, seed) {
+    .Call(`_QuantilePeer_fassignfold`, subnetwork, nfold, seed)
+}
+
 fgmm_red <- function(y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, Kest, HAC = 0L, iv = TRUE) {
     .Call(`_QuantilePeer_fgmm_red`, y, V, ins, W, igroup, ngroup, Kx, Kins, ntau, n, Kest, HAC, iv)
 }
