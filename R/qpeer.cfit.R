@@ -183,10 +183,10 @@ qpeer.cfit <- function(formula, excluded.instruments, A, tau, type = 7, data,
   # save original data
   if (fixed.effects != "no") {
     if (fixed.effects == "join") {
-      qy     <- c(Demean(qy, igroup = igr, ngroup = G))
+      qy     <- Demean(qy, igroup = igr, ngroup = G)
       X      <- Demean(X, igroup = igr, ngroup = G)
     } else {
-      qy     <- c(Demean_separate(qy, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n))
+      qy     <- Demean_separate(qy, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n)
       X      <- Demean_separate(X, igroup = igr, LIs = lIs, LnIs = lnIs, ngroup = G, n = n)
     }
   }
