@@ -43,13 +43,19 @@ jobs:
 
       # ----------------------- TinyTeX setup -----------------------
       - name: Install TinyTeX
+        if: runner.os != 'macOS'
         run: |
           Rscript -e "install.packages('tinytex')"
           Rscript -e "tinytex::install_tinytex(force = TRUE)"
           Rscript -e "tinytex::tlmgr_install(c('latex-bin','pdftex','babel-english','xcolor','framed','inconsolata'))"
+      
+      - name: Setup TinyTeX (macOS)
+        if: runner.os == 'macOS'
+        uses: r-lib/actions/setup-tinytex@v2
 
-      - name: Set TinyTeX PATH (Linux/macOS)
-        if: runner.os != 'Windows'
+
+      - name: Set TinyTeX PATH (Linux)
+        if: runner.os == 'Linux'
         run: |
           export PATH="$HOME/bin/TinyTeX/bin:$PATH"
           echo "$HOME/bin/TinyTeX/bin" >> $GITHUB_PATH
