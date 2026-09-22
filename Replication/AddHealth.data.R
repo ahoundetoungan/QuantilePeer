@@ -5,7 +5,7 @@
 ################################################################################
 ################################################################################
 
-# Last updated: 2025-05-16
+# Last updated: 2026-19-22
 
 ## This script imports raw Add Health data and prepares them for estimation.
 ## The output is an .Rda file per outcome.
@@ -17,8 +17,8 @@ rm(list = ls())
 library(dplyr)
 library(haven)
 
-InDataPath  <- "PATH/TO/DATA/LOCATION" # Where Add Health data are saved
-OutDataPath <- "PATH/TO/WHERE/PREPARED/DATA/IS/SAVED" # Where prepared data for each outcome are saved (/ at the end is important)
+InDataPath  <- "PATH/TO/DATA/LOCATION/" # Where Add Health data are saved (/ at the end is important)
+OutDataPath <- "PATH/TO/WHERE/PREPARED/DATA/IS/SAVED/" # Where prepared data for each outcome are saved (/ at the end is important)
 
 ##########################################################################################
 ##########################################################################################
@@ -29,12 +29,12 @@ OutDataPath <- "PATH/TO/WHERE/PREPARED/DATA/IS/SAVED" # Where prepared data for 
 ##########################################################################################
 # Importing data sets
 # Friendship data set (WAVE I)
-sfriend  <- read_xpt(paste0(InDataPath, "/sfriend.xpt")) %>% arrange(SQID) %>% 
+sfriend  <- read_xpt(paste0(InDataPath, "sfriend.xpt")) %>% arrange(SQID) %>% 
   filter(!(SQID %in% c("999999", ""))) %>%  # Remove student with missing questionnaire ID (cannot be matched)
   mutate(across(ends_with("AID"), as.character)) 
 
 # Inschool data set (WAVE I)
-Inschool <- read_xpt(paste0(InDataPath, "/Inschool.xpt")) %>% arrange(SQID) %>% 
+Inschool <- read_xpt(paste0(InDataPath, "Inschool.xpt")) %>% arrange(SQID) %>% 
   filter(!(SQID %in% c("999999", "")), AID != "") %>% # Remove student with missing questionnaire ID and missing student ID (cannot be matched)
   mutate(across(c("SQID", "AID", "SSCHLCDE"), as.character))
 
@@ -50,25 +50,53 @@ Inschool <- Inschool %>% left_join(sfriend, by = "SQID")
 
 # Create variables that will be used
 Inschool <- Inschool %>% 
-  # I recoded some variables before constructing the ones that will be used in the models.
+  # We recoded some variables before constructing the ones that will be used in the models.
   # Replace 99 with NA
   mutate(across(c(all_of("S1"), starts_with("S45"), starts_with("S59"), starts_with("S62")), ~ ifelse(. == 99, NA, .))) %>%
   # Replace 9 with NA
-  mutate(across(c(all_of(c("S2", "S48", "S63", "S64")), starts_with("S46")), ~ ifelse(. == 9, NA, .))) %>%
+  mutate(across(c(all_of(c("S2", "S48", "S63", "S64")), 
+                  starts_with("S46"), starts_with("S60")), ~ ifelse(. == 9, NA, .))) %>%
   # Replace values out of 1:4 with NA (this is for the GPA)
   mutate(across(all_of(c("S10A", "S10B", "S10C", "S10D")), ~ ifelse(. %in% (1:4), ., NA))) %>%
-  # Variable about perception of future vary from zero to eight. Add one so that they vary from one to nine.
-  # higher values indicate a more positive perception of the future.
-  mutate(across(all_of(c("S45A", "S45E", "S45F")), ~ 1 + .)) %>% 
-  # S45C (be killed) and S45D (get HIV) capture negative perception. 
-  # Thus, do 9 - variable so that they vary from zero to nine, where higher values indicate a more positive perception of the future.
-  mutate(across(all_of(c("S45C", "S45D")), ~ 9 - .)) %>% 
+  # Variable about perception of future vary from zero to eight. 
+  # But S45C (be killed) and S45D (get HIV) capture negative perception. 
+  # Thus, we do 8 - variable so that they vary from zero to eight, where higher values indicate a more positive perception of the future.
+  mutate(across(all_of(c("S45C", "S45D")), ~ 8 - .)) %>% 
   # Get trouble is converted to the number of times per week.
-  mutate(across(all_of(c("S46A", "S46B", "S46C", "S46D")), ~ ifelse(. == 1, 0, ifelse(. == 2, 1, ifelse(. == 3, 2.5, ifelse(. == 4, 5, .)))))) %>%
-  # Dangerous activities
-  mutate(across(starts_with("S59"), ~ ifelse(. == 1, 0.029, ifelse(. == 2, 0.25, ifelse(. == 3, 0.625, ifelse(. == 4, 1.5, ifelse(. == 5, 4, ifelse(. == 6, 7, .)))))))) %>%
+  mutate(across(all_of(c("S46A", "S46B", "S46C", "S46D")), ~ ifelse(. == 1, 0, #never 
+                                                                    ifelse(. == 2, 1, #just a few times
+                                                                           ifelse(. == 3, 2.5, #about once a week
+                                                                                  ifelse(. == 4, 5, .)))))) %>% # almost everyday
+  # Academic effort
+  mutate(S48 = ifelse(S48 == 1, 3, #I try very hard to do my best.
+                      ifelse(S48 == 2, 2, #I try hard enough, but not as hard as I could.
+                             ifelse(S48 == 3, 1, #I don’t try very hard.
+                                    ifelse(S48 == 4, 0, NA))))) %>% #I never try at all.
+  # Dangerous activities (we convert in week)
+  mutate(across(starts_with("S59"), ~ ifelse(. == 1, 0.029, #1.5 per year / 52 week
+                                             ifelse(. == 2, 0.25, # 0.5 per month / 4 weeks
+                                                    ifelse(. == 3, 0.625, # 2.5 per month / 4 weeks
+                                                           ifelse(. == 4, 1.5, # 1.5 per week
+                                                                  ifelse(. == 5, 4, # 4 per weeks
+                                                                         ifelse(. == 6, 7, .)))))))) %>% # everyday
   # Self esteem
-  mutate(across(starts_with("S62"), ~ ifelse(. == 5, 0, ifelse(. == 4, 0.25, ifelse(. == 3, 0.5, ifelse(. == 2, 0.75, .)))))) %>%
+  mutate(across(starts_with("S62"), ~ ifelse(. == 5, 0, # strongly desagree
+                                             ifelse(. == 4, 1, # disagree
+                                                    ifelse(. == 3, 2, # neither agree nor disagree
+                                                           ifelse(. == 2, 3, # # agree 
+                                                                  ifelse(. == 1, 4, .))))))) %>% # strongly agree
+  # Physical exercise
+  mutate(S63 = ifelse(S63 == 0, 0, # never
+                      ifelse(S63 == 1, 1.5, # 1 or 2 times
+                             ifelse(S63 == 2, 4.5, # 3 to 5 times
+                                    ifelse(S63 == 3, 6.5, # 6 or 7 times
+                                           ifelse(S63 == 4, 8, NA)))))) %>% # more than 7 times
+  # Physical fight
+  mutate(S64 = ifelse(S64 == 0, 0, # never,
+                      ifelse(S64 == 1, 1.5, # 1 or 2 times
+                             ifelse(S64 == 2, 4.5, # 3 to 5 times
+                                    ifelse(S64 == 3, 6.5, # 6 or 7 times
+                                           ifelse(S64 == 4, 8, NA)))))) %>% # more than 7 times
   # Model variable creation
   mutate(age = S1, age2 = (age/10)^2, S1 = NULL, 
          male = as.integer(S2 == 1), female = as.integer(S2 == 2), S2 = NULL,
@@ -102,7 +130,7 @@ Inschool <- Inschool %>%
          across(starts_with("S45"), ~ NULL),
          trouble = rowMeans(select(., all_of(c("S46A", "S46B", "S46C", "S46D"))), na.rm = TRUE),
          across(all_of(c("S46A", "S46B", "S46C", "S46D")), ~ NULL),
-         academiceffort = ifelse(S48 == 2, 0.66, ifelse(S48 == 3, 0.33, ifelse(S48 == 4, 0, S48))),
+         academiceffort = S48,
          S48 = NULL,
          smoke = S59A,
          drink = S59B,
@@ -110,9 +138,9 @@ Inschool <- Inschool %>%
          across(starts_with("S59"), ~ NULL),
          selfesteem = rowMeans(select(., starts_with("S62")), na.rm = TRUE),
          across(starts_with("S62"), ~ NULL),
-         physicalexercise = ifelse(S63 == 1, 1.5, ifelse(S63 == 2, 4.5, ifelse(S63 == 3, 6.5, ifelse(S63 == 4, 7.5, S63)))),
+         physicalexercise = S63,
          S63 = NULL,
-         fight = ifelse(S64 == 1, 1.5, ifelse(S64 == 2, 4.5, ifelse(S64 == 3, 6.5, ifelse(S64 == 4, 7.5, S64)))),
+         fight = S64,
          S64 = NULL) %>%
   arrange(SSCHLCDE, AID) %>% mutate(SCID = SSCHLCDE)
 
@@ -207,5 +235,5 @@ for (outcome in depvar) {
   data             <- data %>% select("AID", "SSCHLCDE", "SCID", "y", all_of(exovar))
   data[["match"]]  <- unlist(lapply(G, rowSums))
   data[["nmatch"]] <- unlist(nmatch)
-  save(data, G, exovar, file = paste0(OutDataPath, "/", outcome, ".Rda")) # Saving data
+  save(data, G, exovar, file = paste0(OutDataPath, outcome, ".Rda")) # Saving data
 }
