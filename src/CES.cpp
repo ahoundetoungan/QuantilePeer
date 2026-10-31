@@ -206,11 +206,11 @@ Eigen::ArrayXXd fCESmoments(const Eigen::VectorXd& theta,
   // dGz: Kx + 3
   
   // epsilon
-  Eigen::ArrayXXd X(data(Eigen::all, Eigen::seq(0, Kx - 1)));
+  Eigen::ArrayXXd X(data(Eigen::indexing::all, Eigen::seq(0, Kx - 1)));
   Eigen::ArrayXd eps;
   Eigen::ArrayXXd Z;
   if (structural) {
-    Eigen::ArrayXd Xb1((X(Eigen::all, idX1).matrix()*gamma(idX1)).array());
+    Eigen::ArrayXd Xb1((X(Eigen::indexing::all, idX1).matrix()*gamma(idX1)).array());
     Z.resize(nniso, Kx2 + 3);
     if (Kx2 > 0) {
       eps = data(nIs, Kx) - Xb1(nIs)*(1 - lambda2) - data(nIs, Kx + 1)*lambda - (X(nIs, idX2).matrix()*gamma(idX2)).array();
@@ -221,8 +221,8 @@ Eigen::ArrayXXd fCESmoments(const Eigen::VectorXd& theta,
     }
   } else {
     Z.resize(nst, Kx + 2);
-    Z << data(sel, Kx + 2), data(sel, Kx + 3), X(sel, Eigen::all);
-    eps = data(sel, Kx) - data(sel, Kx + 1)*lambda - (X(sel, Eigen::all).matrix()*gamma).array();
+    Z << data(sel, Kx + 2), data(sel, Kx + 3), X(sel, Eigen::indexing::all);
+    eps = data(sel, Kx) - data(sel, Kx + 1)*lambda - (X(sel, Eigen::indexing::all).matrix()*gamma).array();
   }
   
   // Moments
@@ -300,7 +300,7 @@ Rcpp::List fCESgmmparms(const double& rho,
   // ddGz: Kx + 5
   
   // Extract variables
-  Eigen::MatrixXd Xmat(data(Eigen::all, Eigen::seq(0, Kx - 1)));
+  Eigen::MatrixXd Xmat(data(Eigen::indexing::all, Eigen::seq(0, Kx - 1)));
   Eigen::VectorXd theta;
   Eigen::MatrixXd Vpa;
   double s2(R_NaN), s21(R_NaN), s22(R_NaN);
@@ -310,8 +310,8 @@ Rcpp::List fCESgmmparms(const double& rho,
     theta(3 + idX1) = gamma1;
     theta(0)         = rho;
     
-    Eigen::MatrixXd X1(Xmat(Eigen::all, idX1).matrix());
-    Eigen::MatrixXd XX1(X1(Is, Eigen::all).transpose()*X1(Is, Eigen::all));
+    Eigen::MatrixXd X1(Xmat(Eigen::indexing::all, idX1).matrix());
+    Eigen::MatrixXd XX1(X1(Is, Eigen::indexing::all).transpose()*X1(Is, Eigen::indexing::all));
     Eigen::VectorXd Xb1(X1*gamma1);
     Eigen::MatrixXd Z(nniso, Kx2 + 3), V(nniso, Kx2 + 2);
     if (Kx2 > 0) {
@@ -353,7 +353,7 @@ Rcpp::List fCESgmmparms(const double& rho,
       
       Eigen::MatrixXd dF(Eigen::MatrixXd::Zero(Kx + 3, Kx + 3));
       dF.block(0, 0, Kx1, Kx1) = XX1;
-      dF(Eigen::seq(Kx1, Kx + 2), Eigen::all) << Z.transpose()*X1(nIs, Eigen::all)*tp(0),
+      dF(Eigen::seq(Kx1, Kx + 2), Eigen::indexing::all) << Z.transpose()*X1(nIs, Eigen::indexing::all)*tp(0),
                                                  Z.transpose()*data(nIs, Kx + 4)*tp(1), ZV;
       
       Eigen::MatrixXd VF(Eigen::MatrixXd::Zero(Kx + 3, Kx + 3));
@@ -364,7 +364,7 @@ Rcpp::List fCESgmmparms(const double& rho,
         VF.block(Kx1, Kx1, Kx2 + 3, Kx2 + 3) = s22*ZZ*pow(tp(0), 2);
       }
       if (HAC == 1) {
-        Eigen::MatrixXd Xe1(X1(nIs, Eigen::all).array().colwise()*e1);
+        Eigen::MatrixXd Xe1(X1(nIs, Eigen::indexing::all).array().colwise()*e1);
         Eigen::MatrixXd Ze2(Z.array().colwise()*e2);
         VF.block(0, 0, Kx1, Kx1) = Xe1.transpose()*Xe1;
         VF.block(Kx1, Kx1, Kx2 + 3, Kx2 + 3) = Ze2.transpose()*Ze2;
@@ -373,15 +373,15 @@ Rcpp::List fCESgmmparms(const double& rho,
         Eigen::MatrixXd Xall1(Eigen::MatrixXd::Zero(n, Kx1)), Zall2(Eigen::MatrixXd::Zero(n, Kx2 + 3));
         Eigen::VectorXd e(Eigen::VectorXd::Zero(n));
         
-        Xall1(Is, Eigen::all) = X1(Is, Eigen::all);
-        Zall2(nIs, Eigen::all) = Z;
+        Xall1(Is, Eigen::indexing::all) = X1(Is, Eigen::indexing::all);
+        Zall2(nIs, Eigen::indexing::all) = Z;
         e(Is) = e1;
         e(nIs) = e2;
         
         for (int g(0); g < ngroup; ++ g) {
           int n1(igroup(g)), n2(igroup(g + 1) - 1);
           Eigen::MatrixXd tp1(n2 - n1 + 1, Kx + 3);
-          tp1 << X1(Eigen::seq(n1, n2), Eigen::all), Z(Eigen::seq(n1, n2), Eigen::all);
+          tp1 << X1(Eigen::seq(n1, n2), Eigen::indexing::all), Z(Eigen::seq(n1, n2), Eigen::indexing::all);
           Eigen::VectorXd tp2(tp1.transpose()*e.matrix().segment(n1, n2));
           VF += tp2*tp2.transpose();
         }
@@ -395,8 +395,8 @@ Rcpp::List fCESgmmparms(const double& rho,
     theta(0)   = rho;
     
     Eigen::MatrixXd Z(nst, Kx + 2), V(nst, Kx + 1);
-    Z << data(sel, Kx + 2), data(sel, Kx + 3), Xmat(sel, Eigen::all);
-    V << data(sel, Kx + 1), Xmat(sel, Eigen::all);
+    Z << data(sel, Kx + 2), data(sel, Kx + 3), Xmat(sel, Eigen::indexing::all);
+    V << data(sel, Kx + 1), Xmat(sel, Eigen::indexing::all);
     Eigen::VectorXd y(data(sel, Kx));
     
     Eigen::MatrixXd ZV(Z.transpose()*V);
@@ -433,12 +433,12 @@ Rcpp::List fCESgmmparms(const double& rho,
       }
       if (HAC == 2) {
         Eigen::MatrixXd Zall(Eigen::MatrixXd::Zero(n, Kx + 2));
-        Zall(sel, Eigen::all) = Z;
+        Zall(sel, Eigen::indexing::all) = Z;
         Eigen::VectorXd eall(Eigen::VectorXd::Zero(n));
         eall(sel) = e;
         for (int g(0); g < ngroup; ++ g) {
           int n1(igroup(g)), n2(igroup(g + 1) - 1);
-          Eigen::VectorXd tp1(Zall(Eigen::seq(n1, n2), Eigen::all).transpose()*eall(Eigen::seq(n1, n2)));
+          Eigen::VectorXd tp1(Zall(Eigen::seq(n1, n2), Eigen::indexing::all).transpose()*eall(Eigen::seq(n1, n2)));
           VF += tp1*tp1.transpose();
         }
       }
@@ -504,14 +504,14 @@ double fCESgmmobj(const double& rho,
   // dGz: Kx + 3
   
   // Extract variables
-  Eigen::MatrixXd Xmat(data(Eigen::all, Eigen::seq(0, Kx - 1)));
+  Eigen::MatrixXd Xmat(data(Eigen::indexing::all, Eigen::seq(0, Kx - 1)));
   Eigen::VectorXd theta;
   if (structural) {
     theta.resize(Kx + 3);
     theta(3 + idX1) = gamma1;
     theta(0)         = rho;
     
-    Eigen::VectorXd Xb1(Xmat(Eigen::all, idX1).matrix()*gamma1);
+    Eigen::VectorXd Xb1(Xmat(Eigen::indexing::all, idX1).matrix()*gamma1);
     Eigen::MatrixXd Z(nniso, Kx2 + 3), V(nniso, Kx2 + 2);
     if (Kx2 > 0) {
       Z << Xb1(nIs), data(nIs, Kx + 2), data(nIs, Kx + 3), Xmat(nIs, idX2);
@@ -538,8 +538,8 @@ double fCESgmmobj(const double& rho,
     theta(0) = rho;
     
     Eigen::MatrixXd Z(nst, Kx + 2), V(nst, Kx + 1);
-    Z << data(sel, Kx + 2), data(sel, Kx + 3), Xmat(sel, Eigen::all);
-    V << data(sel, Kx + 1), Xmat(sel, Eigen::all);
+    Z << data(sel, Kx + 2), data(sel, Kx + 3), Xmat(sel, Eigen::indexing::all);
+    V << data(sel, Kx + 1), Xmat(sel, Eigen::indexing::all);
     Eigen::VectorXd y(data(sel, Kx));
     Eigen::MatrixXd ZV(Z.transpose()*V);
     Eigen::MatrixXd VZW(ZV.transpose()*W), VZWZV(VZW*ZV);
@@ -605,7 +605,7 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
                            const int& HAC = 0, 
                            const bool& COV = true) {
   int Kx1(Kx - Kx2);
-  Eigen::MatrixXd Xmat(data(Eigen::all, Eigen::seq(0, Kx - 1)));
+  Eigen::MatrixXd Xmat(data(Eigen::indexing::all, Eigen::seq(0, Kx - 1)));
   Eigen::VectorXd theta;
   Eigen::MatrixXd Vpa;
   double s2(R_NaN), s21(R_NaN), s22(R_NaN);
@@ -615,8 +615,8 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
     theta(3 + idX1) = gamma1;
     theta(0)        = rho;
     
-    Eigen::MatrixXd X1(Xmat(Eigen::all, idX1).matrix());
-    Eigen::MatrixXd XX1(X1(Is, Eigen::all).transpose()*X1(Is, Eigen::all));
+    Eigen::MatrixXd X1(Xmat(Eigen::indexing::all, idX1).matrix());
+    Eigen::MatrixXd XX1(X1(Is, Eigen::indexing::all).transpose()*X1(Is, Eigen::indexing::all));
     Eigen::VectorXd Xb1(X1*gamma1);
     Eigen::MatrixXd Z(nniso, Kx2 + 3 - rhoinf), V(nniso, Kx2 + 2);
     if (Kx2 > 0) {
@@ -661,7 +661,7 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
       
       Eigen::MatrixXd dF(Eigen::MatrixXd::Zero(Kx + 3 - rhoinf, Kx + 2));
       dF.block(0, 0, Kx1, Kx1) = XX1;
-      dF(Eigen::seq(Kx1, Kx + 2), Eigen::all) << (Z.transpose()*X1(nIs, Eigen::all)*tp(0)), ZV;
+      dF(Eigen::seq(Kx1, Kx + 2), Eigen::indexing::all) << (Z.transpose()*X1(nIs, Eigen::indexing::all)*tp(0)), ZV;
       
       Eigen::MatrixXd VF(Eigen::MatrixXd::Zero(Kx + 3 - rhoinf, Kx + 3 - rhoinf));
       if (HAC == 0) {
@@ -671,7 +671,7 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
         VF.block(Kx1, Kx1, Kx2 + 3 - rhoinf, Kx2 + 3 - rhoinf) = s22*ZZ*pow(tp(0), 2);
       }
       if (HAC == 1) {
-        Eigen::MatrixXd Xe1(X1(nIs, Eigen::all).array().colwise()*e1);
+        Eigen::MatrixXd Xe1(X1(nIs, Eigen::indexing::all).array().colwise()*e1);
         Eigen::MatrixXd Ze2(Z.array().colwise()*e2);
         VF.block(0, 0, Kx1, Kx1) = Xe1.transpose()*Xe1;
         VF.block(Kx1, Kx1, Kx2 + 3 - rhoinf, Kx2 + 3 - rhoinf) = Ze2.transpose()*Ze2;
@@ -680,15 +680,15 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
         Eigen::MatrixXd Xall1(Eigen::MatrixXd::Zero(n, Kx1)), Zall2(Eigen::MatrixXd::Zero(n, Kx2 + 3));
         Eigen::VectorXd e(Eigen::VectorXd::Zero(n));
         
-        Xall1(Is, Eigen::all) = X1(Is, Eigen::all);
-        Zall2(nIs, Eigen::all) = Z;
+        Xall1(Is, Eigen::indexing::all) = X1(Is, Eigen::indexing::all);
+        Zall2(nIs, Eigen::indexing::all) = Z;
         e(Is) = e1;
         e(nIs) = e2;
         
         for (int g(0); g < ngroup; ++ g) {
           int n1(igroup(g)), n2(igroup(g + 1) - 1);
           Eigen::MatrixXd tp1(n2 - n1 + 1, Kx + 3 - rhoinf);
-          tp1 << X1(Eigen::seq(n1, n2), Eigen::all), Z(Eigen::seq(n1, n2), Eigen::all);
+          tp1 << X1(Eigen::seq(n1, n2), Eigen::indexing::all), Z(Eigen::seq(n1, n2), Eigen::indexing::all);
           Eigen::VectorXd tp2(tp1.transpose()*e.matrix().segment(n1, n2));
           VF += tp2*tp2.transpose();
         }
@@ -703,11 +703,11 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
     
     Eigen::MatrixXd Z(nst, Kx + 2 - rhoinf), V(nst, Kx + 1);
     if (rhoinf == 0) {
-      Z << data(sel, Kx + 2), data(sel, Kx + 3), Xmat(sel, Eigen::all);
+      Z << data(sel, Kx + 2), data(sel, Kx + 3), Xmat(sel, Eigen::indexing::all);
     } else {
-      Z << data(sel, Kx + 2), Xmat(sel, Eigen::all);
+      Z << data(sel, Kx + 2), Xmat(sel, Eigen::indexing::all);
     }
-    V << data(sel, Kx + 1), Xmat(sel, Eigen::all);
+    V << data(sel, Kx + 1), Xmat(sel, Eigen::indexing::all);
     Eigen::MatrixXd ZZ(Z.transpose()*Z);
     Eigen::VectorXd y(data(sel, Kx));
     Eigen::MatrixXd W((ZZ/nst).inverse());
@@ -740,12 +740,12 @@ Rcpp::List fCESgmmrhoparms(const double& rho,
       }
       if (HAC == 2) {
         Eigen::MatrixXd Zall(Eigen::MatrixXd::Zero(n, Kx + 2 - rhoinf));
-        Zall(sel, Eigen::all) = Z;
+        Zall(sel, Eigen::indexing::all) = Z;
         Eigen::VectorXd eall(Eigen::VectorXd::Zero(n));
         eall(sel) = y - yhat;
         for (int g(0); g < ngroup; ++ g) {
           int n1(igroup(g)), n2(igroup(g + 1) - 1);
-          Eigen::VectorXd tp1(Zall(Eigen::seq(n1, n2), Eigen::all).transpose()*eall(Eigen::seq(n1, n2)));
+          Eigen::VectorXd tp1(Zall(Eigen::seq(n1, n2), Eigen::indexing::all).transpose()*eall(Eigen::seq(n1, n2)));
           VZe += tp1*tp1.transpose();
         }
       }
@@ -778,9 +778,9 @@ double fCESgmmrhoobj(const Eigen::VectorXd& theta,
                      const int& nst,
                      const bool& structural,
                      const int& rhoinf = 0) {
-  Eigen::MatrixXd Xmat(data(Eigen::all, Eigen::seq(0, Kx - 1))), W;
+  Eigen::MatrixXd Xmat(data(Eigen::indexing::all, Eigen::seq(0, Kx - 1))), W;
   if (structural) {
-    Eigen::VectorXd Xb1(Xmat(Eigen::all, idX1).matrix()*theta(idX1));
+    Eigen::VectorXd Xb1(Xmat(Eigen::indexing::all, idX1).matrix()*theta(idX1));
     Eigen::MatrixXd Z(nniso, Kx2 + 3 - rhoinf);
     if (Kx2 > 0) {
       if (rhoinf == 0) {
@@ -800,9 +800,9 @@ double fCESgmmrhoobj(const Eigen::VectorXd& theta,
   } else {
     Eigen::MatrixXd Z(nst, Kx + 2 - rhoinf);
     if (rhoinf == 0) {
-      Z << data(sel, Kx + 2), data(sel, Kx + 3), Xmat(sel, Eigen::all);
+      Z << data(sel, Kx + 2), data(sel, Kx + 3), Xmat(sel, Eigen::indexing::all);
     } else {
-      Z << data(sel, Kx + 2), Xmat(sel, Eigen::all);
+      Z << data(sel, Kx + 2), Xmat(sel, Eigen::indexing::all);
     }
     W = (Z.transpose()*Z/nst).inverse();
     // W.setIdentity();

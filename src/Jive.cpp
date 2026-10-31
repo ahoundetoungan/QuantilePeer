@@ -158,13 +158,13 @@ Rcpp::List fJIVE_redClu(const Eigen::VectorXd& y,
   Rcpp::List LiImPkk(ngroup);
   for (int r(0); r < ngroup; ++ r) {
     int n1(igroup(r)), nr(nvec(r));
-    Eigen::MatrixXd Vr(V(Eigen::seqN(n1, nr), Eigen::all));
-    Eigen::MatrixXd Pkk(tZ(Eigen::seqN(n1, nr), Eigen::all)*ins(Eigen::seqN(n1, nr), Eigen::all).transpose());
+    Eigen::MatrixXd Vr(V(Eigen::seqN(n1, nr), Eigen::indexing::all));
+    Eigen::MatrixXd Pkk(tZ(Eigen::seqN(n1, nr), Eigen::indexing::all)*ins(Eigen::seqN(n1, nr), Eigen::indexing::all).transpose());
     Eigen::MatrixXd iImPkk((Eigen::MatrixXd::Identity(nr, nr) - Pkk).inverse());
     
     LiImPkk[r] = iImPkk;
-    hV(Eigen::seqN(n1, nr), Eigen::all) = Pkk*Vr;
-    tV(Eigen::seqN(n1, nr), Eigen::all) = iImPkk*Vr;
+    hV(Eigen::seqN(n1, nr), Eigen::indexing::all) = Pkk*Vr;
+    tV(Eigen::seqN(n1, nr), Eigen::indexing::all) = iImPkk*Vr;
     ty.segment(n1, nr)                  = iImPkk*y.segment(n1, nr);
   }
   Eigen::MatrixXd VtZ(V.transpose()*tZ);
@@ -187,14 +187,14 @@ Rcpp::List fJIVE_redClu(const Eigen::VectorXd& y,
     for (int r(0); r < ngroup; ++ r) {
       int n1(igroup(r)), nr(nvec(r));
       Eigen::MatrixXd iImPkk = LiImPkk[r];
-      Eigen::MatrixXd tZr(tZ(Eigen::seqN(n1, nr), Eigen::all));
-      Eigen::MatrixXd Zr(ins(Eigen::seqN(n1, nr), Eigen::all));
-      Eigen::MatrixXd Vr(V(Eigen::seqN(n1, nr), Eigen::all));
+      Eigen::MatrixXd tZr(tZ(Eigen::seqN(n1, nr), Eigen::indexing::all));
+      Eigen::MatrixXd Zr(ins(Eigen::seqN(n1, nr), Eigen::indexing::all));
+      Eigen::MatrixXd Vr(V(Eigen::seqN(n1, nr), Eigen::indexing::all));
       Eigen::VectorXd tehr(iImPkk*eh.segment(n1, nr));
       Eigen::VectorXd Ztehr(Zr.transpose()*tehr);
       
       Zteh2       += (Ztehr*Ztehr.transpose());
-      hVtehZteh   += ((hV(Eigen::seqN(n1, nr), Eigen::all).transpose()*tehr)*Ztehr.transpose());
+      hVtehZteh   += ((hV(Eigen::seqN(n1, nr), Eigen::indexing::all).transpose()*tehr)*Ztehr.transpose());
       Eigen::MatrixXd VtZr(Vr.transpose()*tZr);
       Eigen::MatrixXd ZVr(Zr.transpose()*Vr);
       Zteh.col(r)  = Ztehr;
@@ -244,8 +244,8 @@ Rcpp::List fJIVE2_redClu(const Eigen::VectorXd& y,
   Eigen::MatrixXd tZ(ins*iZZ), hV(n, Kv);
   for (int r(0); r < ngroup; ++ r) {
     int n1(igroup(r)), nr(nvec(r));
-    Eigen::MatrixXd Pkk((tZ(Eigen::seqN(n1, nr), Eigen::all))*(ins(Eigen::seqN(n1, nr), Eigen::all)).transpose());
-    hV(Eigen::seqN(n1, nr), Eigen::all) = Pkk*V(Eigen::seqN(n1, nr), Eigen::all);
+    Eigen::MatrixXd Pkk((tZ(Eigen::seqN(n1, nr), Eigen::indexing::all))*(ins(Eigen::seqN(n1, nr), Eigen::indexing::all)).transpose());
+    hV(Eigen::seqN(n1, nr), Eigen::indexing::all) = Pkk*V(Eigen::seqN(n1, nr), Eigen::indexing::all);
   }
   Eigen::MatrixXd VtZ(V.transpose()*tZ);
   
@@ -266,10 +266,10 @@ Rcpp::List fJIVE2_redClu(const Eigen::VectorXd& y,
     Rcpp::List LVtZ(ngroup), LZV(ngroup);
     for (int r(0); r < ngroup; ++ r) {
       int n1(igroup(r)), nr(nvec(r));
-      Eigen::MatrixXd tZr(tZ(Eigen::seqN(n1, nr), Eigen::all));
-      Eigen::MatrixXd Zr(ins(Eigen::seqN(n1, nr), Eigen::all));
-      Eigen::MatrixXd Vr(V(Eigen::seqN(n1, nr), Eigen::all));
-      Eigen::MatrixXd hVr(hV(Eigen::seqN(n1, nr), Eigen::all));
+      Eigen::MatrixXd tZr(tZ(Eigen::seqN(n1, nr), Eigen::indexing::all));
+      Eigen::MatrixXd Zr(ins(Eigen::seqN(n1, nr), Eigen::indexing::all));
+      Eigen::MatrixXd Vr(V(Eigen::seqN(n1, nr), Eigen::indexing::all));
+      Eigen::MatrixXd hVr(hV(Eigen::seqN(n1, nr), Eigen::indexing::all));
       Eigen::VectorXd ehr(eh.segment(n1, nr));
       
       Eigen::VectorXd Zehr(Zr.transpose()*ehr);
@@ -334,13 +334,13 @@ Rcpp::List fJIVE_strucInd(const Eigen::VectorXd& y,
   Eigen::VectorXd b(XX1.colPivHouseholderQr().solve(X1.transpose()*y1));
   
   // Second stage
-  Eigen::VectorXd Xb(X(Eigen::all, idX1)*b), Xb1(Xb(Is)), Xb2(Xb(nIs)), y2(y(nIs));
+  Eigen::VectorXd Xb(X(Eigen::indexing::all, idX1)*b), Xb1(Xb(Is)), Xb2(Xb(nIs)), y2(y(nIs));
   Eigen::MatrixXd X2(X(nIs, idX2));
   Eigen::MatrixXd X21(X(nIs, idX1));
   Eigen::MatrixXd V2(n_niso, 1 + ntau + Kx2);
-  V2 << Xb2, qy(nIs, Eigen::all), X2;
+  V2 << Xb2, qy(nIs, Eigen::indexing::all), X2;
   Eigen::MatrixXd Z2(n_niso, 1 + Kins);
-  Z2 << Xb2, ins(nIs, Eigen::all);
+  Z2 << Xb2, ins(nIs, Eigen::indexing::all);
   Eigen::MatrixXd ZZ2(Z2.transpose()*Z2), iZZ2(ZZ2.inverse()); 
   //Projection matrix (pseudo) Pii
   Eigen::MatrixXd tZ2(Z2*iZZ2);
@@ -368,7 +368,7 @@ Rcpp::List fJIVE_strucInd(const Eigen::VectorXd& y,
   if (COV) {
     Eigen::MatrixXd H(Eigen::MatrixXd::Zero(Kv, Kv));
     H.block(0, 0, Kx1, Kx1)   = XX1;
-    H(Eigen::seqN(Kx1, Kv2), Eigen::all) << lambda(0)*tpH*tX21, H2;
+    H(Eigen::seqN(Kx1, Kv2), Eigen::indexing::all) << lambda(0)*tpH*tX21, H2;
     Eigen::MatrixXd Sigma(Eigen::MatrixXd::Zero(Kv, Kv));
     if (HAC == 0) {
       Sigma.block(0, 0, Kx1, Kx1) = s21*XX1;
@@ -430,13 +430,13 @@ Rcpp::List fJIVE2_strucInd(const Eigen::VectorXd& y,
   Eigen::VectorXd b(XX1.colPivHouseholderQr().solve(X1.transpose()*y1));
   
   // Second stage
-  Eigen::VectorXd Xb(X(Eigen::all, idX1)*b), Xb1(Xb(Is)), Xb2(Xb(nIs)), y2(y(nIs));
+  Eigen::VectorXd Xb(X(Eigen::indexing::all, idX1)*b), Xb1(Xb(Is)), Xb2(Xb(nIs)), y2(y(nIs));
   Eigen::MatrixXd X2(X(nIs, idX2));
   Eigen::MatrixXd X21(X(nIs, idX1));
   Eigen::MatrixXd V2(n_niso, 1 + ntau + Kx2);
-  V2 << Xb2, qy(nIs, Eigen::all), X2;
+  V2 << Xb2, qy(nIs, Eigen::indexing::all), X2;
   Eigen::MatrixXd Z2(n_niso, 1 + Kins);
-  Z2 << Xb2, ins(nIs, Eigen::all);
+  Z2 << Xb2, ins(nIs, Eigen::indexing::all);
   Eigen::MatrixXd ZZ2(Z2.transpose()*Z2), iZZ2(ZZ2.inverse()); 
   //Projection matrix (pseudo) Pii
   Eigen::MatrixXd tZ2(Z2*iZZ2);
@@ -462,7 +462,7 @@ Rcpp::List fJIVE2_strucInd(const Eigen::VectorXd& y,
     Eigen::MatrixXd H(Eigen::MatrixXd::Zero(Kv, Kv));
     Eigen::MatrixXd Sigma(Eigen::MatrixXd::Zero(Kv, Kv));
     H.block(0, 0, Kx1, Kx1)   = XX1;
-    H(Eigen::seqN(Kx1, Kv2), Eigen::all) << lambda(0)*tpH*X21, H2;
+    H(Eigen::seqN(Kx1, Kv2), Eigen::indexing::all) << lambda(0)*tpH*X21, H2;
     if (HAC == 0) {
       Sigma.block(0, 0, Kx1, Kx1) = s21*XX1;
     } else {
@@ -527,12 +527,12 @@ Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y,
   Eigen::VectorXd b(XX1.colPivHouseholderQr().solve(X1.transpose()*y1));
   
   // Second stage
-  Eigen::VectorXd Xb(X(Eigen::all, idX1)*b);
+  Eigen::VectorXd Xb(X(Eigen::indexing::all, idX1)*b);
   Eigen::MatrixXd V(n, Kv2);
-  V << Xb, qy, X(Eigen::all, idX2);
+  V << Xb, qy, X(Eigen::indexing::all, idX2);
   Eigen::MatrixXd Z(n, 1 + Kins);
   Z << Xb, ins;
-  Eigen::MatrixXd ZZ2(Z(nIs, Eigen::all).transpose()*Z(nIs, Eigen::all)), iZZ2(ZZ2.inverse()); 
+  Eigen::MatrixXd ZZ2(Z(nIs, Eigen::indexing::all).transpose()*Z(nIs, Eigen::indexing::all)), iZZ2(ZZ2.inverse()); 
   //Projection matrix (pseudo) Pii
   Eigen::MatrixXd tZ(Z*iZZ2), hV(n, Kv2), tV(n, Kv2), tX1(n, Kx1);
   Eigen::VectorXd ty(n);
@@ -541,26 +541,26 @@ Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y,
     if (hasnIs(r) == 1) {
       int nrnIso(nvecnIs(r));
       Eigen::VectorXi nIsr = LnIs[r];
-      Eigen::MatrixXd Vr(V(nIsr, Eigen::all));
-      Eigen::MatrixXd Pkk(tZ(nIsr, Eigen::all)*Z(nIsr, Eigen::all).transpose());
+      Eigen::MatrixXd Vr(V(nIsr, Eigen::indexing::all));
+      Eigen::MatrixXd Pkk(tZ(nIsr, Eigen::indexing::all)*Z(nIsr, Eigen::indexing::all).transpose());
       Eigen::MatrixXd iImPkk((Eigen::MatrixXd::Identity(nrnIso, nrnIso) - Pkk).inverse());
       
       LiImPkk[r]            = iImPkk;
-      hV(nIsr, Eigen::all)  = Pkk*Vr;
-      tV(nIsr, Eigen::all)  = iImPkk*Vr;
+      hV(nIsr, Eigen::indexing::all)  = Pkk*Vr;
+      tV(nIsr, Eigen::indexing::all)  = iImPkk*Vr;
       ty(nIsr)              = iImPkk*y(nIsr);
-      tX1(nIsr, Eigen::all) = iImPkk*X(nIsr, idX1);
+      tX1(nIsr, Eigen::indexing::all) = iImPkk*X(nIsr, idX1);
     }
   }
-  Eigen::MatrixXd VtZ2(V(nIs, Eigen::all).transpose()*tZ(nIs, Eigen::all));
+  Eigen::MatrixXd VtZ2(V(nIs, Eigen::indexing::all).transpose()*tZ(nIs, Eigen::indexing::all));
   
   // estimate
-  Eigen::MatrixXd tpH(VtZ2*Z(nIs, Eigen::all).transpose() - hV(nIs, Eigen::all).transpose());
-  Eigen::MatrixXd H2(tpH*tV(nIs, Eigen::all));
+  Eigen::MatrixXd tpH(VtZ2*Z(nIs, Eigen::indexing::all).transpose() - hV(nIs, Eigen::indexing::all).transpose());
+  Eigen::MatrixXd H2(tpH*tV(nIs, Eigen::indexing::all));
   Eigen::VectorXd lambda(H2.colPivHouseholderQr().solve(tpH*ty(nIs)));
   
   // Covariance computation
-  Eigen::VectorXd y1hat(Xb(Is)), y2hat(V(nIs, Eigen::all)*lambda), yhat(n);
+  Eigen::VectorXd y1hat(Xb(Is)), y2hat(V(nIs, Eigen::indexing::all)*lambda), yhat(n);
   yhat(Is) = y1hat; yhat(nIs) = y2hat;
   Eigen::VectorXd eh = y - yhat;
   double s21(R_NaN), s22(R_NaN);
@@ -568,7 +568,7 @@ Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y,
   if (COV) {
     Eigen::MatrixXd H(Eigen::MatrixXd::Zero(Kv, Kv));
     H.block(0, 0, Kx1, Kx1)   = XX1;
-    H(Eigen::seqN(Kx1, Kv2), Eigen::all) << lambda(0)*tpH*tX1(nIs, Eigen::all), H2;
+    H(Eigen::seqN(Kx1, Kv2), Eigen::indexing::all) << lambda(0)*tpH*tX1(nIs, Eigen::indexing::all), H2;
     
     Eigen::MatrixXd Sigma1(Eigen::MatrixXd::Zero(Kx1, Kx1));
     Eigen::MatrixXd Sigma12(Eigen::MatrixXd::Zero(Kx1, Kv2));
@@ -587,10 +587,10 @@ Rcpp::List fJIVE_strucClu(const Eigen::VectorXd& y,
         // int n1(igroup(r)), nr(nvec(r));
         Eigen::VectorXi nIsr = LnIs[r];
         Eigen::MatrixXd iImPkk = LiImPkk[r];
-        Eigen::MatrixXd tZr(tZ(nIsr, Eigen::all));
-        Eigen::MatrixXd Zr(Z(nIsr, Eigen::all));
-        Eigen::MatrixXd Vr(V(nIsr, Eigen::all));
-        Eigen::MatrixXd hVr(hV(nIsr, Eigen::all));
+        Eigen::MatrixXd tZr(tZ(nIsr, Eigen::indexing::all));
+        Eigen::MatrixXd Zr(Z(nIsr, Eigen::indexing::all));
+        Eigen::MatrixXd Vr(V(nIsr, Eigen::indexing::all));
+        Eigen::MatrixXd hVr(hV(nIsr, Eigen::indexing::all));
         Eigen::VectorXd tehr(iImPkk*eh(nIsr));
         Eigen::VectorXd Ztehr(Zr.transpose()*tehr);
 
@@ -670,29 +670,29 @@ Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y,
   Eigen::VectorXd b(XX1.colPivHouseholderQr().solve(X1.transpose()*y1));
   
   // Second stage
-  Eigen::VectorXd Xb(X(Eigen::all, idX1)*b);
+  Eigen::VectorXd Xb(X(Eigen::indexing::all, idX1)*b);
   Eigen::MatrixXd V(n, Kv2);
-  V << Xb, qy, X(Eigen::all, idX2);
+  V << Xb, qy, X(Eigen::indexing::all, idX2);
   Eigen::MatrixXd Z(n, 1 + Kins);
   Z << Xb, ins;
-  Eigen::MatrixXd ZZ2(Z(nIs, Eigen::all).transpose()*Z(nIs, Eigen::all)), iZZ2(ZZ2.inverse()); 
+  Eigen::MatrixXd ZZ2(Z(nIs, Eigen::indexing::all).transpose()*Z(nIs, Eigen::indexing::all)), iZZ2(ZZ2.inverse()); 
   //Projection matrix (pseudo) Pii
   Eigen::MatrixXd tZ(Z*iZZ2), hV(n, Kv2);
   for (int r(0); r < ngroup; ++ r) {
     if (hasnIs(r) == 1) {
       Eigen::VectorXi nIsr = LnIs[r];
-      hV(nIsr, Eigen::all)  = (tZ(nIsr, Eigen::all)*Z(nIsr, Eigen::all).transpose())*(V(nIsr, Eigen::all));
+      hV(nIsr, Eigen::indexing::all)  = (tZ(nIsr, Eigen::indexing::all)*Z(nIsr, Eigen::indexing::all).transpose())*(V(nIsr, Eigen::indexing::all));
     }
   }
-  Eigen::MatrixXd VtZ2(V(nIs, Eigen::all).transpose()*tZ(nIs, Eigen::all));
+  Eigen::MatrixXd VtZ2(V(nIs, Eigen::indexing::all).transpose()*tZ(nIs, Eigen::indexing::all));
   
   // estimate
-  Eigen::MatrixXd tpH(VtZ2*Z(nIs, Eigen::all).transpose() - hV(nIs, Eigen::all).transpose());
-  Eigen::MatrixXd H2(tpH*V(nIs, Eigen::all));
+  Eigen::MatrixXd tpH(VtZ2*Z(nIs, Eigen::indexing::all).transpose() - hV(nIs, Eigen::indexing::all).transpose());
+  Eigen::MatrixXd H2(tpH*V(nIs, Eigen::indexing::all));
   Eigen::VectorXd lambda(H2.colPivHouseholderQr().solve(tpH*y(nIs)));
   
   // Covariance computation
-  Eigen::VectorXd y1hat(Xb(Is)), y2hat(V(nIs, Eigen::all)*lambda), yhat(n);
+  Eigen::VectorXd y1hat(Xb(Is)), y2hat(V(nIs, Eigen::indexing::all)*lambda), yhat(n);
   yhat(Is) = y1hat; yhat(nIs) = y2hat;
   Eigen::VectorXd eh = y - yhat;
   double s21(R_NaN), s22(R_NaN);
@@ -701,7 +701,7 @@ Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y,
     Eigen::MatrixXd H(Eigen::MatrixXd::Zero(Kv, Kv));
     Eigen::MatrixXd Sigma(Kv, Kv);
     H.block(0, 0, Kx1, Kx1)   = XX1;
-    H(Eigen::seqN(Kx1, Kv2), Eigen::all) << lambda(0)*tpH*X(nIs, Eigen::all), H2;
+    H(Eigen::seqN(Kx1, Kv2), Eigen::indexing::all) << lambda(0)*tpH*X(nIs, Eigen::indexing::all), H2;
     
     Eigen::MatrixXd Sigma1(Eigen::MatrixXd::Zero(Kx1, Kx1));
     Eigen::MatrixXd Sigma12(Eigen::MatrixXd::Zero(Kx1, Kv2));
@@ -719,10 +719,10 @@ Rcpp::List fJIVE2_strucClu(const Eigen::VectorXd& y,
       if (hasnIs(r) == 1) {
         // int n1(igroup(r)), nr(nvec(r));
         Eigen::VectorXi nIsr = LnIs[r];
-        Eigen::MatrixXd tZr(tZ(nIsr, Eigen::all));
-        Eigen::MatrixXd Zr(Z(nIsr, Eigen::all));
-        Eigen::MatrixXd Vr(V(nIsr, Eigen::all));
-        Eigen::MatrixXd hVr(hV(nIsr, Eigen::all));
+        Eigen::MatrixXd tZr(tZ(nIsr, Eigen::indexing::all));
+        Eigen::MatrixXd Zr(Z(nIsr, Eigen::indexing::all));
+        Eigen::MatrixXd Vr(V(nIsr, Eigen::indexing::all));
+        Eigen::MatrixXd hVr(hV(nIsr, Eigen::indexing::all));
         Eigen::VectorXd ehr(eh(nIsr));
         Eigen::VectorXd Zehr(Zr.transpose()*ehr);
         

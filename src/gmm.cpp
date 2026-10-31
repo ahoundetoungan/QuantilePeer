@@ -92,7 +92,7 @@ Rcpp::List fgmm_red(const Eigen::VectorXd& y,
   if (HAC == 2) {
     for (int r(0); r < ngroup; ++ r) {
       int n1(igroup(r)), n2(igroup(r + 1) - 1);
-      Eigen::VectorXd tp(ins(Eigen::seq(n1, n2), Eigen::all).transpose()*e(Eigen::seq(n1, n2)).matrix());
+      Eigen::VectorXd tp(ins(Eigen::seq(n1, n2), Eigen::indexing::all).transpose()*e(Eigen::seq(n1, n2)).matrix());
       VZe += tp*tp.transpose();
     }
   }
@@ -166,12 +166,12 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   Eigen::VectorXd b(XXWXX1.colPivHouseholderQr().solve(XXW1*X1.transpose()*y1));
   
   // Second stage
-  Eigen::VectorXd Xb(X(Eigen::all, idX1)*b), Xb1(Xb(Is)), Xb2(Xb(nIs)), y2(y(nIs));
+  Eigen::VectorXd Xb(X(Eigen::indexing::all, idX1)*b), Xb1(Xb(Is)), Xb2(Xb(nIs)), y2(y(nIs));
   Eigen::MatrixXd X2(X(nIs, idX2));
   Eigen::MatrixXd X21(X(nIs, idX1));
   Eigen::MatrixXd V2(n_niso, 1 + ntau + Kx2);
-  V2 << Xb2, qy(nIs, Eigen::all), X2;
-  Eigen::MatrixXd Z2(ins(nIs, Eigen::all));
+  V2 << Xb2, qy(nIs, Eigen::indexing::all), X2;
+  Eigen::MatrixXd Z2(ins(nIs, Eigen::indexing::all));
   Eigen::MatrixXd ZV2(Z2.transpose()*V2), ZZ2(Z2.transpose()*Z2);
   if (iv) {
     W2 = (ZZ2/n_niso).inverse();
@@ -195,7 +195,7 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   
   Eigen::MatrixXd dF(Eigen::MatrixXd::Zero(Kx1 + Kins, Kx + ntau + 1));
   dF.block(0, 0, Kx1, Kx1) = XX1;
-  dF(Eigen::seqN(Kx1, Kins), Eigen::all) << (Z2.transpose()*X21*lambda(0)), ZV2;
+  dF(Eigen::seqN(Kx1, Kins), Eigen::indexing::all) << (Z2.transpose()*X21*lambda(0)), ZV2;
   
   Eigen::MatrixXd VF(Eigen::MatrixXd::Zero(Kx1 + Kins, Kx1 + Kins));
   double s21(R_NaN), s22(R_NaN);
@@ -214,16 +214,16 @@ Rcpp::List fgmm_struc(const Eigen::VectorXd& y,
   }
   if (HAC == 2) {
     X1   = Eigen::MatrixXd::Zero(n, Kx1);
-    X1(Is, Eigen::all) = X(Is, idX1);
+    X1(Is, Eigen::indexing::all) = X(Is, idX1);
     Z2   = Eigen::MatrixXd::Zero(n, Kins);
-    Z2(nIs, Eigen::all) = ins(nIs, Eigen::all);
+    Z2(nIs, Eigen::indexing::all) = ins(nIs, Eigen::indexing::all);
     e2   = y - yhat;
     // e1.elem(nIs).zeros();
     // e2.elem(Is).zeros();
     for (int r(0); r < ngroup; ++ r) {
       int n1(igroup(r)), nr(igroup(r + 1) - n1);
       Eigen::MatrixXd tp1(nr, Kx1 + Kins);
-      tp1 << X1(Eigen::seqN(n1, nr), Eigen::all), Z2(Eigen::seqN(n1, nr), Eigen::all);
+      tp1 << X1(Eigen::seqN(n1, nr), Eigen::indexing::all), Z2(Eigen::seqN(n1, nr), Eigen::indexing::all);
       Eigen::VectorXd tp2(tp1.transpose()*e2.matrix().segment(n1, nr));
       VF += tp2*tp2.transpose();
     }
@@ -347,7 +347,7 @@ Rcpp::List fFstat(const Eigen::MatrixXd& y,
     if (HAC == 2) {
       for (int r(0); r < ngroup; ++ r) {
         int n1(igroup(r)), n2(igroup(r + 1) - 1);
-        Eigen::VectorXd tp(X(Eigen::seq(n1, n2), Eigen::all).transpose()*e(Eigen::seq(n1, n2), s).matrix());
+        Eigen::VectorXd tp(X(Eigen::seq(n1, n2), Eigen::indexing::all).transpose()*e(Eigen::seq(n1, n2), s).matrix());
         V += tp*tp.transpose();
       }
     }
@@ -406,7 +406,7 @@ Rcpp::List fKPstat(const Eigen::MatrixXd& qy,
   } else if (HAC == 2) {
     for (int r(0); r < ngroup; ++ r) {
       int n1(igroup(r)), n2(igroup(r + 1) - 1);
-      Eigen::VectorXd tp(vecZe(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix());
+      Eigen::VectorXd tp(vecZe(Eigen::seq(n1, n2), Eigen::indexing::all).array().colwise().sum().matrix());
       VvecZe += tp * tp.transpose();
     }
   }
@@ -665,16 +665,16 @@ Rcpp::List fgmm_red_boot(const Eigen::VectorXd& y,
 #pragma omp parallel for
   for (int s = 0; s < ngroup; ++s) {
     auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
-    LZV[s] = ins(idx, Eigen::all).transpose() * V(idx, Eigen::all);
-    LZy[s] = ins(idx, Eigen::all).transpose() * y(idx);
-    if (iv) LZZ[s] = ins(idx, Eigen::all).transpose() * ins(idx, Eigen::all);
+    LZV[s] = ins(idx, Eigen::indexing::all).transpose() * V(idx, Eigen::indexing::all);
+    LZy[s] = ins(idx, Eigen::indexing::all).transpose() * y(idx);
+    if (iv) LZZ[s] = ins(idx, Eigen::indexing::all).transpose() * ins(idx, Eigen::indexing::all);
   }
 #else
   for (int s = 0; s < ngroup; ++s) {
     auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
-    LZV[s] = ins(idx, Eigen::all).transpose() * V(idx, Eigen::all);
-    LZy[s] = ins(idx, Eigen::all).transpose() * y(idx);
-    if (iv) LZZ[s] = ins(idx, Eigen::all).transpose() * ins(idx, Eigen::all);
+    LZV[s] = ins(idx, Eigen::indexing::all).transpose() * V(idx, Eigen::indexing::all);
+    LZy[s] = ins(idx, Eigen::indexing::all).transpose() * y(idx);
+    if (iv) LZZ[s] = ins(idx, Eigen::indexing::all).transpose() * ins(idx, Eigen::indexing::all);
   }
 #endif
   
@@ -830,7 +830,7 @@ Eigen::VectorXd fKPstat_bootCoef(const std::vector<Eigen::MatrixXd>& LZZ,
   
   // Pi
   Eigen::MatrixXd Pi  = ZZ.colPivHouseholderQr().solve(Zqy);
-  return Pi(index, Eigen::all).transpose().reshaped(l * ntau, 1); // pi as a vector
+  return Pi(index, Eigen::indexing::all).transpose().reshaped(l * ntau, 1); // pi as a vector
 }
 
 
@@ -860,14 +860,14 @@ Rcpp::List fKPstat_boot(const Eigen::MatrixXd& qy,
 #pragma omp parallel for
     for (int s = 0; s < ngroup; ++s) {
       auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
-      LZZ[s]  = Z(idx, Eigen::all).transpose() * Z(idx, Eigen::all);
-      LZqy[s] = Z(idx, Eigen::all).transpose() * qy(idx, Eigen::all);
+      LZZ[s]  = Z(idx, Eigen::indexing::all).transpose() * Z(idx, Eigen::indexing::all);
+      LZqy[s] = Z(idx, Eigen::indexing::all).transpose() * qy(idx, Eigen::indexing::all);
     }
 #else
     for (int s = 0; s < ngroup; ++s) {
       auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
-      LZZ[s]  = Z(idx, Eigen::all).transpose() * Z(idx, Eigen::all);
-      LZqy[s] = Z(idx, Eigen::all).transpose() * qy(idx, Eigen::all);
+      LZZ[s]  = Z(idx, Eigen::indexing::all).transpose() * Z(idx, Eigen::indexing::all);
+      LZqy[s] = Z(idx, Eigen::indexing::all).transpose() * qy(idx, Eigen::indexing::all);
     }
 #endif
     

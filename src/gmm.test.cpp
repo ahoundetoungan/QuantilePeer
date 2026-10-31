@@ -101,7 +101,7 @@ Rcpp::List Cov2ThetaRed(const Eigen::MatrixXd& Z1,
     Ze << Z1.array().colwise()*e1, Z2.array().colwise()*e2;
     for (int r(0); r < ngroup; ++ r) {
       int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
-      Eigen::VectorXd tp(Ze(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix());
+      Eigen::VectorXd tp(Ze(Eigen::seq(n1, n2), Eigen::indexing::all).array().colwise().sum().matrix());
       VZe += tp*tp.transpose();
     }
   }
@@ -124,13 +124,13 @@ Rcpp::List Cov2ThetaRed(const Eigen::MatrixXd& Z1,
   
   // R for selected parameters
   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(df, 2*Kv));
-  R(Eigen::all, Eigen::seqN(0, df))  = Eigen::MatrixXd::Identity(df, df);
-  R(Eigen::all, Eigen::seqN(Kv, df)) = -Eigen::MatrixXd::Identity(df, df);
+  R(Eigen::indexing::all, Eigen::seqN(0, df))  = Eigen::MatrixXd::Identity(df, df);
+  R(Eigen::indexing::all, Eigen::seqN(Kv, df)) = -Eigen::MatrixXd::Identity(df, df);
   
   // R for full 
   Eigen::MatrixXd Rfull(Eigen::MatrixXd::Zero(Kv, 2*Kv));
-  Rfull(Eigen::all, Eigen::seqN(0, Kv))  = Eigen::MatrixXd::Identity(Kv, Kv);
-  Rfull(Eigen::all, Eigen::seqN(Kv, Kv)) = -Eigen::MatrixXd::Identity(Kv, Kv);
+  Rfull(Eigen::indexing::all, Eigen::seqN(0, Kv))  = Eigen::MatrixXd::Identity(Kv, Kv);
+  Rfull(Eigen::indexing::all, Eigen::seqN(Kv, Kv)) = -Eigen::MatrixXd::Identity(Kv, Kv);
   
   // test statistic
   Eigen::VectorXd Rtheta(R*theta);
@@ -183,10 +183,10 @@ Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& Z1,
   
   // Second stage
   Eigen::MatrixXd X21(X(nIs, idX1)), X22(X(nIs, idX2)), V2(n_niso, 1 + ntau + K2);
-  V2 << X(nIs, idX1)*b, qy(nIs, Eigen::all), X22;
+  V2 << X(nIs, idX1)*b, qy(nIs, Eigen::indexing::all), X22;
   
-  Eigen::MatrixXd Z21(Z1(nIs, Eigen::all));
-  Eigen::MatrixXd Z22(Z2(nIs, Eigen::all));
+  Eigen::MatrixXd Z21(Z1(nIs, Eigen::indexing::all));
+  Eigen::MatrixXd Z22(Z2(nIs, Eigen::indexing::all));
   
   Eigen::MatrixXd ZV21(Z21.transpose()*V2), ZZ21(Z21.transpose()*Z21);
   Eigen::MatrixXd ZV22(Z22.transpose()*V2), ZZ22(Z22.transpose()*Z22);
@@ -230,20 +230,20 @@ Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& Z1,
   }
   if (HAC == 2) {
     X1   = Eigen::MatrixXd::Zero(n, K1);
-    X1(Is, Eigen::all) = X(Is, idX1);
+    X1(Is, Eigen::indexing::all) = X(Is, idX1);
     Z21   = Eigen::MatrixXd::Zero(n, Kins1);
-    Z21(nIs, Eigen::all) = Z1(nIs, Eigen::all);
+    Z21(nIs, Eigen::indexing::all) = Z1(nIs, Eigen::indexing::all);
     Z22   = Eigen::MatrixXd::Zero(n, Kins2);
-    Z22(nIs, Eigen::all) = Z2(nIs, Eigen::all);
+    Z22(nIs, Eigen::indexing::all) = Z2(nIs, Eigen::indexing::all);
     Eigen::VectorXd eps1(Eigen::VectorXd::Zero(n)), eps2(Eigen::VectorXd::Zero(n));
     eps1(Is)  = eiso; eps1(nIs) = e21;
     eps2(Is)  = eiso; eps2(nIs) = e22;
     for (int r(0); r < ngroup; ++ r) {
       int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
       Eigen::VectorXd tp(K1 + Kins);
-      tp << X1(Eigen::seq(n1, n2), Eigen::all).transpose() * eps1.segment(n1, n2), 
-            Z21(Eigen::seq(n1, n2), Eigen::all).transpose() * eps1.segment(n1, n2),
-            Z22(Eigen::seq(n1, n2), Eigen::all).transpose() * eps2.segment(n1, n2);
+      tp << X1(Eigen::seq(n1, n2), Eigen::indexing::all).transpose() * eps1.segment(n1, n2), 
+            Z21(Eigen::seq(n1, n2), Eigen::indexing::all).transpose() * eps1.segment(n1, n2),
+            Z22(Eigen::seq(n1, n2), Eigen::indexing::all).transpose() * eps2.segment(n1, n2);
       VF += tp * tp.transpose();
     }
   }
@@ -270,7 +270,7 @@ Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& Z1,
   seltp << Eigen::ArrayXi::LinSpaced(1 + ntau, 0, ntau), 1 + ntau + idX2;
   
   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(2 + 2*ntau + 2*K2, 2 + 2*ntau + K + K2));
-  R.block(0, 0, 1 + ntau + K2, 1 + ntau + K) = R1(seltp, Eigen::all);
+  R.block(0, 0, 1 + ntau + K2, 1 + ntau + K) = R1(seltp, Eigen::indexing::all);
   R.block(1 + ntau + K2, 1 + ntau + K, 1 + ntau + K2, 1 + ntau + K2) = 
     R2(seltp, Eigen::seqN(K1, 1 + ntau + K2));
   
@@ -292,8 +292,8 @@ Rcpp::List Cov2ThetaStruc(const Eigen::MatrixXd& Z1,
     Rt <<  Eigen::MatrixXd::Identity(df, df), -Eigen::MatrixXd::Identity(df, df);
     itheta << Eigen::ArrayXi::LinSpaced(1 + ntau, 1, 1 + ntau),  2 + ntau + idX2;
   } else {
-    Rt(Eigen::all, Eigen::seqN(1, ntau)) = Eigen::MatrixXd::Identity(df, df);
-    Rt(Eigen::all, Eigen::seqN(2 + ntau + K2, ntau)) = -Eigen::MatrixXd::Identity(df, df);
+    Rt(Eigen::indexing::all, Eigen::seqN(1, ntau)) = Eigen::MatrixXd::Identity(df, df);
+    Rt(Eigen::indexing::all, Eigen::seqN(2 + ntau + K2, ntau)) = -Eigen::MatrixXd::Identity(df, df);
     itheta << Eigen::ArrayXi::LinSpaced(ntau, 2, 1 + ntau);
   }
   
@@ -358,7 +358,7 @@ Rcpp::List validZ2SarganRed(const Eigen::MatrixXd& Z1,
     He << H.array().colwise()*e1;
     for (int r(0); r < ngroup; ++ r) {
       int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
-      Eigen::VectorXd tp(He(Eigen::seq(n1, n2), Eigen::all).array().colwise().sum().matrix());
+      Eigen::VectorXd tp(He(Eigen::seq(n1, n2), Eigen::indexing::all).array().colwise().sum().matrix());
       VHe += tp*tp.transpose();
     }
   }
@@ -400,8 +400,8 @@ Rcpp::List validZ2SarganStruc(const Eigen::MatrixXd& Z1,
   Eigen::VectorXd b(theta1(1 + ntau + idX1));
   
   // Instruments
-  Eigen::MatrixXd Z21(Z1(nIs, Eigen::all));
-  Eigen::MatrixXd Z22(Z2(nIs, Eigen::all));
+  Eigen::MatrixXd Z21(Z1(nIs, Eigen::indexing::all));
+  Eigen::MatrixXd Z22(Z2(nIs, Eigen::indexing::all));
   
   Eigen::MatrixXd H(Z22 - Z21*(Z21.transpose() * Z21).colPivHouseholderQr().solve(Z21.transpose() * Z22));
   Eigen::FullPivLU<Eigen::MatrixXd> lu(H);
@@ -419,10 +419,10 @@ Rcpp::List validZ2SarganStruc(const Eigen::MatrixXd& Z1,
   }
   if (HAC == 2) {
     Eigen::ArrayXXd He(Eigen::MatrixXd::Zero(n, Kins2));
-    He(nIs, Eigen::all) << H.array().colwise() * e1(nIs);
+    He(nIs, Eigen::indexing::all) << H.array().colwise() * e1(nIs);
     for (int r(0); r < ngroup; ++ r) {
       int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
-      Eigen::VectorXd tp(He(Eigen::seq(n1, n2), Eigen::all).colwise().sum().matrix());
+      Eigen::VectorXd tp(He(Eigen::seq(n1, n2), Eigen::indexing::all).colwise().sum().matrix());
       VHe += tp*tp.transpose();
     }
   }
@@ -642,8 +642,8 @@ Rcpp::List fEncompassingStrucDelta(const Eigen::VectorXd& y,
   
   {
     Eigen::MatrixXd U1(n, Kv1 - 1), U2(n, Kv2 - 1); // missing the Xb part
-    U1 << qy1, X(Eigen::all, idX2);
-    U2 << qy2, X(Eigen::all, idX2);
+    U1 << qy1, X(Eigen::indexing::all, idX2);
+    U2 << qy2, X(Eigen::indexing::all, idX2);
     
 #ifdef _OPENMP
     omp_set_num_threads(nthreads);
@@ -661,15 +661,15 @@ Rcpp::List fEncompassingStrucDelta(const Eigen::VectorXd& y,
       int n_niso(LnIs[s].size());
       if (n_niso > 0) {
         has_niso(s) = 1;
-        if (iv1) LZZ21[s]  = Z1(LnIs[s], Eigen::all).transpose() * Z1(LnIs[s], Eigen::all);
-        if (iv2) LZZ22[s]  = Z2(LnIs[s], Eigen::all).transpose() * Z2(LnIs[s], Eigen::all);
-        LZ21X2[s]  = Z1(LnIs[s], Eigen::all).transpose() * X(LnIs[s], idX1);
-        LZ22X2[s]  = Z2(LnIs[s], Eigen::all).transpose() * X(LnIs[s], idX1);
-        LZU21[s]   = Z1(LnIs[s], Eigen::all).transpose() * U1(LnIs[s], Eigen::all);
-        LZU22[s]   = Z2(LnIs[s], Eigen::all).transpose() * U2(LnIs[s], Eigen::all);
-        LZ22U21[s] = Z2(LnIs[s], Eigen::all).transpose() * U1(LnIs[s], Eigen::all);
-        LZ21y2[s]  = Z1(LnIs[s], Eigen::all).transpose() * y(LnIs[s]);
-        LZ22y2[s]  = Z2(LnIs[s], Eigen::all).transpose() * y(LnIs[s]);
+        if (iv1) LZZ21[s]  = Z1(LnIs[s], Eigen::indexing::all).transpose() * Z1(LnIs[s], Eigen::indexing::all);
+        if (iv2) LZZ22[s]  = Z2(LnIs[s], Eigen::indexing::all).transpose() * Z2(LnIs[s], Eigen::indexing::all);
+        LZ21X2[s]  = Z1(LnIs[s], Eigen::indexing::all).transpose() * X(LnIs[s], idX1);
+        LZ22X2[s]  = Z2(LnIs[s], Eigen::indexing::all).transpose() * X(LnIs[s], idX1);
+        LZU21[s]   = Z1(LnIs[s], Eigen::indexing::all).transpose() * U1(LnIs[s], Eigen::indexing::all);
+        LZU22[s]   = Z2(LnIs[s], Eigen::indexing::all).transpose() * U2(LnIs[s], Eigen::indexing::all);
+        LZ22U21[s] = Z2(LnIs[s], Eigen::indexing::all).transpose() * U1(LnIs[s], Eigen::indexing::all);
+        LZ21y2[s]  = Z1(LnIs[s], Eigen::indexing::all).transpose() * y(LnIs[s]);
+        LZ22y2[s]  = Z2(LnIs[s], Eigen::indexing::all).transpose() * y(LnIs[s]);
       }
     }
 #else
@@ -686,15 +686,15 @@ Rcpp::List fEncompassingStrucDelta(const Eigen::VectorXd& y,
       int n_niso(LnIs[s].size());
       if (n_niso > 0) {
         has_niso(s) = 1;
-        if (iv1) LZZ21[s]  = Z1(LnIs[s], Eigen::all).transpose() * Z1(LnIs[s], Eigen::all);
-        if (iv2) LZZ22[s]  = Z2(LnIs[s], Eigen::all).transpose() * Z2(LnIs[s], Eigen::all);
-        LZ21X2[s]  = Z1(LnIs[s], Eigen::all).transpose() * X(LnIs[s], idX1);
-        LZ22X2[s]  = Z2(LnIs[s], Eigen::all).transpose() * X(LnIs[s], idX1);
-        LZU21[s]   = Z1(LnIs[s], Eigen::all).transpose() * U1(LnIs[s], Eigen::all);
-        LZU22[s]   = Z2(LnIs[s], Eigen::all).transpose() * U2(LnIs[s], Eigen::all);
-        LZ22U21[s] = Z2(LnIs[s], Eigen::all).transpose() * U1(LnIs[s], Eigen::all);
-        LZ21y2[s]  = Z1(LnIs[s], Eigen::all).transpose() * y(LnIs[s]);
-        LZ22y2[s]  = Z2(LnIs[s], Eigen::all).transpose() * y(LnIs[s]);
+        if (iv1) LZZ21[s]  = Z1(LnIs[s], Eigen::indexing::all).transpose() * Z1(LnIs[s], Eigen::indexing::all);
+        if (iv2) LZZ22[s]  = Z2(LnIs[s], Eigen::indexing::all).transpose() * Z2(LnIs[s], Eigen::indexing::all);
+        LZ21X2[s]  = Z1(LnIs[s], Eigen::indexing::all).transpose() * X(LnIs[s], idX1);
+        LZ22X2[s]  = Z2(LnIs[s], Eigen::indexing::all).transpose() * X(LnIs[s], idX1);
+        LZU21[s]   = Z1(LnIs[s], Eigen::indexing::all).transpose() * U1(LnIs[s], Eigen::indexing::all);
+        LZU22[s]   = Z2(LnIs[s], Eigen::indexing::all).transpose() * U2(LnIs[s], Eigen::indexing::all);
+        LZ22U21[s] = Z2(LnIs[s], Eigen::indexing::all).transpose() * U1(LnIs[s], Eigen::indexing::all);
+        LZ21y2[s]  = Z1(LnIs[s], Eigen::indexing::all).transpose() * y(LnIs[s]);
+        LZ22y2[s]  = Z2(LnIs[s], Eigen::indexing::all).transpose() * y(LnIs[s]);
       }
     }
 #endif
@@ -751,8 +751,8 @@ for (int k = 0; k < boot; ++ k) {
 }
 #endif
 
-Eigen::ArrayXd mdelta(ldelta(Eigen::all, Eigen::seqN(1, boot)).array().rowwise().mean());
-Eigen::MatrixXd ddelta(ldelta(Eigen::all, Eigen::seqN(1, boot)).array().colwise() - mdelta);
+Eigen::ArrayXd mdelta(ldelta(Eigen::indexing::all, Eigen::seqN(1, boot)).array().rowwise().mean());
+Eigen::MatrixXd ddelta(ldelta(Eigen::indexing::all, Eigen::seqN(1, boot)).array().colwise() - mdelta);
 Eigen::MatrixXd Vdelta(ddelta * ddelta.transpose() / (boot - 1));
 return Rcpp::List::create(_["delta"]  = ldelta.col(0), 
                           _["mdelta"] = mdelta,
@@ -804,9 +804,9 @@ Rcpp::List fEncompassingStruc(const Eigen::VectorXd& y,
   }
   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(Kdeltasel, Kv2));
   if (full) {
-    R(Eigen::all, Eigen::seqN(0, Kdeltasel)) = Eigen::MatrixXd::Identity(Kdeltasel, Kdeltasel);
+    R(Eigen::indexing::all, Eigen::seqN(0, Kdeltasel)) = Eigen::MatrixXd::Identity(Kdeltasel, Kdeltasel);
   } else {
-    R(Eigen::all, Eigen::seqN(1, Kdeltasel)) = Eigen::MatrixXd::Identity(Kdeltasel, Kdeltasel);
+    R(Eigen::indexing::all, Eigen::seqN(1, Kdeltasel)) = Eigen::MatrixXd::Identity(Kdeltasel, Kdeltasel);
   }
   
   // delta select
@@ -816,10 +816,10 @@ Rcpp::List fEncompassingStruc(const Eigen::VectorXd& y,
   int df1(Kdeltasel), df2(y.size() - Kest12 - Kest22);
   Eigen::ArrayXi itheta(df1);
   if (full) {
-    R(Eigen::all, Eigen::seqN(0, df1)) = Eigen::MatrixXd::Identity(df1, df1);
+    R(Eigen::indexing::all, Eigen::seqN(0, df1)) = Eigen::MatrixXd::Identity(df1, df1);
     itheta << Eigen::ArrayXi::LinSpaced(1 + ntau2, 1, 1 + ntau2),  2 + ntau2 + idX2;
   } else {
-    R(Eigen::all, Eigen::seqN(1, df1)) = Eigen::MatrixXd::Identity(df1, df1);
+    R(Eigen::indexing::all, Eigen::seqN(1, df1)) = Eigen::MatrixXd::Identity(df1, df1);
     itheta << Eigen::ArrayXi::LinSpaced(ntau2, 2, 1 + ntau2);
   }
   
@@ -928,24 +928,24 @@ Rcpp::List fEncompassingRedDelta(const Eigen::VectorXd& y,
 #pragma omp parallel for
     for (int s = 0; s < ngroup; ++s) {
       auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
-      if (iv1) LZZ1[s]  = Z1(idx, Eigen::all).transpose() * Z1(idx, Eigen::all);
-      if (iv2) LZZ2[s]  = Z2(idx, Eigen::all).transpose() * Z2(idx, Eigen::all);
-      LZV1[s]  = Z1(idx, Eigen::all).transpose() * V1(idx, Eigen::all);
-      LZV2[s]  = Z2(idx, Eigen::all).transpose() * V2(idx, Eigen::all);
-      LZ2V1[s] = Z2(idx, Eigen::all).transpose() * V1(idx, Eigen::all);
-      LZ1y[s]  = Z1(idx, Eigen::all).transpose() * y(idx);
-      LZ2y[s]  = Z2(idx, Eigen::all).transpose() * y(idx);
+      if (iv1) LZZ1[s]  = Z1(idx, Eigen::indexing::all).transpose() * Z1(idx, Eigen::indexing::all);
+      if (iv2) LZZ2[s]  = Z2(idx, Eigen::indexing::all).transpose() * Z2(idx, Eigen::indexing::all);
+      LZV1[s]  = Z1(idx, Eigen::indexing::all).transpose() * V1(idx, Eigen::indexing::all);
+      LZV2[s]  = Z2(idx, Eigen::indexing::all).transpose() * V2(idx, Eigen::indexing::all);
+      LZ2V1[s] = Z2(idx, Eigen::indexing::all).transpose() * V1(idx, Eigen::indexing::all);
+      LZ1y[s]  = Z1(idx, Eigen::indexing::all).transpose() * y(idx);
+      LZ2y[s]  = Z2(idx, Eigen::indexing::all).transpose() * y(idx);
     }
 #else
     for (int s = 0; s < ngroup; ++s) {
       auto idx = Eigen::seq(igroup(s), igroup(s + 1) - 1);
-      LZZ1[s]  = Z1(idx, Eigen::all).transpose() * Z1(idx, Eigen::all);
-      LZZ2[s]  = Z2(idx, Eigen::all).transpose() * Z2(idx, Eigen::all);
-      LZV1[s]  = Z1(idx, Eigen::all).transpose() * V1(idx, Eigen::all);
-      LZV2[s]  = Z2(idx, Eigen::all).transpose() * V2(idx, Eigen::all);
-      LZ2V1[s] = Z2(idx, Eigen::all).transpose() * V1(idx, Eigen::all);
-      LZ1y[s]  = Z1(idx, Eigen::all).transpose() * y(idx);
-      LZ2y[s]  = Z2(idx, Eigen::all).transpose() * y(idx);
+      LZZ1[s]  = Z1(idx, Eigen::indexing::all).transpose() * Z1(idx, Eigen::indexing::all);
+      LZZ2[s]  = Z2(idx, Eigen::indexing::all).transpose() * Z2(idx, Eigen::indexing::all);
+      LZV1[s]  = Z1(idx, Eigen::indexing::all).transpose() * V1(idx, Eigen::indexing::all);
+      LZV2[s]  = Z2(idx, Eigen::indexing::all).transpose() * V2(idx, Eigen::indexing::all);
+      LZ2V1[s] = Z2(idx, Eigen::indexing::all).transpose() * V1(idx, Eigen::indexing::all);
+      LZ1y[s]  = Z1(idx, Eigen::indexing::all).transpose() * y(idx);
+      LZ2y[s]  = Z2(idx, Eigen::indexing::all).transpose() * y(idx);
     }
 #endif
   }  
@@ -999,8 +999,8 @@ for (int k = 0; k < boot; ++ k) {
 }
 #endif
 
-Eigen::ArrayXd mdelta(ldelta(Eigen::all, Eigen::seqN(1, boot)).array().rowwise().mean());
-Eigen::MatrixXd ddelta(ldelta(Eigen::all, Eigen::seqN(1, boot)).array().colwise() - mdelta);
+Eigen::ArrayXd mdelta(ldelta(Eigen::indexing::all, Eigen::seqN(1, boot)).array().rowwise().mean());
+Eigen::MatrixXd ddelta(ldelta(Eigen::indexing::all, Eigen::seqN(1, boot)).array().colwise() - mdelta);
 Eigen::MatrixXd Vdelta(ddelta * ddelta.transpose() / (boot - 1));
 return Rcpp::List::create(_["delta"]  = ldelta.col(0), 
                           _["mdelta"] = mdelta,
@@ -1047,7 +1047,7 @@ Rcpp::List fEncompassingRed(const Eigen::VectorXd& y,
     Kdeltasel = Kv2;
   }
   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(Kdeltasel, Kv2));
-  R(Eigen::all, Eigen::seqN(0, Kdeltasel)) = Eigen::MatrixXd::Identity(Kdeltasel, Kdeltasel);
+  R(Eigen::indexing::all, Eigen::seqN(0, Kdeltasel)) = Eigen::MatrixXd::Identity(Kdeltasel, Kdeltasel);
   
   // delta select
   Eigen::VectorXd deltasel(R * delta);
@@ -1115,18 +1115,18 @@ Rcpp::List fEncompassingRed(const Eigen::VectorXd& y,
 //   Eigen::VectorXd b1(theta1(1 + ntau1 + idX11)), b2(theta2(1 + ntau2 + idX12));
 //   
 //   // Second stage
-//   Eigen::VectorXd Xb1(X1(Eigen::all, idX11)*b1), Xb11(Xb1(Is)), Xb21(Xb1(nIs));
-//   Eigen::VectorXd Xb2(X2(Eigen::all, idX12)*b2), Xb12(Xb2(Is)), Xb22(Xb2(nIs));
+//   Eigen::VectorXd Xb1(X1(Eigen::indexing::all, idX11)*b1), Xb11(Xb1(Is)), Xb21(Xb1(nIs));
+//   Eigen::VectorXd Xb2(X2(Eigen::indexing::all, idX12)*b2), Xb12(Xb2(Is)), Xb22(Xb2(nIs));
 //   
 //   Eigen::MatrixXd X21(X1(nIs, idX21)),  X211(X1(nIs, idX11)), V21(n_niso, 1 + ntau1 + K21);
-//   V21 << Xb21, qy1(nIs, Eigen::all), X21;
+//   V21 << Xb21, qy1(nIs, Eigen::indexing::all), X21;
 //   Eigen::MatrixXd X22(X2(nIs, idX22)),  X212(X2(nIs, idX12)), V22(n_niso, 1 + ntau2 + K22);
-//   V22 << Xb22, qy2(nIs, Eigen::all), X22;
+//   V22 << Xb22, qy2(nIs, Eigen::indexing::all), X22;
 //   
 //   Eigen::MatrixXd Z21(n_niso, 1 + Kins1);
-//   Z21 << Xb21, Z1(nIs, Eigen::all);
+//   Z21 << Xb21, Z1(nIs, Eigen::indexing::all);
 //   Eigen::MatrixXd Z22(n_niso, 1 + Kins2);
-//   Z22 << Xb22, Z2(nIs, Eigen::all);
+//   Z22 << Xb22, Z2(nIs, Eigen::indexing::all);
 //   
 //   //residuals
 //   Eigen::VectorXd e21(e1(nIs)*(1 - theta1(0)));
@@ -1147,12 +1147,12 @@ Rcpp::List fEncompassingRed(const Eigen::VectorXd& y,
 //   }
 //   if (HAC == 2) {
 //     Eigen::MatrixXd Z(Eigen::MatrixXd::Zero(n, 1 + Kins1));
-//     Z(nIs, Eigen::all) << Xb21, Z1(nIs, Eigen::all);
+//     Z(nIs, Eigen::indexing::all) << Xb21, Z1(nIs, Eigen::indexing::all);
 //     Eigen::VectorXd e(Eigen::VectorXd::Zero(n));
 //     e(nIs) = e21;
 //     for (int r(0); r < ngroup; ++ r) {
 //       int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
-//       Eigen::VectorXd tp(Z(Eigen::seq(n1, n2), Eigen::all).transpose()*e.segment(n1, n2));
+//       Eigen::VectorXd tp(Z(Eigen::seq(n1, n2), Eigen::indexing::all).transpose()*e.segment(n1, n2));
 //       VZ1e1 += tp*tp.transpose();
 //     }
 //   }
@@ -1164,9 +1164,9 @@ Rcpp::List fEncompassingRed(const Eigen::VectorXd& y,
 //   }
 //   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(df, 1 + ntau2 + K22));
 //   if (full) {
-//     R(Eigen::all, Eigen::seqN(0, df)) = Eigen::MatrixXd::Identity(df, df);
+//     R(Eigen::indexing::all, Eigen::seqN(0, df)) = Eigen::MatrixXd::Identity(df, df);
 //   } else {
-//     R(Eigen::all, Eigen::seqN(1, df)) = Eigen::MatrixXd::Identity(df, df);
+//     R(Eigen::indexing::all, Eigen::seqN(1, df)) = Eigen::MatrixXd::Identity(df, df);
 //   }
 //   
 //   
@@ -1226,7 +1226,7 @@ Rcpp::List fEncompassingRed(const Eigen::VectorXd& y,
 //   if (HAC == 2) {
 //     for (int r(0); r < ngroup; ++ r) {
 //       int n1(cumsn(r)), n2(cumsn(r + 1) - 1);
-//       Eigen::VectorXd tp(Z1(Eigen::seq(n1, n2), Eigen::all).transpose()*e1.segment(n1, n2));
+//       Eigen::VectorXd tp(Z1(Eigen::seq(n1, n2), Eigen::indexing::all).transpose()*e1.segment(n1, n2));
 //       VZ1e1 += tp*tp.transpose();
 //     }
 //   }
@@ -1237,7 +1237,7 @@ Rcpp::List fEncompassingRed(const Eigen::VectorXd& y,
 //     df = ntau2 + K2; 
 //   }
 //   Eigen::MatrixXd R(Eigen::MatrixXd::Zero(df, ntau2 + K2));
-//   R(Eigen::all, Eigen::seqN(0, df)) = Eigen::MatrixXd::Identity(df, df);
+//   R(Eigen::indexing::all, Eigen::seqN(0, df)) = Eigen::MatrixXd::Identity(df, df);
 //   
 //   // statistic and its variance
 //   Eigen::VectorXd HZ1e1(H*Z1.transpose()*e1);
