@@ -3,7 +3,7 @@
 **Eyo I. Herstad, Aristide Houndetoungan, and Myungkou Shin**
 
 ## Monte Carlo Simulations
-- The file `simulation.R` produces the simulation results presented in Tables 4.2 and 4.3.
+- The file `simulation.R` and `simulationNoContext.R` produces the simulation results presented in Tables 4.2 and 4.3.
 
 ## Application to Add Health Data
 - The file `AddHealth.data.R` prepares the data for analysis. Specifically, it extracts data from the raw Add Health datasets, performs data cleaning, and saves the cleaned datasets.

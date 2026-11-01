@@ -22,7 +22,7 @@
 
 ### Overview
 
-The **QuantilePeer** package implements estimation and simulation routines for quantile peer effect models introduced in [Houndetoungan (2025)](https://doi.org/10.48550/arXiv.2506.12920).
+The **QuantilePeer** package implements estimation and simulation routines for quantile peer effect models introduced in [Herstad et al. (2026)](https://doi.org/10.48550/arXiv.2410.14317).
 Replication code for all results in the paper is available in the [Replication](https://github.com/ahoundetoungan/QuantilePeer/tree/main/Replication) folder.
 
 The package also includes functions to simulate and estimate the CES-based peer effect model developed by [Boucher et al. (2024)](https://doi.org/10.3982/ECTA21048).
