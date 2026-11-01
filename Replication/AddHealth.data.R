@@ -5,7 +5,7 @@
 ################################################################################
 ################################################################################
 
-# Last updated: 2026-19-22
+# Last updated: 2026-09-22
 
 ## This script imports raw Add Health data and prepares them for estimation.
 ## The output is an .Rda file per outcome.

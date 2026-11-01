@@ -5,7 +5,7 @@
 ################################################################################
 ################################################################################
 
-# Last updated: 2026-06-09
+# Last updated: 2026-09-10
 
 # This script reproduces the counterfactual analysis (Figure 5.1)
 
@@ -201,7 +201,7 @@ dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
 
 
 # tau3
-(graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 4, 6, 7, 11)), 
+(graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 4, 6, 7, 8)), 
                  aes(x = Quant3, y = Other, colour = model, shape = model)) +
     geom_point(size = 1.5, alpha = 1) +
     facet_wrap(~ outcome, ncol = 2, scales = "free") +
@@ -224,11 +224,11 @@ dataplot <- do.call(rbind, lapply(1:length(depvar), function(k) {
 ggsave("CFScatter3.pdf", path = OutResPath, plot = graph, device = "pdf", width = 6, height = 6)
 
 # tau4
-(graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 4, 6, 7, 11)), 
+(graph <- ggplot(dataplot %>% filter(k %in% c(2, 3, 4, 6, 7, 8)), 
                  aes(x = Quant4, y = Other, colour = model, shape = model)) +
     geom_point(size = 1.5, alpha = 1) +
     facet_wrap(~ outcome, ncol = 2, scales = "free") +
-    scale_colour_manual(values = c("#c66", "#66c")) +
+    scale_colour_manual(values = c("#cc6666", "#6666cc")) +
     scale_shape_manual(values = c(2, 4)) +
     theme_minimal(base_size = 12, base_family = "Palatino") +
     theme(
