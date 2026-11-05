@@ -857,12 +857,20 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE, boot = 5e2, n
   which  <- tolower(which[1])
   stopifnot(which %in% c("increasing", "decreasing", "uniform", "wald", "sargan", "encompassing"))
   
+  # Name for qy variables
+  namqy1 <- c("qy", "Ay", "endogenous.variables")[class(model1) == c("qpeer", "linpeer", "genpeer")]
+  namqy2 <- if(is.null(model2)) NULL else c("qy", "Ay", "endogenous.variables")[class(model2) == c("qpeer", "linpeer", "genpeer")]
+  
   struc1 <- model1$model.info$structural
   struc2 <- model2$model.info$structural
   y1     <- model1$data$y
   y2     <- model1$data$y
-  qy1    <- model1$data$qy
-  qy2    <- model2$data$qy
+  qy1    <- NULL
+  if (!is.null(namqy1))
+    qy1  <- as.matrix(model1$data[[namqy1]]) 
+  qy2    <- NULL 
+  if (!is.null(namqy2))
+    qy2  <- as.matrix(model2$data[[namqy2]])
   X1     <- model1$data$X
   X2     <- model2$data$X
   Z1     <- model1$data$instruments
@@ -963,7 +971,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE, boot = 5e2, n
           tolower(model2$model.info$estimator) %in% c("iv", "gmm.optimal", "gmm.identity"))) {
       stop("This test is only valid for IV and GMM estimators.")
     }
-    
+
     tp     <- all(length(y1) == length(y2)) &&
       all(dim(X1) == dim(X2)) &&
       (struc1 == struc2) &&
@@ -980,7 +988,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE, boot = 5e2, n
     if (!tp) {
       stop("`model1` and `model2` differ in data or model specification.")
     }
-    
+
     tp     <- all(y1 == y2) &&
       all(X1 == X2) &&
       all(colnames(X1) == colnames(X2)) &&
@@ -1016,7 +1024,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE, boot = 5e2, n
       Z1   <- Demean_separate(Z1, igr, LIs1, LnIs1, ngr1, n1)
       Z2   <- Demean_separate(Z2, igr, LIs1, LnIs1, ngr1, n1)
     }
-    
+ 
     GIs    <- sum(sapply(LIs1, function(s) length(s) > 0))
     GnIs   <- sum(sapply(LnIs1, function(s) length(s) > 0))
     
@@ -1099,6 +1107,7 @@ qpeer.test <- function(model1, model2 = NULL, which, full = FALSE, boot = 5e2, n
         K2    <- length(theta2)
         Kest1 <- ifelse(FEnum == 0, K1, ifelse(FEnum == 1, K1 + ngr1, K1 + GIs + GnIs))
         Kest2 <- ifelse(FEnum == 0, K2, ifelse(FEnum == 1, K2 + ngr1, K2 + GIs + GnIs))
+
         CTT   <- fEncompassingRed(y = y1, 
                                   qy1 = qy1, Z1 = Z1, Kest1 = Kest1, 
                                   qy2 = qy2, Z2 = Z2, Kest2 = Kest2, 

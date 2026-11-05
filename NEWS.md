@@ -8,3 +8,6 @@
 - Optimal instruments are added (see the `qpeer.optimal.inst` function) but requires iid errors (see Herstad, Houndetoungan, and Shin, 2026).
 - Some notation changes have been made to ensure consistency with the new version of the paper (see Herstad, Houndetoungan, and Shin, 2026). In particular, the list of network matrices is now denoted by `Glist` rather than `A`. 
 - The function qpeer.cfit is added to predict instruments using cross fittings.
+
+### Version 1.0.2 (November 2026)
+- The encompassing test can be use to compare linear, general, and quantile model, even different specification models.
